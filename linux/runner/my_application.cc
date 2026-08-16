@@ -25,48 +25,47 @@ static void my_application_activate(GApplication* application) {
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
 
-  // Use a header bar when running in GNOME as this is the common style used
-  // by applications and is the setup most users will be using (e.g. Ubuntu
-  // desktop).
-  // If running on X and not using GNOME then just use a traditional title bar
-  // in case the window manager does more exotic layout, e.g. tiling.
-  // If running on Wayland assume the header bar will work (may need changing
-  // if future cases occur).
   // Aktivera mörkt GTK-tema för hela fönstret
   g_object_set(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", TRUE, NULL);
 
-  // Applicera anpassad GTK CSS för mörk Slate-färg på fönsterlisten (HeaderBar)
+  // Applicera anpassad GTK CSS för mörk Slate-färg (#1E293B) på fönsterramen och knapparna
   GtkCssProvider* css_provider = gtk_css_provider_new();
   gtk_css_provider_load_from_data(css_provider,
-    "headerbar, .titlebar { background-color: #1E293B !important; background-image: none !important; color: #FFFFFF !important; border-bottom: 1px solid #334155 !important; box-shadow: none !important; }\n"
-    "headerbar label.title, .titlebar label.title { color: #FFFFFF !important; font-weight: bold !important; font-size: 12px !important; }\n"
-    "headerbar button, .titlebar button { color: #FFFFFF !important; background: transparent !important; border: none !important; }\n"
-    "headerbar button:hover, .titlebar button:hover { background-color: #334155 !important; }\n",
+    "window, window.background, headerbar, .titlebar, headerbar.titlebar {\n"
+    "  background-color: #1E293B !important;\n"
+    "  background-image: none !important;\n"
+    "  color: #FFFFFF !important;\n"
+    "  border-bottom: 1px solid #334155 !important;\n"
+    "  box-shadow: none !important;\n"
+    "}\n"
+    "headerbar label.title, .titlebar label.title, window title {\n"
+    "  color: #FFFFFF !important;\n"
+    "  font-weight: bold !important;\n"
+    "  font-size: 12px !important;\n"
+    "}\n"
+    "headerbar button, .titlebar button {\n"
+    "  color: #FFFFFF !important;\n"
+    "  background: transparent !important;\n"
+    "  border: none !important;\n"
+    "  border-radius: 4px !important;\n"
+    "}\n"
+    "headerbar button:hover, .titlebar button:hover {\n"
+    "  background-color: #334155 !important;\n"
+    "}\n",
     -1, NULL);
+
   gtk_style_context_add_provider_for_screen(
     gdk_screen_get_default(),
     GTK_STYLE_PROVIDER(css_provider),
     GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-  gboolean use_header_bar = TRUE;
-#ifdef GDK_WINDOWING_X11
-  GdkScreen* screen = gtk_window_get_screen(window);
-  if (GDK_IS_X11_SCREEN(screen)) {
-    const gchar* wm_name = gdk_x11_screen_get_window_manager_name(screen);
-    if (g_strcmp0(wm_name, "GNOME Shell") != 0) {
-      use_header_bar = FALSE;
-    }
-  }
-#endif
-  if (use_header_bar) {
-    GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
-    gtk_widget_show(GTK_WIDGET(header_bar));
-    gtk_header_bar_set_title(header_bar, "Security Harbor – Firewall Management");
-    gtk_header_bar_set_show_close_button(header_bar, TRUE);
-    gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
-  } else {
-    gtk_window_set_title(window, "Security Harbor – Firewall Management");
-  }
+  // Tvinga alltid CSD HeaderBar med Minimera, Maximera och Stäng knappar
+  GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
+  gtk_widget_show(GTK_WIDGET(header_bar));
+  gtk_header_bar_set_title(header_bar, "Security Harbor – Firewall Management");
+  gtk_header_bar_set_show_close_button(header_bar, TRUE);
+  gtk_header_bar_set_decoration_layout(header_bar, "icon:minimize,maximize,close");
+  gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
 
   gtk_window_set_default_size(window, 1280, 720);
   gtk_window_set_icon_name(GTK_WINDOW(window), "security-harbor-gui");
@@ -78,15 +77,12 @@ static void my_application_activate(GApplication* application) {
 
   FlView* view = fl_view_new(project);
   GdkRGBA background_color;
-  // Background defaults to black, override it here if necessary, e.g. #00000000
-  // for transparent.
-  gdk_rgba_parse(&background_color, "#000000");
+  gdk_rgba_parse(&background_color, "#0F172A");
   fl_view_set_background_color(view, &background_color);
   gtk_widget_show(GTK_WIDGET(view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
 
   // Show the window when Flutter renders.
-  // Requires the view to be realized so we can start rendering.
   g_signal_connect_swapped(view, "first-frame", G_CALLBACK(first_frame_cb),
                            self);
   gtk_widget_realize(GTK_WIDGET(view));
@@ -101,7 +97,6 @@ static gboolean my_application_local_command_line(GApplication* application,
                                                   gchar*** arguments,
                                                   int* exit_status) {
   MyApplication* self = MY_APPLICATION(application);
-  // Strip out the first argument as it is the binary name.
   self->dart_entrypoint_arguments = g_strdupv(*arguments + 1);
 
   g_autoptr(GError) error = nullptr;
@@ -119,19 +114,11 @@ static gboolean my_application_local_command_line(GApplication* application,
 
 // Implements GApplication::startup.
 static void my_application_startup(GApplication* application) {
-  // MyApplication* self = MY_APPLICATION(object);
-
-  // Perform any actions required at application startup.
-
   G_APPLICATION_CLASS(my_application_parent_class)->startup(application);
 }
 
 // Implements GApplication::shutdown.
 static void my_application_shutdown(GApplication* application) {
-  // MyApplication* self = MY_APPLICATION(object);
-
-  // Perform any actions required at application shutdown.
-
   G_APPLICATION_CLASS(my_application_parent_class)->shutdown(application);
 }
 
@@ -154,10 +141,6 @@ static void my_application_class_init(MyApplicationClass* klass) {
 static void my_application_init(MyApplication* self) {}
 
 MyApplication* my_application_new() {
-  // Set the program name to the application ID, which helps various systems
-  // like GTK and desktop environments map this running application to its
-  // corresponding .desktop file. This ensures better integration by allowing
-  // the application to be recognized beyond its binary name.
   g_set_prgname(APPLICATION_ID);
 
   return MY_APPLICATION(g_object_new(my_application_get_type(),
