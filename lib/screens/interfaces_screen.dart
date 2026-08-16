@@ -3,16 +3,6 @@ import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 
-const List<Map<String, String>> predefinedInterfaceZones = [
-  {'label': 'LAN (Internt nätverk)', 'value': 'LAN'},
-  {'label': 'WAN (Utsida / Internet)', 'value': 'WAN'},
-  {'label': 'SERVERS (Serverzon)', 'value': 'SERVERS'},
-  {'label': 'IOT (IoT-enheter)', 'value': 'IOT'},
-  {'label': 'GUEST (Gästnätverk)', 'value': 'GUEST'},
-  {'label': 'VPN (VPN-klienter)', 'value': 'VPN'},
-  {'label': '+ Skapa ny / Anpassad zon...', 'value': 'CUSTOM'},
-];
-
 class InterfacesScreen extends StatelessWidget {
   const InterfacesScreen({super.key});
 
@@ -55,160 +45,177 @@ class InterfacesScreen extends StatelessWidget {
     return list;
   }
 
+  bool _zoneExistsInMenu(String zone, ConfigModel? cfg) {
+    if (['LAN', 'WAN', 'SERVERS', 'IOT', 'GUEST', 'VPN'].contains(zone)) return true;
+    if (cfg != null) {
+      if (cfg.zones.any((z) => z.name.toUpperCase() == zone)) return true;
+      if (cfg.interfaces.any((i) => i.zone.toUpperCase() == zone)) return true;
+    }
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ConfigProvider>(context);
     final cfg = provider.candidateConfig ?? provider.runningConfig;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Nätverksgränssnitt & VLAN',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              Row(
-                children: [
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.alt_route),
-                    label: const Text('+ Skapa VLAN'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
-                    onPressed: () => _showAddVLANDialog(context, provider),
+    return Container(
+      color: const Color(0xFF0F172A),
+      alignment: Alignment.topLeft,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Nätverksgränssnitt & VLAN',
+                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.alt_route, size: 14),
+                  label: const Text('+ Skapa VLAN', style: TextStyle(fontSize: 11)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.cyanAccent,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          if (cfg != null && cfg.interfaces.isEmpty)
-            const Card(
-              color: Color(0xFF1E293B),
-              child: Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Center(child: Text('Inga konfigurerade gränssnitt ännu.', style: TextStyle(color: Colors.grey))),
-              ),
-            )
-          else if (cfg != null)
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: cfg.interfaces.length,
-              itemBuilder: (context, idx) {
-                final iface = cfg.interfaces[idx];
-                final isVLAN = iface.vlanId > 0;
-                final isWAN = iface.zone == 'WAN';
-                final isStatic = iface.addressType == 'static';
+                  onPressed: () => _showAddVLANDialog(context, provider),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (cfg != null && cfg.interfaces.isEmpty)
+              const Card(
+                color: Color(0xFF1E293B),
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: Center(child: Text('Inga konfigurerade gränssnitt ännu.', style: TextStyle(color: Colors.grey, fontSize: 11))),
+                ),
+              )
+            else if (cfg != null)
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: cfg.interfaces.length,
+                itemBuilder: (context, idx) {
+                  final iface = cfg.interfaces[idx];
+                  final isVLAN = iface.vlanId > 0;
+                  final isWAN = iface.zone == 'WAN';
+                  final isStatic = iface.addressType == 'static';
 
-                return Card(
-                  color: const Color(0xFF1E293B),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ExpansionTile(
-                    leading: Icon(
-                      isVLAN ? Icons.alt_route : Icons.router,
-                      color: isWAN ? Colors.redAccent : Colors.tealAccent,
-                    ),
-                    title: Text(
-                      '${iface.id} (${iface.device})${isVLAN ? " [VLAN ${iface.vlanId}]" : ""}',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text('Zon: ${iface.zone}  |  Typ: ${isStatic ? "Statisk IP (${iface.ipv4})" : "DHCP-Klient"}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
+                  return Card(
+                    color: const Color(0xFF1E293B),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                      dense: true,
+                      leading: Icon(
+                        isVLAN ? Icons.alt_route : Icons.router,
+                        size: 18,
+                        color: isWAN ? Colors.redAccent : Colors.tealAccent,
+                      ),
+                      title: Text(
+                        '${iface.id} (${iface.device})${isVLAN ? " [VLAN ${iface.vlanId}]" : ""}',
+                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text('Zon: ${iface.zone}  |  Typ: ${isStatic ? "Statisk IP (${iface.ipv4})" : "DHCP-Klient"}', style: const TextStyle(fontSize: 11)),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.cyanAccent, size: 16),
+                            tooltip: 'Redigera gränssnitt',
+                            onPressed: () => _showEditInterfaceDialog(context, provider, cfg, idx),
+                          ),
+                          Switch(
+                            value: iface.enabled,
+                            activeThumbColor: Colors.tealAccent,
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            onChanged: (val) {
+                              _toggleInterface(provider, cfg, idx, val);
+                            },
+                          ),
+                        ],
+                      ),
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.cyanAccent, size: 20),
-                          tooltip: 'Redigera gränssnitt',
-                          onPressed: () => _showEditInterfaceDialog(context, provider, cfg, idx),
-                        ),
-                        Switch(
-                          value: iface.enabled,
-                          activeThumbColor: Colors.tealAccent,
-                          onChanged: (val) {
-                            _toggleInterface(provider, cfg, idx, val);
-                          },
+                        Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                children: [
+                                  Chip(
+                                    label: Text('Adressering: ${isStatic ? "STATISK IP" : "DHCP-KLIENT"}', style: TextStyle(color: isStatic ? Colors.lightBlueAccent : Colors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    backgroundColor: isStatic ? Colors.lightBlueAccent.withValues(alpha: 0.15) : Colors.amber.withValues(alpha: 0.15),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  if (iface.gateway.isNotEmpty)
+                                    Chip(
+                                      label: Text('Gateway: ${iface.gateway}', style: const TextStyle(color: Colors.white, fontSize: 10)),
+                                      backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  if (iface.dnsServers.isNotEmpty)
+                                    Chip(
+                                      label: Text('DNS: ${iface.dnsServers.join(", ")}', style: const TextStyle(color: Colors.cyanAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                                      backgroundColor: Colors.cyanAccent.withValues(alpha: 0.15),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              if (isWAN) ...[
+                                Row(
+                                  children: const [
+                                    Icon(Icons.shield_outlined, color: Colors.amber, size: 16),
+                                    SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'WAN-gränssnitt: Kan köras som DHCP-klient eller Statisk IP med valfria DNS-servrar.',
+                                        style: TextStyle(color: Colors.amber, fontSize: 10),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ] else ...[
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'DHCP Server: ${iface.dhcp != null && iface.dhcp!.enabled ? "AKTIV" : "AVSTÄNGD"}',
+                                      style: const TextStyle(color: Colors.cyanAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                                    ),
+                                    ElevatedButton.icon(
+                                      icon: const Icon(Icons.settings_ethernet, size: 14),
+                                      label: const Text('Konfigurera DHCP Scope', style: TextStyle(fontSize: 10)),
+                                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF334155), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
+                                      onPressed: () => _showDHCPDialog(context, provider, cfg, idx),
+                                    ),
+                                  ],
+                                ),
+                                if (iface.dhcp != null && iface.dhcp!.enabled) ...[
+                                  const SizedBox(height: 4),
+                                  Text('IP Pool: ${iface.dhcp!.rangeStart} - ${iface.dhcp!.rangeEnd}', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                                  Text('Klient DNS: ${iface.dhcp!.dnsServers.join(", ")}  |  Gateway: ${iface.dhcp!.gateway}', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                                ],
+                              ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                Chip(
-                                  label: Text('Adressering: ${isStatic ? "STATISK IP" : "DHCP-KLIENT"}'),
-                                  backgroundColor: isStatic ? Colors.lightBlueAccent.withValues(alpha: 0.2) : Colors.amber.withValues(alpha: 0.2),
-                                  labelStyle: TextStyle(color: isStatic ? Colors.lightBlueAccent : Colors.amber, fontWeight: FontWeight.bold),
-                                ),
-                                if (iface.gateway.isNotEmpty)
-                                  Chip(
-                                    label: Text('Gateway: ${iface.gateway}'),
-                                    backgroundColor: Colors.grey.withValues(alpha: 0.2),
-                                    labelStyle: const TextStyle(color: Colors.white),
-                                  ),
-                                if (iface.dnsServers.isNotEmpty)
-                                  Chip(
-                                    label: Text('DNS: ${iface.dnsServers.join(", ")}'),
-                                    backgroundColor: Colors.cyanAccent.withValues(alpha: 0.2),
-                                    labelStyle: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            if (isWAN) ...[
-                              Row(
-                                children: const [
-                                  Icon(Icons.shield_outlined, color: Colors.amber, size: 20),
-                                  SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'WAN-gränssnitt: Kan köras som DHCP-klient eller Statisk IP med valfria DNS-servrar.',
-                                      style: TextStyle(color: Colors.amber),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ] else ...[
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'DHCP Server: ${iface.dhcp != null && iface.dhcp!.enabled ? "AKTIV" : "AVSTÄNGD"}',
-                                    style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold),
-                                  ),
-                                  ElevatedButton.icon(
-                                    icon: const Icon(Icons.settings_ethernet, size: 16),
-                                    label: const Text('Konfigurera DHCP Scope'),
-                                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF334155), foregroundColor: Colors.white),
-                                    onPressed: () => _showDHCPDialog(context, provider, cfg, idx),
-                                  ),
-                                ],
-                              ),
-                              if (iface.dhcp != null && iface.dhcp!.enabled) ...[
-                                const SizedBox(height: 8),
-                                Text('IP Pool: ${iface.dhcp!.rangeStart} - ${iface.dhcp!.rangeEnd}', style: const TextStyle(color: Colors.grey)),
-                                Text('Klient DNS: ${iface.dhcp!.dnsServers.join(", ")}  |  Gateway: ${iface.dhcp!.gateway}', style: const TextStyle(color: Colors.grey)),
-                                Text('Statiska Reservationer: ${iface.dhcp!.reservations.length} enheter', style: const TextStyle(color: Colors.grey)),
-                              ],
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-        ],
+                  );
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -221,40 +228,40 @@ class InterfacesScreen extends StatelessWidget {
     final dnsCtrl = TextEditingController(text: iface.dnsServers.join(', '));
     
     String selectedZonePreset = iface.zone.isEmpty ? 'LAN' : iface.zone.toUpperCase();
-    final customZoneCtrl = TextEditingController(text: iface.zone);
+    final customZoneCtrl = TextEditingController(text: _zoneExistsInMenu(selectedZonePreset, cfg) ? '' : iface.zone);
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           backgroundColor: const Color(0xFF1E293B),
-          title: Text('Redigera ${iface.id} (${iface.device})', style: const TextStyle(color: Colors.white)),
+          title: Text('Redigera ${iface.id} (${iface.device})', style: const TextStyle(color: Colors.white, fontSize: 13)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Adresseringstyp:', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                const SizedBox(height: 6),
+                const Text('Adresseringstyp:', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                const SizedBox(height: 4),
                 SegmentedButton<String>(
                   segments: const [
-                    ButtonSegment(value: 'static', label: Text('Statisk IP'), icon: Icon(Icons.pin)),
-                    ButtonSegment(value: 'dhcp', label: Text('DHCP Klient'), icon: Icon(Icons.sync)),
+                    ButtonSegment(value: 'static', label: Text('Statisk IP', style: TextStyle(fontSize: 11)), icon: Icon(Icons.pin, size: 14)),
+                    ButtonSegment(value: 'dhcp', label: Text('DHCP Klient', style: TextStyle(fontSize: 11)), icon: Icon(Icons.sync, size: 14)),
                   ],
                   selected: {selectedType},
                   onSelectionChanged: (val) => setState(() => selectedType = val.first),
                 ),
-                const SizedBox(height: 16),
-                if (selectedType == 'static')
-                  TextField(controller: ipCtrl, decoration: const InputDecoration(labelText: 'IPv4 / CIDR (t.ex. 10.0.0.163/24)')),
-                TextField(controller: gwCtrl, decoration: const InputDecoration(labelText: 'Default Gateway IP (Valfri)')),
-                TextField(controller: dnsCtrl, decoration: const InputDecoration(labelText: 'DNS-servrar (komma-separerade, t.ex. 1.1.1.1, 8.8.8.8)')),
                 const SizedBox(height: 12),
+                if (selectedType == 'static')
+                  TextField(controller: ipCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'IPv4 / CIDR (t.ex. 10.0.0.163/24)', isDense: true)),
+                TextField(controller: gwCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Default Gateway IP (Valfri)', isDense: true)),
+                TextField(controller: dnsCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'DNS-servrar (t.ex. 1.1.1.1, 8.8.8.8)', isDense: true)),
+                const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   initialValue: _zoneExistsInMenu(selectedZonePreset, cfg) ? selectedZonePreset : 'CUSTOM',
                   dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Tilldelad Zon'),
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                  decoration: const InputDecoration(labelText: 'Tilldelad Zon', isDense: true),
                   items: _getZoneDropdownItems(cfg),
                   onChanged: (val) {
                     if (val != null) setState(() => selectedZonePreset = val);
@@ -262,12 +269,14 @@ class InterfacesScreen extends StatelessWidget {
                 ),
                 if (selectedZonePreset == 'CUSTOM')
                   Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
+                    padding: const EdgeInsets.only(top: 6.0),
                     child: TextField(
                       controller: customZoneCtrl,
+                      style: const TextStyle(fontSize: 11, color: Colors.white),
                       decoration: const InputDecoration(
-                        labelText: 'Skapa nytt Zon-namn',
+                        labelText: 'Ange nytt Zon-namn',
                         hintText: 't.ex. DMZ, MANAGEMENT, CAMERAS',
+                        isDense: true,
                       ),
                     ),
                   ),
@@ -275,9 +284,9 @@ class InterfacesScreen extends StatelessWidget {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 11))),
             ElevatedButton(
-              child: const Text('Spara Ändringar'),
+              child: const Text('Spara Ändringar', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
               onPressed: () {
                 final dnsList = dnsCtrl.text
                     .split(',')
@@ -289,7 +298,6 @@ class InterfacesScreen extends StatelessWidget {
                     ? customZoneCtrl.text.trim().toUpperCase()
                     : selectedZonePreset;
 
-                // Säkerställ att den nya zonen sparas i zones-listan om den inte finns
                 final updatedZones = List<ZoneModel>.from(cfg.zones);
                 if (finalZone.isNotEmpty && !updatedZones.any((z) => z.name.toUpperCase() == finalZone)) {
                   updatedZones.add(ZoneModel(
@@ -333,15 +341,6 @@ class InterfacesScreen extends StatelessWidget {
     );
   }
 
-  bool _zoneExistsInMenu(String zone, ConfigModel? cfg) {
-    if (['LAN', 'WAN', 'SERVERS', 'IOT', 'GUEST', 'VPN'].contains(zone)) return true;
-    if (cfg != null) {
-      if (cfg.zones.any((z) => z.name.toUpperCase() == zone)) return true;
-      if (cfg.interfaces.any((i) => i.zone.toUpperCase() == zone)) return true;
-    }
-    return false;
-  }
-
   void _toggleInterface(ConfigProvider provider, ConfigModel cfg, int idx, bool enabled) {
     final updatedIfaces = List<InterfaceModel>.from(cfg.interfaces);
     final cur = updatedIfaces[idx];
@@ -377,7 +376,7 @@ class InterfacesScreen extends StatelessWidget {
     final parentCtrl = TextEditingController(text: 'ens19');
     final vlanIdCtrl = TextEditingController(text: '10');
     String selectedZonePreset = 'SERVERS';
-    final customZoneCtrl = TextEditingController(text: 'DMZ');
+    final customZoneCtrl = TextEditingController(text: '');
     final ipCtrl = TextEditingController(text: '192.168.10.1/24');
     final dnsCtrl = TextEditingController(text: '1.1.1.1, 8.8.8.8');
 
@@ -386,19 +385,19 @@ class InterfacesScreen extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           backgroundColor: const Color(0xFF1E293B),
-          title: const Text('Skapa nytt Linux VLAN', style: TextStyle(color: Colors.white)),
+          title: const Text('Skapa nytt Linux VLAN', style: TextStyle(color: Colors.white, fontSize: 13)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: parentCtrl, decoration: const InputDecoration(labelText: 'Föräldra-interface (Parent)')),
-                TextField(controller: vlanIdCtrl, decoration: const InputDecoration(labelText: 'VLAN ID (1-4094)')),
-                const SizedBox(height: 12),
+                TextField(controller: parentCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Föräldra-interface (Parent)', isDense: true)),
+                TextField(controller: vlanIdCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'VLAN ID (1-4094)', isDense: true)),
+                const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   initialValue: selectedZonePreset,
                   dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(labelText: 'Tilldelad Zon'),
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                  decoration: const InputDecoration(labelText: 'Tilldelad Zon', isDense: true),
                   items: _getZoneDropdownItems(cfg),
                   onChanged: (val) {
                     if (val != null) setState(() => selectedZonePreset = val);
@@ -406,24 +405,26 @@ class InterfacesScreen extends StatelessWidget {
                 ),
                 if (selectedZonePreset == 'CUSTOM')
                   Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
+                    padding: const EdgeInsets.only(top: 6.0),
                     child: TextField(
                       controller: customZoneCtrl,
+                      style: const TextStyle(fontSize: 11, color: Colors.white),
                       decoration: const InputDecoration(
-                        labelText: 'Skapa nytt Zon-namn',
+                        labelText: 'Ange nytt Zon-namn',
                         hintText: 't.ex. DMZ, MANAGEMENT, CAMERAS',
+                        isDense: true,
                       ),
                     ),
                   ),
-                TextField(controller: ipCtrl, decoration: const InputDecoration(labelText: 'Statisk IPv4/CIDR (t.ex. 192.168.10.1/24)')),
-                TextField(controller: dnsCtrl, decoration: const InputDecoration(labelText: 'DNS Servrar (t.ex. 1.1.1.1, 8.8.8.8)')),
+                TextField(controller: ipCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Statisk IPv4/CIDR (t.ex. 192.168.10.1/24)', isDense: true)),
+                TextField(controller: dnsCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'DNS Servrar (t.ex. 1.1.1.1, 8.8.8.8)', isDense: true)),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 11))),
             ElevatedButton(
-              child: const Text('Skapa VLAN'),
+              child: const Text('Skapa VLAN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
               onPressed: () {
                 if (cfg != null) {
                   final vlanId = int.tryParse(vlanIdCtrl.text) ?? 10;
@@ -492,20 +493,20 @@ class InterfacesScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: Text('DHCP-inställningar för ${iface.id}', style: const TextStyle(color: Colors.white)),
+        title: Text('DHCP-inställningar för ${iface.id}', style: const TextStyle(color: Colors.white, fontSize: 13)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: startCtrl, decoration: const InputDecoration(labelText: 'Start IP Pool')),
-            TextField(controller: endCtrl, decoration: const InputDecoration(labelText: 'Slut IP Pool')),
-            TextField(controller: gwCtrl, decoration: const InputDecoration(labelText: 'Standard Gateway')),
-            TextField(controller: dnsCtrl, decoration: const InputDecoration(labelText: 'DNS Server (komma-separerade)')),
+            TextField(controller: startCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Start IP Pool', isDense: true)),
+            TextField(controller: endCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Slut IP Pool', isDense: true)),
+            TextField(controller: gwCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Standard Gateway', isDense: true)),
+            TextField(controller: dnsCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'DNS Server (komma-separerade)', isDense: true)),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 11))),
           ElevatedButton(
-            child: const Text('Spara DHCP Scope'),
+            child: const Text('Spara DHCP Scope', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
             onPressed: () {
               final newDHCP = DHCPConfigModel(
                 enabled: true,
@@ -538,7 +539,7 @@ class InterfacesScreen extends StatelessWidget {
                 zones: cfg.zones,
                 objects: cfg.objects,
                 services: cfg.services,
-                policies: cfg.policies,
+                policies: updated,
                 settings: cfg.settings,
               ));
               Navigator.pop(ctx);
