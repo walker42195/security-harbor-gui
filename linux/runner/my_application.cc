@@ -50,62 +50,45 @@ static void my_application_activate(GApplication* application) {
     g_object_set(settings, "gtk-application-prefer-dark-theme", TRUE, NULL);
   }
 
-  // Applicera anpassad GTK CSS för mörk Slate-färg (#1E293B) på alla GTK headerbar-klasser och tillstånd
+  // Applicera ren och giltig GTK CSS för mörk Slate-färg (#1E293B)
   GtkCssProvider* css_provider = gtk_css_provider_new();
   gtk_css_provider_load_from_data(css_provider,
-    "headerbar, headerbar:backdrop, headerbar.titlebar, headerbar.titlebar:backdrop,\n"
-    ".titlebar, .titlebar:backdrop, window headerbar, window headerbar:backdrop,\n"
-    "window.csd headerbar, window.csd headerbar:backdrop, window.csd .titlebar, window.csd .titlebar:backdrop {\n"
-    "  background: #1E293B !important;\n"
-    "  background-color: #1E293B !important;\n"
-    "  background-image: none !important;\n"
-    "  color: #FFFFFF !important;\n"
-    "  border: none !important;\n"
-    "  border-bottom: 1px solid #334155 !important;\n"
-    "  box-shadow: none !important;\n"
+    "headerbar, .titlebar {\n"
+    "  background: #1E293B;\n"
+    "  background-color: #1E293B;\n"
+    "  background-image: none;\n"
+    "  color: #FFFFFF;\n"
+    "  border-bottom: 1px solid #334155;\n"
     "}\n"
-    "headerbar label, headerbar label:backdrop, headerbar label.title, headerbar:backdrop label.title,\n"
-    ".titlebar label.title, .titlebar:backdrop label.title, headerbar .title, headerbar:backdrop .title {\n"
-    "  color: #FFFFFF !important;\n"
-    "  font-weight: bold !important;\n"
-    "  font-size: 12px !important;\n"
+    "headerbar label, .titlebar label {\n"
+    "  color: #FFFFFF;\n"
+    "  font-weight: bold;\n"
     "}\n"
-    "headerbar button, headerbar:backdrop button, .titlebar button, .titlebar:backdrop button,\n"
-    "headerbar button.titlebutton, headerbar:backdrop button.titlebutton {\n"
-    "  color: #FFFFFF !important;\n"
-    "  background: transparent !important;\n"
-    "  background-image: none !important;\n"
-    "  border: none !important;\n"
-    "  box-shadow: none !important;\n"
-    "  border-radius: 4px !important;\n"
+    "headerbar button, .titlebar button {\n"
+    "  color: #FFFFFF;\n"
+    "  background: transparent;\n"
+    "  border: none;\n"
     "}\n"
     "headerbar button:hover, .titlebar button:hover {\n"
-    "  background-color: #334155 !important;\n"
-    "  color: #FFFFFF !important;\n"
+    "  background-color: #334155;\n"
     "}\n",
     -1, NULL);
 
-  // Använd GTK_STYLE_PROVIDER_PRIORITY_USER (800) för att överstyra alla skrivbords-teman
   gtk_style_context_add_provider_for_screen(
     gdk_screen_get_default(),
     GTK_STYLE_PROVIDER(css_provider),
-    GTK_STYLE_PROVIDER_PRIORITY_USER);
+    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-  // Tvinga alltid CSD HeaderBar med Minimera, Maximera och Stäng knappar
   GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
   gtk_widget_show(GTK_WIDGET(header_bar));
   gtk_header_bar_set_title(header_bar, "Security Harbor – Firewall Management");
   gtk_header_bar_set_show_close_button(header_bar, TRUE);
   gtk_header_bar_set_decoration_layout(header_bar, "icon:minimize,maximize,close");
 
-  GtkStyleContext* hb_context = gtk_widget_get_style_context(GTK_WIDGET(header_bar));
-  gtk_style_context_add_provider(hb_context, GTK_STYLE_PROVIDER(css_provider), GTK_STYLE_PROVIDER_PRIORITY_USER);
-
   gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
 
   gtk_window_set_default_size(window, 1280, 720);
   gtk_window_set_icon_name(GTK_WINDOW(window), "security-harbor-gui");
-  gtk_window_set_icon_from_file(GTK_WINDOW(window), "data/flutter_assets/assets/logo.png", NULL);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
