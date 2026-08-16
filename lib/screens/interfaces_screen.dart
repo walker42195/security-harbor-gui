@@ -3,6 +3,15 @@ import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 
+const List<Map<String, String>> predefinedInterfaceZones = [
+  {'label': 'LAN (Internt nätverk)', 'value': 'LAN'},
+  {'label': 'WAN (Utsida / Internet)', 'value': 'WAN'},
+  {'label': 'SERVERS (Serverzon)', 'value': 'SERVERS'},
+  {'label': 'IOT (IoT-enheter)', 'value': 'IOT'},
+  {'label': 'GUEST (Gästnätverk)', 'value': 'GUEST'},
+  {'label': 'VPN (VPN-klienter)', 'value': 'VPN'},
+];
+
 class InterfacesScreen extends StatelessWidget {
   const InterfacesScreen({super.key});
 
@@ -170,7 +179,7 @@ class InterfacesScreen extends StatelessWidget {
     final ipCtrl = TextEditingController(text: iface.ipv4);
     final gwCtrl = TextEditingController(text: iface.gateway);
     final dnsCtrl = TextEditingController(text: iface.dnsServers.join(', '));
-    final zoneCtrl = TextEditingController(text: iface.zone);
+    String selectedZone = iface.zone.isEmpty ? 'LAN' : iface.zone.toUpperCase();
 
     showDialog(
       context: context,
@@ -178,27 +187,41 @@ class InterfacesScreen extends StatelessWidget {
         builder: (context, setState) => AlertDialog(
           backgroundColor: const Color(0xFF1E293B),
           title: Text('Redigera ${iface.id} (${iface.device})', style: const TextStyle(color: Colors.white)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Adresseringstyp:', style: TextStyle(color: Colors.grey, fontSize: 12)),
-              const SizedBox(height: 6),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(value: 'static', label: Text('Statisk IP'), icon: Icon(Icons.pin)),
-                  ButtonSegment(value: 'dhcp', label: Text('DHCP Klient'), icon: Icon(Icons.sync)),
-                ],
-                selected: {selectedType},
-                onSelectionChanged: (val) => setState(() => selectedType = val.first),
-              ),
-              const SizedBox(height: 16),
-              if (selectedType == 'static')
-                TextField(controller: ipCtrl, decoration: const InputDecoration(labelText: 'IPv4 / CIDR (t.ex. 10.0.0.163/24)')),
-              TextField(controller: gwCtrl, decoration: const InputDecoration(labelText: 'Default Gateway IP (Valfri)')),
-              TextField(controller: dnsCtrl, decoration: const InputDecoration(labelText: 'DNS-servrar (komma-separerade, t.ex. 1.1.1.1, 8.8.8.8)')),
-              TextField(controller: zoneCtrl, decoration: const InputDecoration(labelText: 'Zon (t.ex. WAN, LAN, SERVERS)')),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Adresseringstyp:', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                const SizedBox(height: 6),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'static', label: Text('Statisk IP'), icon: Icon(Icons.pin)),
+                    ButtonSegment(value: 'dhcp', label: Text('DHCP Klient'), icon: Icon(Icons.sync)),
+                  ],
+                  selected: {selectedType},
+                  onSelectionChanged: (val) => setState(() => selectedType = val.first),
+                ),
+                const SizedBox(height: 16),
+                if (selectedType == 'static')
+                  TextField(controller: ipCtrl, decoration: const InputDecoration(labelText: 'IPv4 / CIDR (t.ex. 10.0.0.163/24)')),
+                TextField(controller: gwCtrl, decoration: const InputDecoration(labelText: 'Default Gateway IP (Valfri)')),
+                TextField(controller: dnsCtrl, decoration: const InputDecoration(labelText: 'DNS-servrar (komma-separerade, t.ex. 1.1.1.1, 8.8.8.8)')),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedZone,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Tilldelad Zon'),
+                  items: predefinedInterfaceZones
+                      .map((z) => DropdownMenuItem(value: z['value']!, child: Text(z['label']!)))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => selectedZone = val);
+                  },
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
@@ -217,7 +240,7 @@ class InterfacesScreen extends StatelessWidget {
                   device: iface.device,
                   parent: iface.parent,
                   vlanId: iface.vlanId,
-                  zone: zoneCtrl.text.toUpperCase(),
+                  zone: selectedZone,
                   enabled: iface.enabled,
                   addressType: selectedType,
                   ipv4: selectedType == 'static' ? ipCtrl.text : '',
@@ -279,68 +302,84 @@ class InterfacesScreen extends StatelessWidget {
   void _showAddVLANDialog(BuildContext context, ConfigProvider provider) {
     final parentCtrl = TextEditingController(text: 'ens19');
     final vlanIdCtrl = TextEditingController(text: '10');
-    final zoneCtrl = TextEditingController(text: 'SERVERS');
+    String selectedZone = 'SERVERS';
     final ipCtrl = TextEditingController(text: '192.168.10.1/24');
     final dnsCtrl = TextEditingController(text: '1.1.1.1, 8.8.8.8');
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: const Text('Skapa nytt Linux VLAN', style: TextStyle(color: Colors.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: parentCtrl, decoration: const InputDecoration(labelText: 'Föräldra-interface (Parent)')),
-            TextField(controller: vlanIdCtrl, decoration: const InputDecoration(labelText: 'VLAN ID (1-4094)')),
-            TextField(controller: zoneCtrl, decoration: const InputDecoration(labelText: 'Zon (t.ex. SERVERS, IOT, GUEST)')),
-            TextField(controller: ipCtrl, decoration: const InputDecoration(labelText: 'Statisk IPv4/CIDR (t.ex. 192.168.10.1/24)')),
-            TextField(controller: dnsCtrl, decoration: const InputDecoration(labelText: 'DNS Servrar (t.ex. 1.1.1.1, 8.8.8.8)')),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          title: const Text('Skapa nytt Linux VLAN', style: TextStyle(color: Colors.white)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: parentCtrl, decoration: const InputDecoration(labelText: 'Föräldra-interface (Parent)')),
+                TextField(controller: vlanIdCtrl, decoration: const InputDecoration(labelText: 'VLAN ID (1-4094)')),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedZone,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Tilldelad Zon'),
+                  items: predefinedInterfaceZones
+                      .map((z) => DropdownMenuItem(value: z['value']!, child: Text(z['label']!)))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setState(() => selectedZone = val);
+                  },
+                ),
+                TextField(controller: ipCtrl, decoration: const InputDecoration(labelText: 'Statisk IPv4/CIDR (t.ex. 192.168.10.1/24)')),
+                TextField(controller: dnsCtrl, decoration: const InputDecoration(labelText: 'DNS Servrar (t.ex. 1.1.1.1, 8.8.8.8)')),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
+            ElevatedButton(
+              child: const Text('Skapa VLAN'),
+              onPressed: () {
+                final cfg = provider.candidateConfig ?? provider.runningConfig;
+                if (cfg != null) {
+                  final vlanId = int.tryParse(vlanIdCtrl.text) ?? 10;
+                  final dev = '${parentCtrl.text}.$vlanId';
+                  final dnsList = dnsCtrl.text
+                      .split(',')
+                      .map((e) => e.trim())
+                      .where((e) => e.isNotEmpty)
+                      .toList();
+
+                  final newIface = InterfaceModel(
+                    id: 'vlan$vlanId',
+                    device: dev,
+                    parent: parentCtrl.text,
+                    vlanId: vlanId,
+                    zone: selectedZone,
+                    enabled: true,
+                    addressType: 'static',
+                    ipv4: ipCtrl.text,
+                    dnsServers: dnsList,
+                  );
+                  final updated = List<InterfaceModel>.from(cfg.interfaces)..add(newIface);
+                  provider.updateCandidate(ConfigModel(
+                    version: cfg.version,
+                    revision: cfg.revision,
+                    updatedAt: cfg.updatedAt,
+                    interfaces: updated,
+                    zones: cfg.zones,
+                    objects: cfg.objects,
+                    services: cfg.services,
+                    policies: cfg.policies,
+                    settings: cfg.settings,
+                  ));
+                }
+                Navigator.pop(ctx);
+              },
+            ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
-          ElevatedButton(
-            child: const Text('Skapa VLAN'),
-            onPressed: () {
-              final cfg = provider.candidateConfig ?? provider.runningConfig;
-              if (cfg != null) {
-                final vlanId = int.tryParse(vlanIdCtrl.text) ?? 10;
-                final dev = '${parentCtrl.text}.$vlanId';
-                final dnsList = dnsCtrl.text
-                    .split(',')
-                    .map((e) => e.trim())
-                    .where((e) => e.isNotEmpty)
-                    .toList();
-
-                final newIface = InterfaceModel(
-                  id: 'vlan$vlanId',
-                  device: dev,
-                  parent: parentCtrl.text,
-                  vlanId: vlanId,
-                  zone: zoneCtrl.text.toUpperCase(),
-                  enabled: true,
-                  addressType: 'static',
-                  ipv4: ipCtrl.text,
-                  dnsServers: dnsList,
-                );
-                final updated = List<InterfaceModel>.from(cfg.interfaces)..add(newIface);
-                provider.updateCandidate(ConfigModel(
-                  version: cfg.version,
-                  revision: cfg.revision,
-                  updatedAt: cfg.updatedAt,
-                  interfaces: updated,
-                  zones: cfg.zones,
-                  objects: cfg.objects,
-                  services: cfg.services,
-                  policies: cfg.policies,
-                  settings: cfg.settings,
-                ));
-              }
-              Navigator.pop(ctx);
-            },
-          ),
-        ],
       ),
     );
   }

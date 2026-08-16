@@ -92,6 +92,23 @@ class ApiService {
     return 'Ingen kontakt';
   }
 
+  Future<String> traceroute(String host) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/v1/diagnostics/traceroute'),
+        headers: _headers,
+        body: jsonEncode({'host': host}),
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return data['output'] ?? '';
+      }
+    } catch (e) {
+      return 'Fel: $e';
+    }
+    return 'Ingen kontakt';
+  }
+
   Future<ConfigModel?> getRunningConfig() async {
     try {
       final res = await http.get(Uri.parse('$baseUrl/api/v1/config/running'), headers: _headers);

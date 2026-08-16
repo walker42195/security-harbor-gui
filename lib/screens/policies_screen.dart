@@ -14,8 +14,36 @@ const List<Map<String, String>> predefinedServices = [
   {'label': 'Anpassad Port / Tjänst', 'value': 'CUSTOM'},
 ];
 
+const List<Map<String, String>> predefinedZones = [
+  {'label': 'Alla Zoner (ANY)', 'value': 'ANY'},
+  {'label': 'WAN (Utsida / Internet)', 'value': 'WAN'},
+  {'label': 'LAN (Internt nätverk)', 'value': 'LAN'},
+  {'label': 'SERVERS (Serverzon)', 'value': 'SERVERS'},
+  {'label': 'IOT (IoT-enheter)', 'value': 'IOT'},
+  {'label': 'GUEST (Gästnätverk)', 'value': 'GUEST'},
+  {'label': 'VPN (VPN-klienter)', 'value': 'VPN'},
+];
+
 class PoliciesScreen extends StatelessWidget {
   const PoliciesScreen({super.key});
+
+  List<DropdownMenuItem<String>> _getZoneDropdownItems(ConfigModel? cfg) {
+    final Set<String> zones = {'ANY', 'WAN', 'LAN', 'SERVERS', 'IOT', 'GUEST', 'VPN'};
+    if (cfg != null) {
+      for (final z in cfg.zones) {
+        zones.add(z.name.toUpperCase());
+      }
+      for (final i in cfg.interfaces) {
+        if (i.zone.isNotEmpty) {
+          zones.add(i.zone.toUpperCase());
+        }
+      }
+    }
+    return zones.map((z) {
+      final found = predefinedZones.firstWhere((p) => p['value'] == z, orElse: () => {'label': z, 'value': z});
+      return DropdownMenuItem(value: z, child: Text(found['label']!));
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -188,9 +216,9 @@ class PoliciesScreen extends StatelessWidget {
     final pol = cfg.policies[idx];
 
     final nameCtrl = TextEditingController(text: pol.name);
-    final srcZoneCtrl = TextEditingController(text: pol.sourceZone);
-    final dstZoneCtrl = TextEditingController(text: pol.destZone);
-    
+    String selectedSrcZone = pol.sourceZone.isEmpty ? 'ANY' : pol.sourceZone.toUpperCase();
+    String selectedDstZone = pol.destZone.isEmpty ? 'ANY' : pol.destZone.toUpperCase();
+
     // Tjänste-hantering
     String selectedServicePreset = 'ANY';
     final customServiceCtrl = TextEditingController(text: pol.service);
@@ -234,8 +262,27 @@ class PoliciesScreen extends StatelessWidget {
                   onSelectionChanged: (val) => setState(() => selectedAction = val.first),
                 ),
                 const SizedBox(height: 12),
-                TextField(controller: srcZoneCtrl, decoration: const InputDecoration(labelText: 'Källzon (Source Zone, t.ex. LAN, WAN, ANY)')),
-                TextField(controller: dstZoneCtrl, decoration: const InputDecoration(labelText: 'Målzon (Dest Zone, t.ex. SERVERS, WAN, ANY)')),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedSrcZone,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Källzon (Source Zone)'),
+                  items: _getZoneDropdownItems(cfg),
+                  onChanged: (val) {
+                    if (val != null) setState(() => selectedSrcZone = val);
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedDstZone,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Målzon (Dest Zone)'),
+                  items: _getZoneDropdownItems(cfg),
+                  onChanged: (val) {
+                    if (val != null) setState(() => selectedDstZone = val);
+                  },
+                ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: selectedServicePreset,
@@ -298,8 +345,8 @@ class PoliciesScreen extends StatelessWidget {
                   name: nameCtrl.text,
                   enabled: pol.enabled,
                   priority: pol.priority,
-                  sourceZone: srcZoneCtrl.text.toUpperCase(),
-                  destZone: dstZoneCtrl.text.toUpperCase(),
+                  sourceZone: selectedSrcZone,
+                  destZone: selectedDstZone,
                   sourceObj: pol.sourceObj,
                   destObj: pol.destObj,
                   service: finalService,
@@ -399,9 +446,10 @@ class PoliciesScreen extends StatelessWidget {
   }
 
   void _showAddPolicyDialog(BuildContext context, ConfigProvider provider) {
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
     final nameCtrl = TextEditingController(text: 'Tillåt LAN till SERVERS');
-    final srcZoneCtrl = TextEditingController(text: 'LAN');
-    final dstZoneCtrl = TextEditingController(text: 'SERVERS');
+    String selectedSrcZone = 'LAN';
+    String selectedDstZone = 'SERVERS';
     String selectedServicePreset = 'ANY';
     final customServiceCtrl = TextEditingController(text: '8080');
 
@@ -417,8 +465,28 @@ class PoliciesScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Policynamn')),
-                TextField(controller: srcZoneCtrl, decoration: const InputDecoration(labelText: 'Källzon (Source Zone, t.ex. LAN, WAN, ANY)')),
-                TextField(controller: dstZoneCtrl, decoration: const InputDecoration(labelText: 'Målzon (Dest Zone, t.ex. SERVERS, WAN, ANY)')),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedSrcZone,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Källzon (Source Zone)'),
+                  items: _getZoneDropdownItems(cfg),
+                  onChanged: (val) {
+                    if (val != null) setState(() => selectedSrcZone = val);
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedDstZone,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Målzon (Dest Zone)'),
+                  items: _getZoneDropdownItems(cfg),
+                  onChanged: (val) {
+                    if (val != null) setState(() => selectedDstZone = val);
+                  },
+                ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: selectedServicePreset,
@@ -453,7 +521,6 @@ class PoliciesScreen extends StatelessWidget {
             ElevatedButton(
               child: const Text('Spara Policy'),
               onPressed: () {
-                final cfg = provider.candidateConfig ?? provider.runningConfig;
                 if (cfg != null) {
                   final finalService = selectedServicePreset == 'CUSTOM'
                       ? customServiceCtrl.text.toUpperCase()
@@ -463,8 +530,8 @@ class PoliciesScreen extends StatelessWidget {
                     id: 'pol_${DateTime.now().millisecondsSinceEpoch}',
                     name: nameCtrl.text,
                     enabled: true,
-                    sourceZone: srcZoneCtrl.text.toUpperCase(),
-                    destZone: dstZoneCtrl.text.toUpperCase(),
+                    sourceZone: selectedSrcZone,
+                    destZone: selectedDstZone,
                     sourceObj: 'ANY',
                     destObj: 'ANY',
                     service: finalService,
