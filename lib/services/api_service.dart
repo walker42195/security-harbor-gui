@@ -176,4 +176,15 @@ class ApiService {
   }
 
   Future<bool> rollback() => rollbackConfig();
+
+  Future<List<Map<String, dynamic>>> fetchBandwidthStats() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/api/v1/diagnostics/bandwidth'), headers: _headers);
+      if (res.statusCode == 200) {
+        final List dynamicList = jsonDecode(res.body);
+        return dynamicList.cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return [];
+  }
 }
