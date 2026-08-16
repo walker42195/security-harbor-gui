@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
+import '../widgets/dialog_helpers.dart';
 
 class ObjectsScreen extends StatelessWidget {
   const ObjectsScreen({super.key});
@@ -69,21 +70,34 @@ class ObjectsScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => Dialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: const Text('Skapa nytt Nätverksobjekt', style: TextStyle(color: Colors.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Objektnamn')),
-            TextField(controller: valCtrl, decoration: const InputDecoration(labelText: 'IP / CIDR (komma-separerade)')),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
-          ElevatedButton(
-            child: const Text('Spara'),
-            onPressed: () {
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        child: Container(
+          width: 440,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              dialogTitleRow(context, 'Skapa nytt Nätverksobjekt', () => Navigator.pop(ctx)),
+              const SizedBox(height: 12),
+
+              dialogSection(title: 'OBJEKT', children: [
+                dialogField(nameCtrl, 'Objektnamn'),
+                const SizedBox(height: 12),
+                dialogField(valCtrl, 'IP / CIDR', hint: 'komma-separerade'),
+              ]),
+              const SizedBox(height: 16),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    child: const Text('Spara', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    onPressed: () {
               final cfg = provider.candidateConfig ?? provider.runningConfig;
               if (cfg != null) {
                 final newObj = ObjectModel(
@@ -107,9 +121,13 @@ class ObjectsScreen extends StatelessWidget {
                 ));
               }
               Navigator.pop(ctx);
-            },
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

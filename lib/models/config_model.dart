@@ -241,6 +241,8 @@ class PolicyModel {
   final NATConfigModel? nat;
   final bool logging;
   final String description;
+  final bool local; // Gäller åtkomst till brandväggen själv (INPUT), t.ex. SSH
+  final bool critical; // Kräver bekräftelse innan den inaktiveras/tas bort
 
   PolicyModel({
     required this.id,
@@ -256,6 +258,8 @@ class PolicyModel {
     this.nat,
     this.logging = false,
     this.description = '',
+    this.local = false,
+    this.critical = false,
   });
 
   factory PolicyModel.fromJson(Map<String, dynamic> json) {
@@ -273,6 +277,8 @@ class PolicyModel {
       nat: json['nat'] != null ? NATConfigModel.fromJson(json['nat']) : null,
       logging: json['logging'] ?? false,
       description: json['description'] ?? '',
+      local: json['local'] ?? false,
+      critical: json['critical'] ?? false,
     );
   }
 
@@ -290,6 +296,8 @@ class PolicyModel {
         if (nat != null) 'nat': nat!.toJson(),
         'logging': logging,
         'description': description,
+        'local': local,
+        'critical': critical,
       };
 }
 

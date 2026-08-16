@@ -192,14 +192,14 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                                         padding: EdgeInsets.zero,
                                         constraints: const BoxConstraints(),
                                         tooltip: 'Ta bort Policy',
-                                        onPressed: () => _deletePolicy(provider, cfg, idx),
+                                        onPressed: () => _deletePolicy(context, provider, cfg, idx),
                                       ),
                                       const SizedBox(width: 8),
                                       Switch(
                                         value: pol.enabled,
                                         activeThumbColor: Colors.tealAccent,
                                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        onChanged: (val) => _togglePolicy(provider, cfg, idx, val),
+                                        onChanged: (val) => _togglePolicy(context, provider, cfg, idx, val),
                                       ),
                                     ],
                                   ),
@@ -232,7 +232,45 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     return s;
   }
 
-  void _deletePolicy(ConfigProvider provider, ConfigModel cfg, int idx) {
+  // Visar en varningsdialog innan en kritisk policy (t.ex. SSH-åtkomst till
+  // brandväggen) inaktiveras eller tas bort. Returnerar true om admin
+  // uttryckligen bekräftar att de förstår konsekvensen.
+  Future<bool> _confirmCriticalChange(BuildContext context, String policyName, String actionVerb) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Row(
+          children: const [
+            Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
+            SizedBox(width: 8),
+            Text('Är du säker?', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          '"$policyName" styr kritisk åtkomst till brandväggen själv. Om du $actionVerb den kan du bli utelåst från detta gränssnitt via nätverket.\n\n'
+          'Se till att du har en annan väg in (t.ex. tangentbord och skärm, eller seriekonsol) innan du fortsätter.',
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Ja, jag är säker', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  Future<void> _deletePolicy(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx) async {
+    final pol = cfg.policies[idx];
+    if (pol.critical) {
+      final confirmed = await _confirmCriticalChange(context, pol.name, 'tar bort');
+      if (!confirmed) return;
+    }
     final updatedPolicies = List<PolicyModel>.from(cfg.policies)..removeAt(idx);
     provider.updateCandidate(ConfigModel(
       version: cfg.version,
@@ -247,9 +285,13 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     ));
   }
 
-  void _togglePolicy(ConfigProvider provider, ConfigModel cfg, int idx, bool enabled) {
+  Future<void> _togglePolicy(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx, bool enabled) async {
+    final cur = cfg.policies[idx];
+    if (cur.critical && !enabled) {
+      final confirmed = await _confirmCriticalChange(context, cur.name, 'inaktiverar');
+      if (!confirmed) return;
+    }
     final updatedPolicies = List<PolicyModel>.from(cfg.policies);
-    final cur = updatedPolicies[idx];
     updatedPolicies[idx] = PolicyModel(
       id: cur.id,
       name: cur.name,
@@ -264,6 +306,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       nat: cur.nat,
       logging: cur.logging,
       description: cur.description,
+      local: cur.local,
+      critical: cur.critical,
     );
     provider.updateCandidate(ConfigModel(
       version: cfg.version,
@@ -356,7 +400,14 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           value: enabled,
                           activeColor: Colors.tealAccent,
                           checkColor: Colors.black,
-                          onChanged: (v) => setState(() => enabled = v ?? false),
+                          onChanged: (v) async {
+                            final newVal = v ?? false;
+                            if (pol != null && pol.critical && enabled && !newVal) {
+                              final confirmed = await _confirmCriticalChange(context, pol.name, 'inaktiverar');
+                              if (!confirmed) return;
+                            }
+                            setState(() => enabled = newVal);
+                          },
                         ),
                         const Text('Enable', style: TextStyle(color: Colors.white, fontSize: 12)),
                       ],
@@ -555,6 +606,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             service: finalService,
                             action: action,
                             nat: updatedNAT,
+                            local: pol?.local ?? false,
+                            critical: pol?.critical ?? false,
                           );
 
                           if (isEditing) {

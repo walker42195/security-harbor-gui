@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
+import '../widgets/dialog_helpers.dart';
 
 class InterfacesScreen extends StatelessWidget {
   const InterfacesScreen({super.key});
@@ -383,49 +384,74 @@ class InterfacesScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+        builder: (context, setState) => Dialog(
           backgroundColor: const Color(0xFF1E293B),
-          title: const Text('Skapa nytt Linux VLAN', style: TextStyle(color: Colors.white, fontSize: 13)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: parentCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Föräldra-interface (Parent)', isDense: true)),
-                TextField(controller: vlanIdCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'VLAN ID (1-4094)', isDense: true)),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: selectedZonePreset,
-                  dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white, fontSize: 11),
-                  decoration: const InputDecoration(labelText: 'Tilldelad Zon', isDense: true),
-                  items: _getZoneDropdownItems(cfg),
-                  onChanged: (val) {
-                    if (val != null) setState(() => selectedZonePreset = val);
-                  },
-                ),
-                if (selectedZonePreset == 'CUSTOM')
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6.0),
-                    child: TextField(
-                      controller: customZoneCtrl,
-                      style: const TextStyle(fontSize: 11, color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Ange nytt Zon-namn',
-                        hintText: 't.ex. DMZ, MANAGEMENT, CAMERAS',
-                        isDense: true,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          child: Container(
+            width: 480,
+            padding: const EdgeInsets.all(16),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Skapa nytt Linux VLAN', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+                        onPressed: () => Navigator.pop(ctx),
                       ),
-                    ),
+                    ],
                   ),
-                TextField(controller: ipCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Statisk IPv4/CIDR (t.ex. 192.168.10.1/24)', isDense: true)),
-                TextField(controller: dnsCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'DNS Servrar (t.ex. 1.1.1.1, 8.8.8.8)', isDense: true)),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 11))),
-            ElevatedButton(
-              child: const Text('Skapa VLAN', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-              onPressed: () {
+                  const SizedBox(height: 12),
+
+                  dialogSection(title: 'GRUNDUPPGIFTER', children: [
+                    dialogField(parentCtrl, 'Föräldra-interface (parent)'),
+                    const SizedBox(height: 12),
+                    dialogField(vlanIdCtrl, 'VLAN ID (1-4094)'),
+                  ]),
+                  const SizedBox(height: 12),
+
+                  dialogSection(title: 'ZON', children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedZonePreset,
+                      dropdownColor: const Color(0xFF1E293B),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      decoration: const InputDecoration(
+                        labelText: 'Tilldelad zon',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                      ),
+                      items: _getZoneDropdownItems(cfg),
+                      onChanged: (val) {
+                        if (val != null) setState(() => selectedZonePreset = val);
+                      },
+                    ),
+                    if (selectedZonePreset == 'CUSTOM') ...[
+                      const SizedBox(height: 12),
+                      dialogField(customZoneCtrl, 'Ange nytt zon-namn', hint: 't.ex. DMZ, MANAGEMENT, CAMERAS'),
+                    ],
+                  ]),
+                  const SizedBox(height: 12),
+
+                  dialogSection(title: 'NÄTVERK', children: [
+                    dialogField(ipCtrl, 'Statisk IPv4/CIDR', hint: 't.ex. 192.168.10.1/24'),
+                    const SizedBox(height: 12),
+                    dialogField(dnsCtrl, 'DNS-servrar', hint: 't.ex. 1.1.1.1, 8.8.8.8'),
+                  ]),
+                  const SizedBox(height: 16),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        child: const Text('Skapa VLAN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () {
                 if (cfg != null) {
                   final vlanId = int.tryParse(vlanIdCtrl.text) ?? 10;
                   final dev = '${parentCtrl.text}.$vlanId';
@@ -472,9 +498,14 @@ class InterfacesScreen extends StatelessWidget {
                   ));
                 }
                 Navigator.pop(ctx);
-              },
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -491,23 +522,50 @@ class InterfacesScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => Dialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: Text('DHCP-inställningar för ${iface.id}', style: const TextStyle(color: Colors.white, fontSize: 13)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: startCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Start IP Pool', isDense: true)),
-            TextField(controller: endCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Slut IP Pool', isDense: true)),
-            TextField(controller: gwCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Standard Gateway', isDense: true)),
-            TextField(controller: dnsCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'DNS Server (komma-separerade)', isDense: true)),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 11))),
-          ElevatedButton(
-            child: const Text('Spara DHCP Scope', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            onPressed: () {
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        child: Container(
+          width: 440,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('DHCP-inställningar för ${iface.id}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              dialogSection(title: 'IP-POOL', children: [
+                dialogField(startCtrl, 'Start IP pool'),
+                const SizedBox(height: 12),
+                dialogField(endCtrl, 'Slut IP pool'),
+              ]),
+              const SizedBox(height: 12),
+
+              dialogSection(title: 'NÄTVERK', children: [
+                dialogField(gwCtrl, 'Standard gateway'),
+                const SizedBox(height: 12),
+                dialogField(dnsCtrl, 'DNS-servrar', hint: 'komma-separerade'),
+              ]),
+              const SizedBox(height: 16),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    child: const Text('Spara DHCP Scope', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    onPressed: () {
               final newDHCP = DHCPConfigModel(
                 enabled: true,
                 rangeStart: startCtrl.text,
@@ -543,9 +601,13 @@ class InterfacesScreen extends StatelessWidget {
                 settings: cfg.settings,
               ));
               Navigator.pop(ctx);
-            },
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
