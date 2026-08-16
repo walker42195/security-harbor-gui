@@ -32,6 +32,8 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           // Loading & Status Banner
           if (provider.isLoading && provider.statusMessage != null)
