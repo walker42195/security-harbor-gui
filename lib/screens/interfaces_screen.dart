@@ -10,10 +10,50 @@ const List<Map<String, String>> predefinedInterfaceZones = [
   {'label': 'IOT (IoT-enheter)', 'value': 'IOT'},
   {'label': 'GUEST (Gästnätverk)', 'value': 'GUEST'},
   {'label': 'VPN (VPN-klienter)', 'value': 'VPN'},
+  {'label': '+ Skapa ny / Anpassad zon...', 'value': 'CUSTOM'},
 ];
 
 class InterfacesScreen extends StatelessWidget {
   const InterfacesScreen({super.key});
+
+  List<DropdownMenuItem<String>> _getZoneDropdownItems(ConfigModel? cfg) {
+    final Map<String, String> itemsMap = {
+      'LAN': 'LAN (Internt nätverk)',
+      'WAN': 'WAN (Utsida / Internet)',
+      'SERVERS': 'SERVERS (Serverzon)',
+      'IOT': 'IOT (IoT-enheter)',
+      'GUEST': 'Gästnätverk (GUEST)',
+      'VPN': 'VPN (VPN-klienter)',
+    };
+
+    if (cfg != null) {
+      for (final z in cfg.zones) {
+        final name = z.name.toUpperCase();
+        if (!itemsMap.containsKey(name)) {
+          itemsMap[name] = '$name (Egen zon)';
+        }
+      }
+      for (final i in cfg.interfaces) {
+        if (i.zone.isNotEmpty) {
+          final name = i.zone.toUpperCase();
+          if (!itemsMap.containsKey(name)) {
+            itemsMap[name] = '$name (Aktiv zon)';
+          }
+        }
+      }
+    }
+
+    final list = itemsMap.entries
+        .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+        .toList();
+
+    list.add(const DropdownMenuItem(
+      value: 'CUSTOM',
+      child: Text('+ Skapa ny / Anpassad zon...', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
+    ));
+
+    return list;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +219,9 @@ class InterfacesScreen extends StatelessWidget {
     final ipCtrl = TextEditingController(text: iface.ipv4);
     final gwCtrl = TextEditingController(text: iface.gateway);
     final dnsCtrl = TextEditingController(text: iface.dnsServers.join(', '));
-    String selectedZone = iface.zone.isEmpty ? 'LAN' : iface.zone.toUpperCase();
+    
+    String selectedZonePreset = iface.zone.isEmpty ? 'LAN' : iface.zone.toUpperCase();
+    final customZoneCtrl = TextEditingController(text: iface.zone);
 
     showDialog(
       context: context,
@@ -209,17 +251,26 @@ class InterfacesScreen extends StatelessWidget {
                 TextField(controller: dnsCtrl, decoration: const InputDecoration(labelText: 'DNS-servrar (komma-separerade, t.ex. 1.1.1.1, 8.8.8.8)')),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedZone,
+                  initialValue: _zoneExistsInMenu(selectedZonePreset, cfg) ? selectedZonePreset : 'CUSTOM',
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(labelText: 'Tilldelad Zon'),
-                  items: predefinedInterfaceZones
-                      .map((z) => DropdownMenuItem(value: z['value']!, child: Text(z['label']!)))
-                      .toList(),
+                  items: _getZoneDropdownItems(cfg),
                   onChanged: (val) {
-                    if (val != null) setState(() => selectedZone = val);
+                    if (val != null) setState(() => selectedZonePreset = val);
                   },
                 ),
+                if (selectedZonePreset == 'CUSTOM')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TextField(
+                      controller: customZoneCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Skapa nytt Zon-namn',
+                        hintText: 't.ex. DMZ, MANAGEMENT, CAMERAS',
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -234,13 +285,26 @@ class InterfacesScreen extends StatelessWidget {
                     .where((e) => e.isNotEmpty)
                     .toList();
 
+                final finalZone = selectedZonePreset == 'CUSTOM'
+                    ? customZoneCtrl.text.trim().toUpperCase()
+                    : selectedZonePreset;
+
+                // Säkerställ att den nya zonen sparas i zones-listan om den inte finns
+                final updatedZones = List<ZoneModel>.from(cfg.zones);
+                if (finalZone.isNotEmpty && !updatedZones.any((z) => z.name.toUpperCase() == finalZone)) {
+                  updatedZones.add(ZoneModel(
+                    name: finalZone,
+                    description: 'Egen skapad zon',
+                  ));
+                }
+
                 final updated = List<InterfaceModel>.from(cfg.interfaces);
                 updated[idx] = InterfaceModel(
                   id: iface.id,
                   device: iface.device,
                   parent: iface.parent,
                   vlanId: iface.vlanId,
-                  zone: selectedZone,
+                  zone: finalZone,
                   enabled: iface.enabled,
                   addressType: selectedType,
                   ipv4: selectedType == 'static' ? ipCtrl.text : '',
@@ -254,7 +318,7 @@ class InterfacesScreen extends StatelessWidget {
                   revision: cfg.revision,
                   updatedAt: cfg.updatedAt,
                   interfaces: updated,
-                  zones: cfg.zones,
+                  zones: updatedZones,
                   objects: cfg.objects,
                   services: cfg.services,
                   policies: cfg.policies,
@@ -267,6 +331,15 @@ class InterfacesScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  bool _zoneExistsInMenu(String zone, ConfigModel? cfg) {
+    if (['LAN', 'WAN', 'SERVERS', 'IOT', 'GUEST', 'VPN'].contains(zone)) return true;
+    if (cfg != null) {
+      if (cfg.zones.any((z) => z.name.toUpperCase() == zone)) return true;
+      if (cfg.interfaces.any((i) => i.zone.toUpperCase() == zone)) return true;
+    }
+    return false;
   }
 
   void _toggleInterface(ConfigProvider provider, ConfigModel cfg, int idx, bool enabled) {
@@ -300,9 +373,11 @@ class InterfacesScreen extends StatelessWidget {
   }
 
   void _showAddVLANDialog(BuildContext context, ConfigProvider provider) {
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
     final parentCtrl = TextEditingController(text: 'ens19');
     final vlanIdCtrl = TextEditingController(text: '10');
-    String selectedZone = 'SERVERS';
+    String selectedZonePreset = 'SERVERS';
+    final customZoneCtrl = TextEditingController(text: 'DMZ');
     final ipCtrl = TextEditingController(text: '192.168.10.1/24');
     final dnsCtrl = TextEditingController(text: '1.1.1.1, 8.8.8.8');
 
@@ -320,17 +395,26 @@ class InterfacesScreen extends StatelessWidget {
                 TextField(controller: vlanIdCtrl, decoration: const InputDecoration(labelText: 'VLAN ID (1-4094)')),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedZone,
+                  initialValue: selectedZonePreset,
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(labelText: 'Tilldelad Zon'),
-                  items: predefinedInterfaceZones
-                      .map((z) => DropdownMenuItem(value: z['value']!, child: Text(z['label']!)))
-                      .toList(),
+                  items: _getZoneDropdownItems(cfg),
                   onChanged: (val) {
-                    if (val != null) setState(() => selectedZone = val);
+                    if (val != null) setState(() => selectedZonePreset = val);
                   },
                 ),
+                if (selectedZonePreset == 'CUSTOM')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TextField(
+                      controller: customZoneCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Skapa nytt Zon-namn',
+                        hintText: 't.ex. DMZ, MANAGEMENT, CAMERAS',
+                      ),
+                    ),
+                  ),
                 TextField(controller: ipCtrl, decoration: const InputDecoration(labelText: 'Statisk IPv4/CIDR (t.ex. 192.168.10.1/24)')),
                 TextField(controller: dnsCtrl, decoration: const InputDecoration(labelText: 'DNS Servrar (t.ex. 1.1.1.1, 8.8.8.8)')),
               ],
@@ -341,7 +425,6 @@ class InterfacesScreen extends StatelessWidget {
             ElevatedButton(
               child: const Text('Skapa VLAN'),
               onPressed: () {
-                final cfg = provider.candidateConfig ?? provider.runningConfig;
                 if (cfg != null) {
                   final vlanId = int.tryParse(vlanIdCtrl.text) ?? 10;
                   final dev = '${parentCtrl.text}.$vlanId';
@@ -351,12 +434,24 @@ class InterfacesScreen extends StatelessWidget {
                       .where((e) => e.isNotEmpty)
                       .toList();
 
+                  final finalZone = selectedZonePreset == 'CUSTOM'
+                      ? customZoneCtrl.text.trim().toUpperCase()
+                      : selectedZonePreset;
+
+                  final updatedZones = List<ZoneModel>.from(cfg.zones);
+                  if (finalZone.isNotEmpty && !updatedZones.any((z) => z.name.toUpperCase() == finalZone)) {
+                    updatedZones.add(ZoneModel(
+                      name: finalZone,
+                      description: 'Egen skapad zon',
+                    ));
+                  }
+
                   final newIface = InterfaceModel(
                     id: 'vlan$vlanId',
                     device: dev,
                     parent: parentCtrl.text,
                     vlanId: vlanId,
-                    zone: selectedZone,
+                    zone: finalZone,
                     enabled: true,
                     addressType: 'static',
                     ipv4: ipCtrl.text,
@@ -368,7 +463,7 @@ class InterfacesScreen extends StatelessWidget {
                     revision: cfg.revision,
                     updatedAt: cfg.updatedAt,
                     interfaces: updated,
-                    zones: cfg.zones,
+                    zones: updatedZones,
                     objects: cfg.objects,
                     services: cfg.services,
                     policies: cfg.policies,

@@ -14,35 +14,56 @@ const List<Map<String, String>> predefinedServices = [
   {'label': 'Anpassad Port / Tjänst', 'value': 'CUSTOM'},
 ];
 
-const List<Map<String, String>> predefinedZones = [
-  {'label': 'Alla Zoner (ANY)', 'value': 'ANY'},
-  {'label': 'WAN (Utsida / Internet)', 'value': 'WAN'},
-  {'label': 'LAN (Internt nätverk)', 'value': 'LAN'},
-  {'label': 'SERVERS (Serverzon)', 'value': 'SERVERS'},
-  {'label': 'IOT (IoT-enheter)', 'value': 'IOT'},
-  {'label': 'GUEST (Gästnätverk)', 'value': 'GUEST'},
-  {'label': 'VPN (VPN-klienter)', 'value': 'VPN'},
-];
-
 class PoliciesScreen extends StatelessWidget {
   const PoliciesScreen({super.key});
 
   List<DropdownMenuItem<String>> _getZoneDropdownItems(ConfigModel? cfg) {
-    final Set<String> zones = {'ANY', 'WAN', 'LAN', 'SERVERS', 'IOT', 'GUEST', 'VPN'};
+    final Map<String, String> itemsMap = {
+      'ANY': 'Alla Zoner (ANY)',
+      'LAN': 'LAN (Internt nätverk)',
+      'WAN': 'WAN (Utsida / Internet)',
+      'SERVERS': 'SERVERS (Serverzon)',
+      'IOT': 'IOT (IoT-enheter)',
+      'GUEST': 'Gästnätverk (GUEST)',
+      'VPN': 'VPN (VPN-klienter)',
+    };
+
     if (cfg != null) {
       for (final z in cfg.zones) {
-        zones.add(z.name.toUpperCase());
+        final name = z.name.toUpperCase();
+        if (!itemsMap.containsKey(name)) {
+          itemsMap[name] = '$name (Egen zon)';
+        }
       }
       for (final i in cfg.interfaces) {
         if (i.zone.isNotEmpty) {
-          zones.add(i.zone.toUpperCase());
+          final name = i.zone.toUpperCase();
+          if (!itemsMap.containsKey(name)) {
+            itemsMap[name] = '$name (Aktiv zon)';
+          }
         }
       }
     }
-    return zones.map((z) {
-      final found = predefinedZones.firstWhere((p) => p['value'] == z, orElse: () => {'label': z, 'value': z});
-      return DropdownMenuItem(value: z, child: Text(found['label']!));
-    }).toList();
+
+    final list = itemsMap.entries
+        .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+        .toList();
+
+    list.add(const DropdownMenuItem(
+      value: 'CUSTOM',
+      child: Text('+ Skapa ny / Anpassad zon...', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
+    ));
+
+    return list;
+  }
+
+  bool _zoneExistsInMenu(String zone, ConfigModel? cfg) {
+    if (['ANY', 'LAN', 'WAN', 'SERVERS', 'IOT', 'GUEST', 'VPN'].contains(zone)) return true;
+    if (cfg != null) {
+      if (cfg.zones.any((z) => z.name.toUpperCase() == zone)) return true;
+      if (cfg.interfaces.any((i) => i.zone.toUpperCase() == zone)) return true;
+    }
+    return false;
   }
 
   @override
@@ -216,8 +237,12 @@ class PoliciesScreen extends StatelessWidget {
     final pol = cfg.policies[idx];
 
     final nameCtrl = TextEditingController(text: pol.name);
-    String selectedSrcZone = pol.sourceZone.isEmpty ? 'ANY' : pol.sourceZone.toUpperCase();
-    String selectedDstZone = pol.destZone.isEmpty ? 'ANY' : pol.destZone.toUpperCase();
+    
+    String selectedSrcZonePreset = pol.sourceZone.isEmpty ? 'ANY' : pol.sourceZone.toUpperCase();
+    final customSrcZoneCtrl = TextEditingController(text: pol.sourceZone);
+
+    String selectedDstZonePreset = pol.destZone.isEmpty ? 'ANY' : pol.destZone.toUpperCase();
+    final customDstZoneCtrl = TextEditingController(text: pol.destZone);
 
     // Tjänste-hantering
     String selectedServicePreset = 'ANY';
@@ -263,26 +288,48 @@ class PoliciesScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedSrcZone,
+                  initialValue: _zoneExistsInMenu(selectedSrcZonePreset, cfg) ? selectedSrcZonePreset : 'CUSTOM',
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(labelText: 'Källzon (Source Zone)'),
                   items: _getZoneDropdownItems(cfg),
                   onChanged: (val) {
-                    if (val != null) setState(() => selectedSrcZone = val);
+                    if (val != null) setState(() => selectedSrcZonePreset = val);
                   },
                 ),
+                if (selectedSrcZonePreset == 'CUSTOM')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TextField(
+                      controller: customSrcZoneCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Skapa ny Källzon',
+                        hintText: 't.ex. DMZ, MANAGEMENT',
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedDstZone,
+                  initialValue: _zoneExistsInMenu(selectedDstZonePreset, cfg) ? selectedDstZonePreset : 'CUSTOM',
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(labelText: 'Målzon (Dest Zone)'),
                   items: _getZoneDropdownItems(cfg),
                   onChanged: (val) {
-                    if (val != null) setState(() => selectedDstZone = val);
+                    if (val != null) setState(() => selectedDstZonePreset = val);
                   },
                 ),
+                if (selectedDstZonePreset == 'CUSTOM')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TextField(
+                      controller: customDstZoneCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Skapa ny Målzon',
+                        hintText: 't.ex. DMZ, SERVERS',
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: selectedServicePreset,
@@ -339,14 +386,31 @@ class PoliciesScreen extends StatelessWidget {
                     ? customServiceCtrl.text.toUpperCase()
                     : selectedServicePreset;
 
+                final finalSrcZone = selectedSrcZonePreset == 'CUSTOM'
+                    ? customSrcZoneCtrl.text.trim().toUpperCase()
+                    : selectedSrcZonePreset;
+
+                final finalDstZone = selectedDstZonePreset == 'CUSTOM'
+                    ? customDstZoneCtrl.text.trim().toUpperCase()
+                    : selectedDstZonePreset;
+
+                // Spara nya zoner i zones listan
+                final updatedZones = List<ZoneModel>.from(cfg.zones);
+                if (finalSrcZone.isNotEmpty && finalSrcZone != 'ANY' && !updatedZones.any((z) => z.name.toUpperCase() == finalSrcZone)) {
+                  updatedZones.add(ZoneModel(name: finalSrcZone, description: 'Egen skapad zon'));
+                }
+                if (finalDstZone.isNotEmpty && finalDstZone != 'ANY' && !updatedZones.any((z) => z.name.toUpperCase() == finalDstZone)) {
+                  updatedZones.add(ZoneModel(name: finalDstZone, description: 'Egen skapad zon'));
+                }
+
                 final updatedPolicies = List<PolicyModel>.from(cfg.policies);
                 updatedPolicies[idx] = PolicyModel(
                   id: pol.id,
                   name: nameCtrl.text,
                   enabled: pol.enabled,
                   priority: pol.priority,
-                  sourceZone: selectedSrcZone,
-                  destZone: selectedDstZone,
+                  sourceZone: finalSrcZone,
+                  destZone: finalDstZone,
                   sourceObj: pol.sourceObj,
                   destObj: pol.destObj,
                   service: finalService,
@@ -361,7 +425,7 @@ class PoliciesScreen extends StatelessWidget {
                   revision: cfg.revision,
                   updatedAt: cfg.updatedAt,
                   interfaces: cfg.interfaces,
-                  zones: cfg.zones,
+                  zones: updatedZones,
                   objects: cfg.objects,
                   services: cfg.services,
                   policies: updatedPolicies,
@@ -448,8 +512,13 @@ class PoliciesScreen extends StatelessWidget {
   void _showAddPolicyDialog(BuildContext context, ConfigProvider provider) {
     final cfg = provider.candidateConfig ?? provider.runningConfig;
     final nameCtrl = TextEditingController(text: 'Tillåt LAN till SERVERS');
-    String selectedSrcZone = 'LAN';
-    String selectedDstZone = 'SERVERS';
+    
+    String selectedSrcZonePreset = 'LAN';
+    final customSrcZoneCtrl = TextEditingController(text: 'DMZ');
+
+    String selectedDstZonePreset = 'SERVERS';
+    final customDstZoneCtrl = TextEditingController(text: 'SERVERS');
+
     String selectedServicePreset = 'ANY';
     final customServiceCtrl = TextEditingController(text: '8080');
 
@@ -467,26 +536,48 @@ class PoliciesScreen extends StatelessWidget {
                 TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Policynamn')),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedSrcZone,
+                  initialValue: selectedSrcZonePreset,
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(labelText: 'Källzon (Source Zone)'),
                   items: _getZoneDropdownItems(cfg),
                   onChanged: (val) {
-                    if (val != null) setState(() => selectedSrcZone = val);
+                    if (val != null) setState(() => selectedSrcZonePreset = val);
                   },
                 ),
+                if (selectedSrcZonePreset == 'CUSTOM')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TextField(
+                      controller: customSrcZoneCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Skapa ny Källzon',
+                        hintText: 't.ex. DMZ, MANAGEMENT',
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedDstZone,
+                  initialValue: selectedDstZonePreset,
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(labelText: 'Målzon (Dest Zone)'),
                   items: _getZoneDropdownItems(cfg),
                   onChanged: (val) {
-                    if (val != null) setState(() => selectedDstZone = val);
+                    if (val != null) setState(() => selectedDstZonePreset = val);
                   },
                 ),
+                if (selectedDstZonePreset == 'CUSTOM')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TextField(
+                      controller: customDstZoneCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Skapa ny Målzon',
+                        hintText: 't.ex. DMZ, SERVERS',
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: selectedServicePreset,
@@ -526,12 +617,28 @@ class PoliciesScreen extends StatelessWidget {
                       ? customServiceCtrl.text.toUpperCase()
                       : selectedServicePreset;
 
+                  final finalSrcZone = selectedSrcZonePreset == 'CUSTOM'
+                      ? customSrcZoneCtrl.text.trim().toUpperCase()
+                      : selectedSrcZonePreset;
+
+                  final finalDstZone = selectedDstZonePreset == 'CUSTOM'
+                      ? customDstZoneCtrl.text.trim().toUpperCase()
+                      : selectedDstZonePreset;
+
+                  final updatedZones = List<ZoneModel>.from(cfg.zones);
+                  if (finalSrcZone.isNotEmpty && finalSrcZone != 'ANY' && !updatedZones.any((z) => z.name.toUpperCase() == finalSrcZone)) {
+                    updatedZones.add(ZoneModel(name: finalSrcZone, description: 'Egen skapad zon'));
+                  }
+                  if (finalDstZone.isNotEmpty && finalDstZone != 'ANY' && !updatedZones.any((z) => z.name.toUpperCase() == finalDstZone)) {
+                    updatedZones.add(ZoneModel(name: finalDstZone, description: 'Egen skapad zon'));
+                  }
+
                   final newPol = PolicyModel(
                     id: 'pol_${DateTime.now().millisecondsSinceEpoch}',
                     name: nameCtrl.text,
                     enabled: true,
-                    sourceZone: selectedSrcZone,
-                    destZone: selectedDstZone,
+                    sourceZone: finalSrcZone,
+                    destZone: finalDstZone,
                     sourceObj: 'ANY',
                     destObj: 'ANY',
                     service: finalService,
@@ -543,7 +650,7 @@ class PoliciesScreen extends StatelessWidget {
                     revision: cfg.revision,
                     updatedAt: cfg.updatedAt,
                     interfaces: cfg.interfaces,
-                    zones: cfg.zones,
+                    zones: updatedZones,
                     objects: cfg.objects,
                     services: cfg.services,
                     policies: updated,
