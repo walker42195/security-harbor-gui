@@ -83,6 +83,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
+                          showCheckboxColumn: false,
                           columnSpacing: 18,
                           horizontalMargin: 12,
                           headingRowHeight: 28,
@@ -108,7 +109,13 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             return DataRow(
                               selected: isSelected,
                               onSelectChanged: (_) {
-                                setState(() => _selectedRowIndex = idx);
+                                setState(() {
+                                  if (_selectedRowIndex == idx) {
+                                    _selectedRowIndex = null;
+                                  } else {
+                                    _selectedRowIndex = idx;
+                                  }
+                                });
                               },
                               color: WidgetStateProperty.resolveWith((states) {
                                 if (isSelected) return Colors.cyan.withValues(alpha: 0.2);
@@ -340,7 +347,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           value: enabled,
                           activeColor: Colors.tealAccent,
                           checkColor: Colors.black,
-                          onChanged: (v) => setState(() => enabled = v ?? true),
+                          onChanged: (v) => setState(() => enabled = v ?? false),
                         ),
                         const Text('Enable', style: TextStyle(color: Colors.white, fontSize: 12)),
                       ],
