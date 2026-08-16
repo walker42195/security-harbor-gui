@@ -3,6 +3,8 @@
 #include <flutter_linux/flutter_linux.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #endif
 
 #include "flutter/generated_plugin_registrant.h"
@@ -14,9 +16,26 @@ struct _MyApplication {
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
+static void set_x11_dark_theme(GtkWindow* window) {
+#ifdef GDK_WINDOWING_X11
+  GdkWindow* gdk_win = gtk_widget_get_window(GTK_WIDGET(window));
+  if (gdk_win != NULL && GDK_IS_X11_WINDOW(gdk_win)) {
+    Display* display = gdk_x11_display_get_xdisplay(gdk_window_get_display(gdk_win));
+    Window xid = gdk_x11_window_get_xid(gdk_win);
+    Atom net_wm_theme_variant = XInternAtom(display, "_GTK_THEME_VARIANT", False);
+    Atom utf8_string = XInternAtom(display, "UTF8_STRING", False);
+    const char* variant = "dark";
+    XChangeProperty(display, xid, net_wm_theme_variant, utf8_string, 8,
+                    PropModeReplace, (const unsigned char*)variant, strlen(variant));
+  }
+#endif
+}
+
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
-  gtk_widget_show(gtk_widget_get_toplevel(GTK_WIDGET(view)));
+  GtkWindow* window = GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(view)));
+  set_x11_dark_theme(window);
+  gtk_widget_show(GTK_WIDGET(window));
 }
 
 // Implements GApplication::activate.
@@ -102,7 +121,8 @@ static void my_application_activate(GApplication* application) {
   // Show the window when Flutter renders.
   g_signal_connect_swapped(view, "first-frame", G_CALLBACK(first_frame_cb),
                            self);
-  gtk_widget_realize(GTK_WIDGET(view));
+  gtk_widget_realize(GTK_WIDGET(window));
+  set_x11_dark_theme(window);
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
 

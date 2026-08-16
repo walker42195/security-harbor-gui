@@ -63,68 +63,74 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (!mounted) return;
 
+    // Lista över alla konfigurerade gränssnitt/VLAN
+    final List<Map<String, String>> targetIfaces = [];
+    if (cfg != null && cfg.interfaces.isNotEmpty) {
+      for (final i in cfg.interfaces) {
+        final id = i.id;
+        final dev = i.device.isNotEmpty ? i.device : i.id;
+        final zone = i.zone.isNotEmpty ? i.zone : 'Okonfigurerad';
+        targetIfaces.add({'key': id, 'dev': dev, 'label': '$id ($zone)'});
+      }
+    } else {
+      targetIfaces.addAll([
+        {'key': 'ens18', 'dev': 'ens18', 'label': 'ens18 (WAN)'},
+        {'key': 'ens19', 'dev': 'ens19', 'label': 'ens19 (LAN)'},
+        {'key': 'vlan10', 'dev': 'vlan10', 'label': 'vlan10 (SERVERS)'},
+        {'key': 'vlan20', 'dev': 'vlan20', 'label': 'vlan20 (IOT)'},
+      ]);
+    }
+
     setState(() {
-      if (stats.isNotEmpty) {
-        for (final stat in stats) {
-          final dev = stat['device']?.toString() ?? '';
-          if (dev.isEmpty || dev == 'lo') continue;
+      final bool isLive = stats.isNotEmpty;
 
-          final rx = (stat['rx_bytes'] as num?)?.toInt() ?? 0;
-          final tx = (stat['tx_bytes'] as num?)?.toInt() ?? 0;
+      for (final target in targetIfaces) {
+        final key = target['key']!;
+        final dev = target['dev']!;
+        final label = target['label']!;
 
-          // Hitta zon/etikett från konfigurationen
-          String label = dev;
-          if (cfg != null) {
-            final matching = cfg.interfaces.where((i) => i.device == dev || i.id == dev);
-            if (matching.isNotEmpty) {
-              final first = matching.first;
-              label = '${first.id} (${first.zone.isNotEmpty ? first.zone : "Okonfigurerad"})';
+        int rx = 0;
+        int tx = 0;
+        bool found = false;
+
+        if (isLive) {
+          for (final s in stats) {
+            final sDev = s['device']?.toString() ?? '';
+            if (sDev == dev || sDev == key || sDev.endsWith('.10') && key.contains('10') || sDev.endsWith('.20') && key.contains('20')) {
+              rx = (s['rx_bytes'] as num?)?.toInt() ?? 0;
+              tx = (s['tx_bytes'] as num?)?.toInt() ?? 0;
+              found = true;
+              break;
             }
           }
+        }
 
-          if (!_metrics.containsKey(dev)) {
-            _metrics[dev] = InterfaceMetricHistory(
-              device: dev,
-              label: label,
-              lastRxBytes: rx,
-              lastTxBytes: tx,
-            );
-          } else {
-            final item = _metrics[dev]!;
-            final deltaRx = rx >= item.lastRxBytes ? (rx - item.lastRxBytes) : 0;
-            final deltaTx = tx >= item.lastTxBytes ? (tx - item.lastTxBytes) : 0;
+        if (!_metrics.containsKey(key)) {
+          _metrics[key] = InterfaceMetricHistory(
+            device: dev,
+            label: label,
+            lastRxBytes: rx,
+            lastTxBytes: tx,
+          );
+        } else {
+          final item = _metrics[key]!;
+
+          double rxRate = 0.0;
+          double txRate = 0.0;
+
+          if (isLive && found) {
+            final deltaRx = (rx >= item.lastRxBytes && item.lastRxBytes > 0) ? (rx - item.lastRxBytes) : 0;
+            final deltaTx = (tx >= item.lastTxBytes && item.lastTxBytes > 0) ? (tx - item.lastTxBytes) : 0;
 
             item.lastRxBytes = rx;
             item.lastTxBytes = tx;
-            item.curRxRateKBps = deltaRx / 1024.0;
-            item.curTxRateKBps = deltaTx / 1024.0;
-
-            item.rxHistory.add(item.curRxRateKBps);
-            if (item.rxHistory.length > 20) item.rxHistory.removeAt(0);
-
-            item.txHistory.add(item.curTxRateKBps);
-            if (item.txHistory.length > 20) item.txHistory.removeAt(0);
+            rxRate = deltaRx / 1024.0;
+            txRate = deltaTx / 1024.0;
+          } else if (!isLive) {
+            // Simulera levande testtrafik för utvecklingsläge
+            rxRate = 12.0 + (DateTime.now().millisecondsSinceEpoch % 35);
+            txRate = 5.0 + (DateTime.now().millisecondsSinceEpoch % 20);
           }
-        }
-      } else {
-        // Mock data om offline/dev-läge för 4 kort & vlan
-        final mockDevs = [
-          {'dev': 'ens18', 'label': 'ens18 (WAN)'},
-          {'dev': 'ens19', 'label': 'ens19 (LAN)'},
-          {'dev': 'vlan10', 'label': 'vlan10 (SERVERS)'},
-          {'dev': 'vlan20', 'label': 'vlan20 (IOT)'},
-        ];
-
-        for (final m in mockDevs) {
-          final dev = m['dev']!;
-          final label = m['label']!;
-
-          if (!_metrics.containsKey(dev)) {
-            _metrics[dev] = InterfaceMetricHistory(device: dev, label: label);
-          }
-          final item = _metrics[dev]!;
-          final rxRate = 15.0 + (DateTime.now().millisecondsSinceEpoch % 40);
-          final txRate = 8.0 + (DateTime.now().millisecondsSinceEpoch % 25);
 
           item.curRxRateKBps = rxRate;
           item.curTxRateKBps = txRate;
