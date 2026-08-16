@@ -34,11 +34,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final TextEditingController _pingController = TextEditingController(text: '8.8.8.8');
-  String _pingOutput = '';
-  bool _isPingLoading = false;
-  bool _isTracerouteLoading = false;
-
   Timer? _metricsTimer;
   final Map<String, InterfaceMetricHistory> _metrics = {};
 
@@ -51,7 +46,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _metricsTimer?.cancel();
-    _pingController.dispose();
     super.dispose();
   }
 
@@ -224,113 +218,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       return _buildBandwidthGraphCard(item);
                     },
                   ),
-
-            const SizedBox(height: 16),
-
-            // Diagnostikvy
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                border: Border.all(color: const Color(0xFF334155)),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Diagnostik & Nätverksverktyg',
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: const Color(0xFF334155)),
-                        ),
-                        child: Row(
-                          children: const [
-                            Icon(Icons.terminal, size: 12, color: Colors.cyanAccent),
-                            SizedBox(width: 6),
-                            Text('Körs från brandväggen (10.0.0.163)', style: TextStyle(color: Colors.cyanAccent, fontSize: 10)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 32,
-                          child: TextField(
-                            controller: _pingController,
-                            style: const TextStyle(fontSize: 11, color: Colors.white),
-                            decoration: const InputDecoration(
-                              labelText: 'Mål-IP eller domän (t.ex. 8.8.8.8)',
-                              labelStyle: TextStyle(fontSize: 11),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              border: OutlineInputBorder(),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        icon: _isPingLoading
-                            ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                            : const Icon(Icons.download, size: 14),
-                        label: const Text('Ping', style: TextStyle(fontSize: 11)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.cyanAccent,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                        onPressed: _isPingLoading ? null : () => _runPing(provider),
-                      ),
-                      const SizedBox(width: 6),
-                      ElevatedButton.icon(
-                        icon: _isTracerouteLoading
-                            ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : const Icon(Icons.alt_route, size: 14),
-                        label: const Text('Traceroute', style: TextStyle(fontSize: 11)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.lightBlueAccent,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                        onPressed: _isTracerouteLoading ? null : () => _runTraceroute(provider),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    height: 150,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: const Color(0xFF334155)),
-                    ),
-                    child: SingleChildScrollView(
-                      child: SelectableText(
-                        _pingOutput.isEmpty ? 'Klicka på Ping eller Traceroute för att köra diagnos...' : _pingOutput,
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Colors.greenAccent),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),
@@ -445,30 +332,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
-  }
-
-  void _runPing(ConfigProvider provider) async {
-    setState(() {
-      _isPingLoading = true;
-      _pingOutput = 'Kör ping mot ${_pingController.text}...';
-    });
-    final out = await provider.api.ping(_pingController.text);
-    setState(() {
-      _pingOutput = out;
-      _isPingLoading = false;
-    });
-  }
-
-  void _runTraceroute(ConfigProvider provider) async {
-    setState(() {
-      _isTracerouteLoading = true;
-      _pingOutput = 'Kör traceroute mot ${_pingController.text}...';
-    });
-    final out = await provider.api.traceroute(_pingController.text);
-    setState(() {
-      _pingOutput = out;
-      _isTracerouteLoading = false;
-    });
   }
 }
 
