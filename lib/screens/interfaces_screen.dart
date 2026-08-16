@@ -539,7 +539,7 @@ class InterfacesScreen extends StatelessWidget {
                 zones: cfg.zones,
                 objects: cfg.objects,
                 services: cfg.services,
-                policies: updated,
+                policies: cfg.policies,
                 settings: cfg.settings,
               ));
               Navigator.pop(ctx);
