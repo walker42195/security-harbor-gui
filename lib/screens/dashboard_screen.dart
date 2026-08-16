@@ -100,9 +100,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             },
           ),
           const SizedBox(height: 32),
-          Text(
-            'Diagnostik & Nätverksverktyg',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              Text(
+                'Diagnostik & Nätverksverktyg',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+              ),
+              Chip(
+                avatar: const Icon(Icons.dns, size: 16, color: Colors.cyanAccent),
+                label: Text(
+                  'Körs från brandväggen (${provider.api.baseUrl.replaceAll("http://", "").replaceAll("https://", "").split(":")[0]})',
+                  style: const TextStyle(fontSize: 12, color: Colors.cyanAccent, fontWeight: FontWeight.bold),
+                ),
+                backgroundColor: const Color(0xFF0F172A),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Card(

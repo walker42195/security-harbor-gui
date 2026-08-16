@@ -58,6 +58,7 @@ class InterfaceModel {
   final String addressType;
   final String ipv4;
   final String gateway;
+  final List<String> dnsServers;
   final int mtu;
   final DHCPConfigModel? dhcp;
 
@@ -71,6 +72,7 @@ class InterfaceModel {
     required this.addressType,
     required this.ipv4,
     this.gateway = '',
+    this.dnsServers = const [],
     this.mtu = 1500,
     this.dhcp,
   });
@@ -86,6 +88,7 @@ class InterfaceModel {
       addressType: json['address_type'] ?? 'static',
       ipv4: json['ipv4'] ?? '',
       gateway: json['gateway'] ?? '',
+      dnsServers: List<String>.from(json['dns_servers'] ?? []),
       mtu: json['mtu'] ?? 1500,
       dhcp: json['dhcp'] != null ? DHCPConfigModel.fromJson(json['dhcp']) : null,
     );
@@ -101,6 +104,7 @@ class InterfaceModel {
         'address_type': addressType,
         'ipv4': ipv4,
         'gateway': gateway,
+        'dns_servers': dnsServers,
         'mtu': mtu,
         if (dhcp != null) 'dhcp': dhcp!.toJson(),
       };

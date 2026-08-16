@@ -8,6 +8,18 @@ class ApiService {
 
   ApiService({this.baseUrl = 'http://10.0.0.163:8443'});
 
+  void setBaseUrl(String newUrl) {
+    var formatted = newUrl.trim();
+    if (!formatted.startsWith('http://') && !formatted.startsWith('https://')) {
+      formatted = 'http://$formatted';
+    }
+    if (formatted.endsWith('/')) {
+      formatted = formatted.substring(0, formatted.length - 1);
+    }
+    baseUrl = formatted;
+    token = null;
+  }
+
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',

@@ -52,6 +52,8 @@ class InterfacesScreen extends StatelessWidget {
               itemBuilder: (context, idx) {
                 final iface = cfg.interfaces[idx];
                 final isVLAN = iface.vlanId > 0;
+                final isWAN = iface.zone == 'WAN';
+                final isStatic = iface.addressType == 'static';
 
                 return Card(
                   color: const Color(0xFF1E293B),
@@ -59,19 +61,29 @@ class InterfacesScreen extends StatelessWidget {
                   child: ExpansionTile(
                     leading: Icon(
                       isVLAN ? Icons.alt_route : Icons.router,
-                      color: iface.zone == 'WAN' ? Colors.redAccent : Colors.tealAccent,
+                      color: isWAN ? Colors.redAccent : Colors.tealAccent,
                     ),
                     title: Text(
                       '${iface.id} (${iface.device})${isVLAN ? " [VLAN ${iface.vlanId}]" : ""}',
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
-                    subtitle: Text('Zon: ${iface.zone}  |  IP: ${iface.ipv4.isEmpty ? "DHCP (Ingen IP)" : iface.ipv4}'),
-                    trailing: Switch(
-                      value: iface.enabled,
-                      activeThumbColor: Colors.tealAccent,
-                      onChanged: (val) {
-                        _toggleInterface(provider, cfg, idx, val);
-                      },
+                    subtitle: Text('Zon: ${iface.zone}  |  Typ: ${isStatic ? "Statisk IP (${iface.ipv4})" : "DHCP-Klient"}'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.cyanAccent, size: 20),
+                          tooltip: 'Redigera gränssnitt',
+                          onPressed: () => _showEditInterfaceDialog(context, provider, cfg, idx),
+                        ),
+                        Switch(
+                          value: iface.enabled,
+                          activeThumbColor: Colors.tealAccent,
+                          onChanged: (val) {
+                            _toggleInterface(provider, cfg, idx, val);
+                          },
+                        ),
+                      ],
                     ),
                     children: [
                       Padding(
@@ -79,24 +91,65 @@ class InterfacesScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
                               children: [
-                                Text('DHCP Server: ${iface.dhcp != null && iface.dhcp!.enabled ? "AKTIV" : "AVSTÄNGD"}',
-                                    style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
-                                ElevatedButton.icon(
-                                  icon: const Icon(Icons.settings_ethernet, size: 16),
-                                  label: const Text('Konfigurera DHCP Scope'),
-                                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF334155), foregroundColor: Colors.white),
-                                  onPressed: () => _showDHCPDialog(context, provider, cfg, idx),
+                                Chip(
+                                  label: Text('Adressering: ${isStatic ? "STATISK IP" : "DHCP-KLIENT"}'),
+                                  backgroundColor: isStatic ? Colors.lightBlueAccent.withValues(alpha: 0.2) : Colors.amber.withValues(alpha: 0.2),
+                                  labelStyle: TextStyle(color: isStatic ? Colors.lightBlueAccent : Colors.amber, fontWeight: FontWeight.bold),
                                 ),
+                                if (iface.gateway.isNotEmpty)
+                                  Chip(
+                                    label: Text('Gateway: ${iface.gateway}'),
+                                    backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                                    labelStyle: const TextStyle(color: Colors.white),
+                                  ),
+                                if (iface.dnsServers.isNotEmpty)
+                                  Chip(
+                                    label: Text('DNS: ${iface.dnsServers.join(", ")}'),
+                                    backgroundColor: Colors.cyanAccent.withValues(alpha: 0.2),
+                                    labelStyle: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold),
+                                  ),
                               ],
                             ),
-                            if (iface.dhcp != null && iface.dhcp!.enabled) ...[
-                              const SizedBox(height: 8),
-                              Text('IP Pool: ${iface.dhcp!.rangeStart} - ${iface.dhcp!.rangeEnd}', style: const TextStyle(color: Colors.grey)),
-                              Text('DNS: ${iface.dhcp!.dnsServers.join(", ")}  |  Gateway: ${iface.dhcp!.gateway}', style: const TextStyle(color: Colors.grey)),
-                              Text('Statiska Reservationer: ${iface.dhcp!.reservations.length} enheter', style: const TextStyle(color: Colors.grey)),
+                            const SizedBox(height: 12),
+                            if (isWAN) ...[
+                              Row(
+                                children: const [
+                                  Icon(Icons.shield_outlined, color: Colors.amber, size: 20),
+                                  SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'WAN-gränssnitt: Kan köras som DHCP-klient eller Statisk IP med valfria DNS-servrar.',
+                                      style: TextStyle(color: Colors.amber),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ] else ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'DHCP Server: ${iface.dhcp != null && iface.dhcp!.enabled ? "AKTIV" : "AVSTÄNGD"}',
+                                    style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold),
+                                  ),
+                                  ElevatedButton.icon(
+                                    icon: const Icon(Icons.settings_ethernet, size: 16),
+                                    label: const Text('Konfigurera DHCP Scope'),
+                                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF334155), foregroundColor: Colors.white),
+                                    onPressed: () => _showDHCPDialog(context, provider, cfg, idx),
+                                  ),
+                                ],
+                              ),
+                              if (iface.dhcp != null && iface.dhcp!.enabled) ...[
+                                const SizedBox(height: 8),
+                                Text('IP Pool: ${iface.dhcp!.rangeStart} - ${iface.dhcp!.rangeEnd}', style: const TextStyle(color: Colors.grey)),
+                                Text('Klient DNS: ${iface.dhcp!.dnsServers.join(", ")}  |  Gateway: ${iface.dhcp!.gateway}', style: const TextStyle(color: Colors.grey)),
+                                Text('Statiska Reservationer: ${iface.dhcp!.reservations.length} enheter', style: const TextStyle(color: Colors.grey)),
+                              ],
                             ],
                           ],
                         ),
@@ -107,6 +160,88 @@ class InterfacesScreen extends StatelessWidget {
               },
             ),
         ],
+      ),
+    );
+  }
+
+  void _showEditInterfaceDialog(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx) {
+    final iface = cfg.interfaces[idx];
+    String selectedType = iface.addressType;
+    final ipCtrl = TextEditingController(text: iface.ipv4);
+    final gwCtrl = TextEditingController(text: iface.gateway);
+    final dnsCtrl = TextEditingController(text: iface.dnsServers.join(', '));
+    final zoneCtrl = TextEditingController(text: iface.zone);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          title: Text('Redigera ${iface.id} (${iface.device})', style: const TextStyle(color: Colors.white)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Adresseringstyp:', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 6),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'static', label: Text('Statisk IP'), icon: Icon(Icons.pin)),
+                  ButtonSegment(value: 'dhcp', label: Text('DHCP Klient'), icon: Icon(Icons.sync)),
+                ],
+                selected: {selectedType},
+                onSelectionChanged: (val) => setState(() => selectedType = val.first),
+              ),
+              const SizedBox(height: 16),
+              if (selectedType == 'static')
+                TextField(controller: ipCtrl, decoration: const InputDecoration(labelText: 'IPv4 / CIDR (t.ex. 10.0.0.163/24)')),
+              TextField(controller: gwCtrl, decoration: const InputDecoration(labelText: 'Default Gateway IP (Valfri)')),
+              TextField(controller: dnsCtrl, decoration: const InputDecoration(labelText: 'DNS-servrar (komma-separerade, t.ex. 1.1.1.1, 8.8.8.8)')),
+              TextField(controller: zoneCtrl, decoration: const InputDecoration(labelText: 'Zon (t.ex. WAN, LAN, SERVERS)')),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
+            ElevatedButton(
+              child: const Text('Spara Ändringar'),
+              onPressed: () {
+                final dnsList = dnsCtrl.text
+                    .split(',')
+                    .map((e) => e.trim())
+                    .where((e) => e.isNotEmpty)
+                    .toList();
+
+                final updated = List<InterfaceModel>.from(cfg.interfaces);
+                updated[idx] = InterfaceModel(
+                  id: iface.id,
+                  device: iface.device,
+                  parent: iface.parent,
+                  vlanId: iface.vlanId,
+                  zone: zoneCtrl.text.toUpperCase(),
+                  enabled: iface.enabled,
+                  addressType: selectedType,
+                  ipv4: selectedType == 'static' ? ipCtrl.text : '',
+                  gateway: gwCtrl.text,
+                  dnsServers: dnsList,
+                  mtu: iface.mtu,
+                  dhcp: iface.dhcp,
+                );
+                provider.updateCandidate(ConfigModel(
+                  version: cfg.version,
+                  revision: cfg.revision,
+                  updatedAt: cfg.updatedAt,
+                  interfaces: updated,
+                  zones: cfg.zones,
+                  objects: cfg.objects,
+                  services: cfg.services,
+                  policies: cfg.policies,
+                  settings: cfg.settings,
+                ));
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -124,6 +259,7 @@ class InterfacesScreen extends StatelessWidget {
       addressType: cur.addressType,
       ipv4: cur.ipv4,
       gateway: cur.gateway,
+      dnsServers: cur.dnsServers,
       mtu: cur.mtu,
       dhcp: cur.dhcp,
     );
@@ -145,6 +281,7 @@ class InterfacesScreen extends StatelessWidget {
     final vlanIdCtrl = TextEditingController(text: '10');
     final zoneCtrl = TextEditingController(text: 'SERVERS');
     final ipCtrl = TextEditingController(text: '192.168.10.1/24');
+    final dnsCtrl = TextEditingController(text: '1.1.1.1, 8.8.8.8');
 
     showDialog(
       context: context,
@@ -158,6 +295,7 @@ class InterfacesScreen extends StatelessWidget {
             TextField(controller: vlanIdCtrl, decoration: const InputDecoration(labelText: 'VLAN ID (1-4094)')),
             TextField(controller: zoneCtrl, decoration: const InputDecoration(labelText: 'Zon (t.ex. SERVERS, IOT, GUEST)')),
             TextField(controller: ipCtrl, decoration: const InputDecoration(labelText: 'Statisk IPv4/CIDR (t.ex. 192.168.10.1/24)')),
+            TextField(controller: dnsCtrl, decoration: const InputDecoration(labelText: 'DNS Servrar (t.ex. 1.1.1.1, 8.8.8.8)')),
           ],
         ),
         actions: [
@@ -169,6 +307,12 @@ class InterfacesScreen extends StatelessWidget {
               if (cfg != null) {
                 final vlanId = int.tryParse(vlanIdCtrl.text) ?? 10;
                 final dev = '${parentCtrl.text}.$vlanId';
+                final dnsList = dnsCtrl.text
+                    .split(',')
+                    .map((e) => e.trim())
+                    .where((e) => e.isNotEmpty)
+                    .toList();
+
                 final newIface = InterfaceModel(
                   id: 'vlan$vlanId',
                   device: dev,
@@ -178,6 +322,7 @@ class InterfacesScreen extends StatelessWidget {
                   enabled: true,
                   addressType: 'static',
                   ipv4: ipCtrl.text,
+                  dnsServers: dnsList,
                 );
                 final updated = List<InterfaceModel>.from(cfg.interfaces)..add(newIface);
                 provider.updateCandidate(ConfigModel(
@@ -247,6 +392,7 @@ class InterfacesScreen extends StatelessWidget {
                 addressType: iface.addressType,
                 ipv4: iface.ipv4,
                 gateway: iface.gateway,
+                dnsServers: iface.dnsServers,
                 mtu: iface.mtu,
                 dhcp: newDHCP,
               );

@@ -25,6 +25,11 @@ class ConfigProvider extends ChangeNotifier {
     login('admin', 'SecurityHarbor2026!');
   }
 
+  Future<void> changeAgentUrl(String newUrl) async {
+    api.setBaseUrl(newUrl);
+    await login('admin', 'SecurityHarbor2026!');
+  }
+
   Future<void> login(String user, String pass) async {
     isLoading = true;
     errorMessage = null;
@@ -36,7 +41,7 @@ class ConfigProvider extends ChangeNotifier {
       await fetchAll();
     } else {
       isAuthenticated = false;
-      errorMessage = 'Inloggning misslyckades';
+      errorMessage = 'Inloggning misslyckades mot ${api.baseUrl}';
     }
 
     isLoading = false;

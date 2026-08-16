@@ -103,10 +103,15 @@ class _MainScreenState extends State<MainScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 24.0),
                     child: Column(
                       children: [
-                        Image.network(
-                          'https://raw.githubusercontent.com/flutter/flutter-intellij/master/resources/icons/flutter.png',
-                          width: 32,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.shield, color: Colors.cyanAccent, size: 36),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.asset(
+                            'assets/logo.png',
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.shield, color: Colors.cyanAccent, size: 36),
+                          ),
                         ),
                         const SizedBox(height: 8),
                         const Text('HARBOR', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
