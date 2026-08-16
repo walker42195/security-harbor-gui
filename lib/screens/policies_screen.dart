@@ -3,6 +3,17 @@ import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 
+const List<Map<String, String>> predefinedServices = [
+  {'label': 'Alla Tjänster (ANY)', 'value': 'ANY'},
+  {'label': 'HTTP (TCP 80)', 'value': 'HTTP'},
+  {'label': 'HTTPS (TCP 443)', 'value': 'HTTPS'},
+  {'label': 'SSH (TCP 22)', 'value': 'SSH'},
+  {'label': 'DNS (UDP 53)', 'value': 'DNS'},
+  {'label': 'RDP (TCP 3389)', 'value': 'RDP'},
+  {'label': 'ICMP (Ping / Traceroute)', 'value': 'ICMP'},
+  {'label': 'Anpassad Port / Tjänst', 'value': 'CUSTOM'},
+];
+
 class PoliciesScreen extends StatelessWidget {
   const PoliciesScreen({super.key});
 
@@ -179,7 +190,17 @@ class PoliciesScreen extends StatelessWidget {
     final nameCtrl = TextEditingController(text: pol.name);
     final srcZoneCtrl = TextEditingController(text: pol.sourceZone);
     final dstZoneCtrl = TextEditingController(text: pol.destZone);
-    final serviceCtrl = TextEditingController(text: pol.service);
+    
+    // Tjänste-hantering
+    String selectedServicePreset = 'ANY';
+    final customServiceCtrl = TextEditingController(text: pol.service);
+    
+    if (['ANY', 'HTTP', 'HTTPS', 'SSH', 'DNS', 'RDP', 'ICMP'].contains(pol.service.toUpperCase())) {
+      selectedServicePreset = pol.service.toUpperCase();
+    } else {
+      selectedServicePreset = 'CUSTOM';
+    }
+
     String selectedAction = pol.action;
 
     // DNAT parametrar
@@ -215,7 +236,32 @@ class PoliciesScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 TextField(controller: srcZoneCtrl, decoration: const InputDecoration(labelText: 'Källzon (Source Zone, t.ex. LAN, WAN, ANY)')),
                 TextField(controller: dstZoneCtrl, decoration: const InputDecoration(labelText: 'Målzon (Dest Zone, t.ex. SERVERS, WAN, ANY)')),
-                TextField(controller: serviceCtrl, decoration: const InputDecoration(labelText: 'Tjänst / Port (t.ex. HTTP, HTTPS, ANY, TCP)')),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedServicePreset,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Tjänst / Protokoll'),
+                  items: predefinedServices
+                      .map((s) => DropdownMenuItem(value: s['value']!, child: Text(s['label']!)))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => selectedServicePreset = val);
+                    }
+                  },
+                ),
+                if (selectedServicePreset == 'CUSTOM')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TextField(
+                      controller: customServiceCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Anpassad Tjänst / Portnummer',
+                        hintText: 't.ex. 8080 eller TCP 8080',
+                      ),
+                    ),
+                  ),
                 if (selectedAction == 'dnat') ...[
                   const Divider(color: Colors.white10, height: 24),
                   const Text('Port Forwarding (DNAT) Parametrar:', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
@@ -242,6 +288,10 @@ class PoliciesScreen extends StatelessWidget {
                   );
                 }
 
+                final finalService = selectedServicePreset == 'CUSTOM'
+                    ? customServiceCtrl.text.toUpperCase()
+                    : selectedServicePreset;
+
                 final updatedPolicies = List<PolicyModel>.from(cfg.policies);
                 updatedPolicies[idx] = PolicyModel(
                   id: pol.id,
@@ -252,7 +302,7 @@ class PoliciesScreen extends StatelessWidget {
                   destZone: dstZoneCtrl.text.toUpperCase(),
                   sourceObj: pol.sourceObj,
                   destObj: pol.destObj,
-                  service: serviceCtrl.text.toUpperCase(),
+                  service: finalService,
                   action: selectedAction,
                   nat: updatedNAT,
                   logging: pol.logging,
@@ -352,55 +402,92 @@ class PoliciesScreen extends StatelessWidget {
     final nameCtrl = TextEditingController(text: 'Tillåt LAN till SERVERS');
     final srcZoneCtrl = TextEditingController(text: 'LAN');
     final dstZoneCtrl = TextEditingController(text: 'SERVERS');
+    String selectedServicePreset = 'ANY';
+    final customServiceCtrl = TextEditingController(text: '8080');
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: const Text('Skapa Brandväggspolicy', style: TextStyle(color: Colors.white)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Policynamn')),
-            TextField(controller: srcZoneCtrl, decoration: const InputDecoration(labelText: 'Källzon (Source Zone)')),
-            TextField(controller: dstZoneCtrl, decoration: const InputDecoration(labelText: 'Målzon (Dest Zone)')),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          title: const Text('Skapa Brandväggspolicy', style: TextStyle(color: Colors.white)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Policynamn')),
+                TextField(controller: srcZoneCtrl, decoration: const InputDecoration(labelText: 'Källzon (Source Zone, t.ex. LAN, WAN, ANY)')),
+                TextField(controller: dstZoneCtrl, decoration: const InputDecoration(labelText: 'Målzon (Dest Zone, t.ex. SERVERS, WAN, ANY)')),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedServicePreset,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(labelText: 'Tjänst / Protokoll'),
+                  items: predefinedServices
+                      .map((s) => DropdownMenuItem(value: s['value']!, child: Text(s['label']!)))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => selectedServicePreset = val);
+                    }
+                  },
+                ),
+                if (selectedServicePreset == 'CUSTOM')
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: TextField(
+                      controller: customServiceCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Anpassad Tjänst / Portnummer',
+                        hintText: 't.ex. 8080 eller TCP 8080',
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
+            ElevatedButton(
+              child: const Text('Spara Policy'),
+              onPressed: () {
+                final cfg = provider.candidateConfig ?? provider.runningConfig;
+                if (cfg != null) {
+                  final finalService = selectedServicePreset == 'CUSTOM'
+                      ? customServiceCtrl.text.toUpperCase()
+                      : selectedServicePreset;
+
+                  final newPol = PolicyModel(
+                    id: 'pol_${DateTime.now().millisecondsSinceEpoch}',
+                    name: nameCtrl.text,
+                    enabled: true,
+                    sourceZone: srcZoneCtrl.text.toUpperCase(),
+                    destZone: dstZoneCtrl.text.toUpperCase(),
+                    sourceObj: 'ANY',
+                    destObj: 'ANY',
+                    service: finalService,
+                    action: 'accept',
+                  );
+                  final updated = List<PolicyModel>.from(cfg.policies)..add(newPol);
+                  provider.updateCandidate(ConfigModel(
+                    version: cfg.version,
+                    revision: cfg.revision,
+                    updatedAt: cfg.updatedAt,
+                    interfaces: cfg.interfaces,
+                    zones: cfg.zones,
+                    objects: cfg.objects,
+                    services: cfg.services,
+                    policies: updated,
+                    settings: cfg.settings,
+                  ));
+                }
+                Navigator.pop(ctx);
+              },
+            ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
-          ElevatedButton(
-            child: const Text('Spara Policy'),
-            onPressed: () {
-              final cfg = provider.candidateConfig ?? provider.runningConfig;
-              if (cfg != null) {
-                final newPol = PolicyModel(
-                  id: 'pol_${DateTime.now().millisecondsSinceEpoch}',
-                  name: nameCtrl.text,
-                  enabled: true,
-                  sourceZone: srcZoneCtrl.text.toUpperCase(),
-                  destZone: dstZoneCtrl.text.toUpperCase(),
-                  sourceObj: 'ANY',
-                  destObj: 'ANY',
-                  service: 'ANY',
-                  action: 'accept',
-                );
-                final updated = List<PolicyModel>.from(cfg.policies)..add(newPol);
-                provider.updateCandidate(ConfigModel(
-                  version: cfg.version,
-                  revision: cfg.revision,
-                  updatedAt: cfg.updatedAt,
-                  interfaces: cfg.interfaces,
-                  zones: cfg.zones,
-                  objects: cfg.objects,
-                  services: cfg.services,
-                  policies: updated,
-                  settings: cfg.settings,
-                ));
-              }
-              Navigator.pop(ctx);
-            },
-          ),
-        ],
       ),
     );
   }
