@@ -8,6 +8,11 @@ class ApiService {
 
   ApiService({this.baseUrl = 'http://10.0.0.163:8443'});
 
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+
   Future<bool> login(String username, String password) async {
     try {
       final res = await http.post(
@@ -27,11 +32,6 @@ class ApiService {
     }
   }
 
-  Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': 'Bearer $token',
-      };
-
   Future<Map<String, dynamic>?> getSystemStatus() async {
     try {
       final res = await http.get(Uri.parse('$baseUrl/api/v1/system'), headers: _headers);
@@ -40,6 +40,44 @@ class ApiService {
       }
     } catch (_) {}
     return null;
+  }
+
+  Future<List<dynamic>> discoverInterfaces() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/api/v1/interfaces/discover'), headers: _headers);
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body);
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  Future<List<ConntrackModel>> getConntrack() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/api/v1/diagnostics/conntrack'), headers: _headers);
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List;
+        return list.map((e) => ConntrackModel.fromJson(e)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  Future<String> ping(String host) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/v1/diagnostics/ping'),
+        headers: _headers,
+        body: jsonEncode({'host': host}),
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return data['output'] ?? '';
+      }
+    } catch (e) {
+      return 'Fel: $e';
+    }
+    return 'Ingen kontakt';
   }
 
   Future<ConfigModel?> getRunningConfig() async {
@@ -75,6 +113,8 @@ class ApiService {
     }
   }
 
+  Future<bool> updateCandidate(ConfigModel config) => setCandidateConfig(config);
+
   Future<bool> applyConfig() async {
     try {
       final res = await http.post(Uri.parse('$baseUrl/api/v1/config/apply'), headers: _headers);
@@ -83,6 +123,8 @@ class ApiService {
       return false;
     }
   }
+
+  Future<bool> applyCandidate() => applyConfig();
 
   Future<bool> confirmConfig() async {
     try {
@@ -93,6 +135,8 @@ class ApiService {
     }
   }
 
+  Future<bool> confirmApply() => confirmConfig();
+
   Future<bool> rollbackConfig() async {
     try {
       final res = await http.post(Uri.parse('$baseUrl/api/v1/config/rollback'), headers: _headers);
@@ -101,4 +145,6 @@ class ApiService {
       return false;
     }
   }
+
+  Future<bool> rollback() => rollbackConfig();
 }

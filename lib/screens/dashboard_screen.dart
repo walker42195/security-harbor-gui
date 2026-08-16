@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  final _pingController = TextEditingController(text: '8.8.8.8');
+  String _diagOutput = '';
+  bool _isLoadingDiag = false;
 
   @override
   Widget build(BuildContext context) {
@@ -19,23 +29,26 @@ class DashboardScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'SECURITY HARBOR FIREWALL',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Systemöversikt & Live Status',
-                    style: TextStyle(color: Colors.grey[400]),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'SECURITY HARBOR FIREWALL',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                          ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Systemöversikt, Conntrack & Diagnostik',
+                      style: TextStyle(color: Colors.grey[400]),
+                    ),
+                  ],
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.refresh, color: Colors.cyanAccent),
@@ -45,38 +58,101 @@ class DashboardScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatusCard(
-                  context,
-                  title: 'Systemstatus',
-                  value: sys != null ? sys['state'].toString().toUpperCase() : 'ANSLUTER...',
-                  icon: Icons.shield,
-                  color: sys != null ? Colors.tealAccent : Colors.amber,
-                ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cardWidth = constraints.maxWidth > 700 ? (constraints.maxWidth - 32) / 3 : constraints.maxWidth;
+              return Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  SizedBox(
+                    width: cardWidth,
+                    child: _buildStatusCard(
+                      context,
+                      title: 'Systemstatus',
+                      value: sys != null ? sys['state'].toString().toUpperCase() : 'ANSLUTER...',
+                      icon: Icons.shield,
+                      color: sys != null ? Colors.tealAccent : Colors.amber,
+                    ),
+                  ),
+                  SizedBox(
+                    width: cardWidth,
+                    child: _buildStatusCard(
+                      context,
+                      title: 'Konfigurations-revision',
+                      value: cfg != null ? 'Rev #${cfg.revision}' : 'N/A',
+                      icon: Icons.history,
+                      color: Colors.cyanAccent,
+                    ),
+                  ),
+                  SizedBox(
+                    width: cardWidth,
+                    child: _buildStatusCard(
+                      context,
+                      title: 'Aktiva Gränssnitt',
+                      value: cfg != null ? '${cfg.interfaces.where((i) => i.enabled).length} Aktiva' : '0',
+                      icon: Icons.router,
+                      color: Colors.lightBlueAccent,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 32),
+          Text(
+            'Diagnostik & Nätverksverktyg',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            color: const Color(0xFF1E293B),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _pingController,
+                          decoration: const InputDecoration(labelText: 'Mål-IP eller domän (t.ex. 8.8.8.8)'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.network_ping),
+                        label: const Text('Kör Ping'),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                        onPressed: () => _runPing(provider),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.alt_route),
+                        label: const Text('Traceroute'),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlueAccent, foregroundColor: Colors.black),
+                        onPressed: () => _runTraceroute(provider),
+                      ),
+                    ],
+                  ),
+                  if (_isLoadingDiag)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: LinearProgressIndicator(color: Colors.cyanAccent),
+                    ),
+                  if (_diagOutput.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(8)),
+                      child: SelectableText(_diagOutput, style: const TextStyle(fontFamily: 'monospace', color: Colors.greenAccent)),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStatusCard(
-                  context,
-                  title: 'Konfigurations-revision',
-                  value: cfg != null ? 'Rev #${cfg.revision}' : 'N/A',
-                  icon: Icons.history,
-                  color: Colors.cyanAccent,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildStatusCard(
-                  context,
-                  title: 'Aktiva Gränssnitt',
-                  value: cfg != null ? '${cfg.interfaces.where((i) => i.enabled).length} Aktiva' : '0',
-                  icon: Icons.router,
-                  color: Colors.lightBlueAccent,
-                ),
-              ),
-            ],
+            ),
           ),
           const SizedBox(height: 32),
           Text(
@@ -96,7 +172,7 @@ class DashboardScreen extends StatelessWidget {
                   final iface = cfg.interfaces[idx];
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: iface.zone == 'WAN' ? Colors.redAccent.withOpacity(0.2) : Colors.tealAccent.withOpacity(0.2),
+                      backgroundColor: iface.zone == 'WAN' ? Colors.redAccent.withValues(alpha: 0.2) : Colors.tealAccent.withValues(alpha: 0.2),
                       child: Icon(
                         iface.zone == 'WAN' ? Icons.public : Icons.lan,
                         color: iface.zone == 'WAN' ? Colors.redAccent : Colors.tealAccent,
@@ -106,7 +182,7 @@ class DashboardScreen extends StatelessWidget {
                     subtitle: Text('Zon: ${iface.zone}  |  IP: ${iface.ipv4}  |  Typ: ${iface.addressType}'),
                     trailing: Chip(
                       label: Text(iface.enabled ? 'AKTIV' : 'AVSTÄNGD'),
-                      backgroundColor: iface.enabled ? Colors.tealAccent.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
+                      backgroundColor: iface.enabled ? Colors.tealAccent.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
                       labelStyle: TextStyle(color: iface.enabled ? Colors.tealAccent : Colors.grey),
                     ),
                   );
@@ -116,6 +192,30 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _runPing(ConfigProvider provider) async {
+    setState(() {
+      _isLoadingDiag = true;
+      _diagOutput = 'Kör ping mot ${_pingController.text}...';
+    });
+    final res = await provider.api.ping(_pingController.text);
+    setState(() {
+      _isLoadingDiag = false;
+      _diagOutput = res;
+    });
+  }
+
+  void _runTraceroute(ConfigProvider provider) async {
+    setState(() {
+      _isLoadingDiag = true;
+      _diagOutput = 'Kör traceroute mot ${_pingController.text}...';
+    });
+    final res = await provider.api.ping(_pingController.text);
+    setState(() {
+      _isLoadingDiag = false;
+      _diagOutput = res;
+    });
   }
 
   Widget _buildStatusCard(
@@ -135,19 +235,21 @@ class DashboardScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: color, size: 28),
             ),
             const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-                const SizedBox(height: 4),
-                Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(color: Colors.grey[400], fontSize: 12), overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 4),
+                  Text(value, style: TextStyle(color: color, fontSize: 18, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+                ],
+              ),
             ),
           ],
         ),
