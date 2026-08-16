@@ -353,11 +353,41 @@ class BandwidthGraphPainter extends CustomPainter {
       if (v > maxVal) maxVal = v;
     }
 
+    const double yAxisWidth = 58.0;
+    final graphWidth = size.width - yAxisWidth;
+    final graphHeight = size.height - 14.0;
+
+    // Gridlinjer och Skala (100%, 50%, 0%)
+    final gridPaint = Paint()
+      ..color = const Color(0xFF334155)
+      ..strokeWidth = 0.8
+      ..style = PaintingStyle.stroke;
+
+    final double topY = 6.0;
+    final double midY = topY + (graphHeight / 2.0);
+    final double botY = topY + graphHeight;
+
+    // Rita 3 horisontella skalgaller-linjer
+    canvas.drawLine(Offset(yAxisWidth, topY), Offset(size.width, topY), gridPaint);
+    canvas.drawLine(Offset(yAxisWidth, midY), Offset(size.width, midY), gridPaint);
+    canvas.drawLine(Offset(yAxisWidth, botY), Offset(size.width, botY), gridPaint);
+
+    // Rita Y-axelns skala med enhet (KB/s, MB/s, GB/s)
+    _drawYText(canvas, _formatScaleVal(maxVal), topY);
+    _drawYText(canvas, _formatScaleVal(maxVal / 2.0), midY);
+    _drawYText(canvas, '0 KB/s', botY);
+
+    if (graphWidth <= 0) return;
+
     final rxPaint = Paint()
       ..color = Colors.tealAccent
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
       ..isAntiAlias = true;
+
+    final rxFillPaint = Paint()
+      ..color = Colors.tealAccent.withValues(alpha: 0.12)
+      ..style = PaintingStyle.fill;
 
     final txPaint = Paint()
       ..color = Colors.amberAccent
@@ -365,26 +395,35 @@ class BandwidthGraphPainter extends CustomPainter {
       ..strokeWidth = 1.8
       ..isAntiAlias = true;
 
-    final stepX = size.width / (rxData.length - 1);
+    final stepX = graphWidth / (rxData.length - 1);
 
-    // Rita RX Kurva
+    // Rita RX Kurva & Area Fill
     final rxPath = Path();
+    final rxFillPath = Path();
+    rxFillPath.moveTo(yAxisWidth, botY);
+
     for (int i = 0; i < rxData.length; i++) {
-      final x = i * stepX;
-      final y = size.height - ((rxData[i] / maxVal) * (size.height - 4)) - 2;
+      final x = yAxisWidth + (i * stepX);
+      final y = botY - ((rxData[i] / maxVal) * graphHeight);
       if (i == 0) {
         rxPath.moveTo(x, y);
+        rxFillPath.lineTo(x, y);
       } else {
         rxPath.lineTo(x, y);
+        rxFillPath.lineTo(x, y);
       }
     }
+    rxFillPath.lineTo(yAxisWidth + graphWidth, botY);
+    rxFillPath.close();
+
+    canvas.drawPath(rxFillPath, rxFillPaint);
     canvas.drawPath(rxPath, rxPaint);
 
     // Rita TX Kurva
     final txPath = Path();
     for (int i = 0; i < txData.length; i++) {
-      final x = i * stepX;
-      final y = size.height - ((txData[i] / maxVal) * (size.height - 4)) - 2;
+      final x = yAxisWidth + (i * stepX);
+      final y = botY - ((txData[i] / maxVal) * graphHeight);
       if (i == 0) {
         txPath.moveTo(x, y);
       } else {
@@ -392,6 +431,27 @@ class BandwidthGraphPainter extends CustomPainter {
       }
     }
     canvas.drawPath(txPath, txPaint);
+  }
+
+  void _drawYText(Canvas canvas, String text, double yPos) {
+    final tp = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 8, fontWeight: FontWeight.bold),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    tp.layout();
+    tp.paint(canvas, Offset(2, yPos - (tp.height / 2.0)));
+  }
+
+  String _formatScaleVal(double kbps) {
+    if (kbps >= 1024 * 1024) {
+      return '${(kbps / (1024.0 * 1024.0)).toStringAsFixed(1)} GB/s';
+    } else if (kbps >= 1024) {
+      return '${(kbps / 1024.0).toStringAsFixed(1)} MB/s';
+    }
+    return '${kbps.toStringAsFixed(0)} KB/s';
   }
 
   @override
