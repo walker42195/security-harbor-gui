@@ -20,7 +20,7 @@ class PoliciesScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Brandväggs- & NAT-regler',
+                'Brandväggspolicyer & NAT-regler',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
               ),
               Row(
@@ -28,13 +28,13 @@ class PoliciesScreen extends StatelessWidget {
                   ElevatedButton.icon(
                     icon: const Icon(Icons.input),
                     label: const Text('+ Port Forwarding (DNAT)'),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlueAccent, foregroundColor: Colors.black),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF334155), foregroundColor: Colors.white),
                     onPressed: () => _showAddDNATDialog(context, provider),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add),
-                    label: const Text('+ Skapa Policy'),
+                    label: const Text('+ Ny Regel'),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
                     onPressed: () => _showAddPolicyDialog(context, provider),
                   ),
@@ -48,7 +48,12 @@ class PoliciesScreen extends StatelessWidget {
               color: Color(0xFF1E293B),
               child: Padding(
                 padding: EdgeInsets.all(32.0),
-                child: Center(child: Text('Inga sparade policies ännu. Standardregel: Nekar all inter-VLAN trafik (Default Deny).', style: TextStyle(color: Colors.grey))),
+                child: Center(
+                  child: Text(
+                    'Inga brandväggsregler konfigurerade ännu. Default Deny gäller mellan zoner.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
               ),
             )
           else if (cfg != null)
@@ -58,8 +63,8 @@ class PoliciesScreen extends StatelessWidget {
               itemCount: cfg.policies.length,
               itemBuilder: (context, idx) {
                 final pol = cfg.policies[idx];
-                final isAllow = pol.action == 'accept';
                 final isDNAT = pol.action == 'dnat';
+                final isAllow = pol.action == 'accept';
 
                 return Card(
                   color: const Color(0xFF1E293B),
@@ -67,10 +72,10 @@ class PoliciesScreen extends StatelessWidget {
                   child: ListTile(
                     leading: CircleAvatar(
                       backgroundColor: isDNAT
-                          ? Colors.lightBlueAccent.withOpacity(0.2)
+                          ? Colors.lightBlueAccent.withValues(alpha: 0.2)
                           : isAllow
-                              ? Colors.tealAccent.withOpacity(0.2)
-                              : Colors.redAccent.withOpacity(0.2),
+                              ? Colors.tealAccent.withValues(alpha: 0.2)
+                              : Colors.redAccent.withValues(alpha: 0.2),
                       child: Icon(
                         isDNAT
                             ? Icons.input
@@ -91,12 +96,27 @@ class PoliciesScreen extends StatelessWidget {
                     subtitle: Text(isDNAT && pol.nat != null
                         ? 'DNAT: WAN Port ${pol.nat!.externalPort}  ➔  ${pol.nat!.internalIp}:${pol.nat!.internalPort} (${pol.nat!.protocol.toUpperCase()})'
                         : 'Från: ${pol.sourceZone}  ➔  Till: ${pol.destZone}  |  Tjänst: ${pol.service}  |  Åtgärd: ${pol.action.toUpperCase()}'),
-                    trailing: Switch(
-                      value: pol.enabled,
-                      activeThumbColor: Colors.tealAccent,
-                      onChanged: (val) {
-                        _togglePolicy(provider, cfg, idx, val);
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.cyanAccent, size: 20),
+                          tooltip: 'Redigera Policy',
+                          onPressed: () => _showEditPolicyDialog(context, provider, cfg, idx),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                          tooltip: 'Ta bort Policy',
+                          onPressed: () => _deletePolicy(provider, cfg, idx),
+                        ),
+                        Switch(
+                          value: pol.enabled,
+                          activeThumbColor: Colors.tealAccent,
+                          onChanged: (val) {
+                            _togglePolicy(provider, cfg, idx, val);
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 );
@@ -105,6 +125,21 @@ class PoliciesScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _deletePolicy(ConfigProvider provider, ConfigModel cfg, int idx) {
+    final updatedPolicies = List<PolicyModel>.from(cfg.policies)..removeAt(idx);
+    provider.updateCandidate(ConfigModel(
+      version: cfg.version,
+      revision: cfg.revision,
+      updatedAt: cfg.updatedAt,
+      interfaces: cfg.interfaces,
+      zones: cfg.zones,
+      objects: cfg.objects,
+      services: cfg.services,
+      policies: updatedPolicies,
+      settings: cfg.settings,
+    ));
   }
 
   void _togglePolicy(ConfigProvider provider, ConfigModel cfg, int idx, bool enabled) {
@@ -136,6 +171,112 @@ class PoliciesScreen extends StatelessWidget {
       policies: updatedPolicies,
       settings: cfg.settings,
     ));
+  }
+
+  void _showEditPolicyDialog(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx) {
+    final pol = cfg.policies[idx];
+
+    final nameCtrl = TextEditingController(text: pol.name);
+    final srcZoneCtrl = TextEditingController(text: pol.sourceZone);
+    final dstZoneCtrl = TextEditingController(text: pol.destZone);
+    final serviceCtrl = TextEditingController(text: pol.service);
+    String selectedAction = pol.action;
+
+    // DNAT parametrar
+    final extPortCtrl = TextEditingController(text: pol.nat?.externalPort.toString() ?? '443');
+    final intIpCtrl = TextEditingController(text: pol.nat?.internalIp ?? '192.168.10.10');
+    final intPortCtrl = TextEditingController(text: pol.nat?.internalPort.toString() ?? '443');
+    final protoCtrl = TextEditingController(text: pol.nat?.protocol ?? 'tcp');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          title: Text('Redigera Policy: ${pol.name}', style: const TextStyle(color: Colors.white)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Policynamn')),
+                const SizedBox(height: 12),
+                const Text('Åtgärd (Action):', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                const SizedBox(height: 6),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'accept', label: Text('Tillåt'), icon: Icon(Icons.check_circle, color: Colors.tealAccent)),
+                    ButtonSegment(value: 'drop', label: Text('Neka'), icon: Icon(Icons.block, color: Colors.redAccent)),
+                    ButtonSegment(value: 'dnat', label: Text('DNAT'), icon: Icon(Icons.input, color: Colors.lightBlueAccent)),
+                  ],
+                  selected: {selectedAction},
+                  onSelectionChanged: (val) => setState(() => selectedAction = val.first),
+                ),
+                const SizedBox(height: 12),
+                TextField(controller: srcZoneCtrl, decoration: const InputDecoration(labelText: 'Källzon (Source Zone, t.ex. LAN, WAN, ANY)')),
+                TextField(controller: dstZoneCtrl, decoration: const InputDecoration(labelText: 'Målzon (Dest Zone, t.ex. SERVERS, WAN, ANY)')),
+                TextField(controller: serviceCtrl, decoration: const InputDecoration(labelText: 'Tjänst / Port (t.ex. HTTP, HTTPS, ANY, TCP)')),
+                if (selectedAction == 'dnat') ...[
+                  const Divider(color: Colors.white10, height: 24),
+                  const Text('Port Forwarding (DNAT) Parametrar:', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
+                  TextField(controller: extPortCtrl, decoration: const InputDecoration(labelText: 'Extern Port på WAN (t.ex. 443)')),
+                  TextField(controller: intIpCtrl, decoration: const InputDecoration(labelText: 'Intern Mål-IP (t.ex. 192.168.10.10)')),
+                  TextField(controller: intPortCtrl, decoration: const InputDecoration(labelText: 'Intern Målport (t.ex. 443)')),
+                  TextField(controller: protoCtrl, decoration: const InputDecoration(labelText: 'Protokoll (tcp/udp)')),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
+            ElevatedButton(
+              child: const Text('Spara Ändringar'),
+              onPressed: () {
+                NATConfigModel? updatedNAT;
+                if (selectedAction == 'dnat') {
+                  updatedNAT = NATConfigModel(
+                    externalPort: int.tryParse(extPortCtrl.text) ?? 443,
+                    internalIp: intIpCtrl.text,
+                    internalPort: int.tryParse(intPortCtrl.text) ?? 443,
+                    protocol: protoCtrl.text,
+                  );
+                }
+
+                final updatedPolicies = List<PolicyModel>.from(cfg.policies);
+                updatedPolicies[idx] = PolicyModel(
+                  id: pol.id,
+                  name: nameCtrl.text,
+                  enabled: pol.enabled,
+                  priority: pol.priority,
+                  sourceZone: srcZoneCtrl.text.toUpperCase(),
+                  destZone: dstZoneCtrl.text.toUpperCase(),
+                  sourceObj: pol.sourceObj,
+                  destObj: pol.destObj,
+                  service: serviceCtrl.text.toUpperCase(),
+                  action: selectedAction,
+                  nat: updatedNAT,
+                  logging: pol.logging,
+                  description: pol.description,
+                );
+
+                provider.updateCandidate(ConfigModel(
+                  version: cfg.version,
+                  revision: cfg.revision,
+                  updatedAt: cfg.updatedAt,
+                  interfaces: cfg.interfaces,
+                  zones: cfg.zones,
+                  objects: cfg.objects,
+                  services: cfg.services,
+                  policies: updatedPolicies,
+                  settings: cfg.settings,
+                ));
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showAddDNATDialog(BuildContext context, ConfigProvider provider) {
@@ -236,8 +377,8 @@ class PoliciesScreen extends StatelessWidget {
                   id: 'pol_${DateTime.now().millisecondsSinceEpoch}',
                   name: nameCtrl.text,
                   enabled: true,
-                  sourceZone: srcZoneCtrl.text,
-                  destZone: dstZoneCtrl.text,
+                  sourceZone: srcZoneCtrl.text.toUpperCase(),
+                  destZone: dstZoneCtrl.text.toUpperCase(),
                   sourceObj: 'ANY',
                   destObj: 'ANY',
                   service: 'ANY',

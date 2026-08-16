@@ -53,6 +53,8 @@ static void my_application_activate(GApplication* application) {
   }
 
   gtk_window_set_default_size(window, 1280, 720);
+  gtk_window_set_icon_name(GTK_WINDOW(window), "security-harbor-gui");
+  gtk_window_set_icon_from_file(GTK_WINDOW(window), "data/flutter_assets/assets/logo.png", NULL);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
