@@ -33,7 +33,30 @@ class _MainScreenState extends State<MainScreen> {
       backgroundColor: const Color(0xFF0F172A),
       body: Column(
         children: [
-          // Safe Apply Status Bar (Syns om konfigurationen har obekräftade ändringar)
+          // Loading & Status Banner
+          if (provider.isLoading && provider.statusMessage != null)
+            Container(
+              color: Colors.cyan[900],
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      provider.statusMessage!,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Safe Apply Status Bar (Syns när konfigurationen är applicerad i unconfirmed-läge)
           if (provider.applyStatus == ApplyStatus.unconfirmed)
             Container(
               color: Colors.amber[900],
@@ -44,27 +67,50 @@ class _MainScreenState extends State<MainScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'ÄNDRINGAR APPLICERADE (SAFE APPLY): Automatisk rollback sker om ${provider.rollbackSecondsRemaining} sekunder om du inte bekräftar!',
+                      'ÄNDRINGAR APPLICERADE PÅ BRANDVÄGGEN (SAFE APPLY): Automatisk rollback sker om ${provider.rollbackSecondsRemaining} sekunder om du inte bekräftar!',
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
-                  ElevatedButton(
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.check_circle, size: 18),
+                    label: const Text('BEKRÄFTA (COMMIT)'),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
-                    onPressed: () => provider.confirmChanges(),
-                    child: const Text('BEKRÄFTA (COMMIT)'),
+                    onPressed: () async {
+                      final ok = await provider.confirmChanges();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(ok ? 'Konfiguration bekräftad och committad till running.json!' : 'Misslyckades bekräfta'),
+                            backgroundColor: ok ? Colors.green : Colors.red,
+                          ),
+                        );
+                      }
+                    },
                   ),
                   const SizedBox(width: 8),
-                  OutlinedButton(
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.undo, size: 18),
+                    label: const Text('RULLA TILLBAKA'),
                     style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white)),
-                    onPressed: () => provider.rollbackChanges(),
-                    child: const Text('RULLA TILLBAKA'),
+                    onPressed: () async {
+                      await provider.rollbackChanges();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Konfigurationen återställd till senast säkra tillstånd.'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ],
               ),
             )
-          else if (provider.candidateConfig != null &&
-              provider.runningConfig != null &&
-              provider.candidateConfig!.revision > provider.runningConfig!.revision)
+          else if (provider.hasUnappliedChanges ||
+              (provider.candidateConfig != null &&
+                  provider.runningConfig != null &&
+                  provider.candidateConfig!.revision > provider.runningConfig!.revision))
             Container(
               color: Colors.blueGrey[900],
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -74,14 +120,27 @@ class _MainScreenState extends State<MainScreen> {
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
-                      'Du har kandidat-ändringar redo att testas.',
-                      style: TextStyle(color: Colors.white),
+                      'Du har obekräftade ändringar redo att testas på brandväggen.',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
                     ),
                   ),
-                  ElevatedButton(
+                  ElevatedButton.icon(
+                    icon: const Icon(Icons.play_arrow, size: 18),
+                    label: const Text('APPLICERA (SAFE APPLY)'),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
-                    onPressed: () => provider.applyChanges(),
-                    child: const Text('APPLICERA (SAFE APPLY)'),
+                    onPressed: () async {
+                      final ok = await provider.applyChanges();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(ok
+                                ? 'Ändringar applicerade på brandväggen! Bekräfta (Commit) inom 30s för att behålla dem.'
+                                : 'Misslyckades applicera konfiguration på brandväggen'),
+                            backgroundColor: ok ? Colors.teal : Colors.red,
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ],
               ),
