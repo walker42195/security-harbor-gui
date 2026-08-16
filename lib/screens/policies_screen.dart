@@ -218,14 +218,18 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   }
 
   String _getPortForService(String service) {
-    final s = service.toUpperCase();
+    final s = service.toUpperCase().trim();
     if (s == 'HTTP') return 'tcp:80';
     if (s == 'HTTPS') return 'tcp:443';
     if (s == 'SSH') return 'tcp:22';
     if (s == 'DNS') return 'udp:53';
     if (s == 'RDP') return 'tcp:3389';
     if (s == 'ICMP') return 'icmp';
-    return s == 'ANY' ? 'any' : s;
+    if (s == 'ANY') return 'any';
+    if (!s.contains('tcp:') && !s.contains('udp:') && !s.contains('icmp')) {
+      return 'tcp:$s';
+    }
+    return s;
   }
 
   void _deletePolicy(ConfigProvider provider, ConfigModel cfg, int idx) {
@@ -281,7 +285,12 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     final nameCtrl = TextEditingController(text: pol?.name ?? 'Ny Brandväggsregel');
     bool enabled = pol?.enabled ?? true;
     String action = pol?.action ?? 'accept';
-    String service = pol?.service ?? 'ANY';
+    
+    // Tjänst & Port
+    final existingService = pol?.service ?? 'ANY';
+    final isPreset = ['ANY', 'HTTP', 'HTTPS', 'SSH', 'DNS', 'RDP', 'ICMP'].contains(existingService);
+    String selectedServicePreset = isPreset ? existingService : 'CUSTOM';
+    final customPortCtrl = TextEditingController(text: isPreset ? '' : existingService);
 
     List<String> fromMembers = pol != null ? pol.sourceZone.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : ['LAN'];
     List<String> toMembers = pol != null ? pol.destZone.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : ['SERVERS'];
@@ -360,7 +369,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 Row(
                   children: [
                     _buildTabButton('Policy', 0, selectedTab, (idx) => setState(() => selectedTab = idx)),
-                    _buildTabButton('Properties', 1, selectedTab, (idx) => setState(() => selectedTab = idx)),
+                    _buildTabButton('Properties / Portar', 1, selectedTab, (idx) => setState(() => selectedTab = idx)),
                     _buildTabButton('Advanced', 2, selectedTab, (idx) => setState(() => selectedTab = idx)),
                   ],
                 ),
@@ -447,23 +456,59 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     ),
                   ],
                 ] else if (selectedTab == 1) ...[
-                  const Text('Policy Tjänst / Protokoll:', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  const Text('Förinställd Tjänst / Protokoll:', style: TextStyle(color: Colors.white, fontSize: 12)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    initialValue: ['ANY', 'HTTP', 'HTTPS', 'SSH', 'DNS', 'RDP', 'ICMP'].contains(service) ? service : 'ANY',
+                    initialValue: selectedServicePreset,
                     dropdownColor: const Color(0xFF1E293B),
                     style: const TextStyle(color: Colors.white, fontSize: 12),
                     decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), border: OutlineInputBorder()),
                     items: const [
-                      DropdownMenuItem(value: 'ANY', child: Text('ANY (Alla tjänster)')),
+                      DropdownMenuItem(value: 'ANY', child: Text('ANY (Alla tjänster & portar)')),
                       DropdownMenuItem(value: 'HTTP', child: Text('HTTP (TCP 80)')),
                       DropdownMenuItem(value: 'HTTPS', child: Text('HTTPS (TCP 443)')),
                       DropdownMenuItem(value: 'SSH', child: Text('SSH (TCP 22)')),
                       DropdownMenuItem(value: 'DNS', child: Text('DNS (UDP 53)')),
                       DropdownMenuItem(value: 'RDP', child: Text('RDP (TCP 3389)')),
                       DropdownMenuItem(value: 'ICMP', child: Text('ICMP (Ping)')),
+                      DropdownMenuItem(value: 'CUSTOM', child: Text('+ Anpassad Port / Protokoll (Skriv själv t.ex. 7201)', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold))),
                     ],
-                    onChanged: (v) => setState(() => service = v ?? 'ANY'),
+                    onChanged: (v) {
+                      if (v != null) {
+                        setState(() {
+                          selectedServicePreset = v;
+                          if (v != 'CUSTOM') {
+                            customPortCtrl.clear();
+                          }
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Anpassat Portnummer eller Protokoll (skriv in valfri port, t.ex. 7201):', style: TextStyle(color: Colors.cyanAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    height: 36,
+                    child: TextField(
+                      controller: customPortCtrl,
+                      style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                      decoration: const InputDecoration(
+                        hintText: 't.ex. 7201 eller tcp:7201 eller udp:5000 eller 7000-8000',
+                        hintStyle: TextStyle(color: Colors.grey, fontSize: 11),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (val) {
+                        if (val.trim().isNotEmpty && selectedServicePreset != 'CUSTOM') {
+                          setState(() => selectedServicePreset = 'CUSTOM');
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Exempel: skriv "7201" för TCP port 7201, "udp:5000" för UDP port 5000, eller "icmp" för Ping.',
+                    style: TextStyle(color: Colors.grey, fontSize: 10),
                   ),
                 ] else ...[
                   const Text('Avancerade brandväggsinställningar (Logging, TCP Sync timeout, PBR)', style: TextStyle(color: Colors.grey, fontSize: 11)),
@@ -489,6 +534,14 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             );
                           }
 
+                          // Beräkna slutgiltig service
+                          String finalService = 'ANY';
+                          if (customPortCtrl.text.trim().isNotEmpty) {
+                            finalService = customPortCtrl.text.trim();
+                          } else if (selectedServicePreset != 'CUSTOM') {
+                            finalService = selectedServicePreset;
+                          }
+
                           final updatedPolicies = List<PolicyModel>.from(cfg.policies);
                           final newPol = PolicyModel(
                             id: isEditing ? pol!.id : 'pol_${DateTime.now().millisecondsSinceEpoch}',
@@ -499,7 +552,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             destZone: toMembers.join(', '),
                             sourceObj: 'ANY',
                             destObj: 'ANY',
-                            service: service,
+                            service: finalService,
                             action: action,
                             nat: updatedNAT,
                           );
