@@ -32,6 +32,22 @@ static void my_application_activate(GApplication* application) {
   // in case the window manager does more exotic layout, e.g. tiling.
   // If running on Wayland assume the header bar will work (may need changing
   // if future cases occur).
+  // Aktivera mörkt GTK-tema för hela fönstret
+  g_object_set(gtk_settings_get_default(), "gtk-application-prefer-dark-theme", TRUE, NULL);
+
+  // Applicera anpassad GTK CSS för mörk Slate-färg på fönsterlisten (HeaderBar)
+  GtkCssProvider* css_provider = gtk_css_provider_new();
+  gtk_css_provider_load_from_data(css_provider,
+    "headerbar, .titlebar { background-color: #1E293B !important; background-image: none !important; color: #FFFFFF !important; border-bottom: 1px solid #334155 !important; box-shadow: none !important; }\n"
+    "headerbar label.title, .titlebar label.title { color: #FFFFFF !important; font-weight: bold !important; font-size: 12px !important; }\n"
+    "headerbar button, .titlebar button { color: #FFFFFF !important; background: transparent !important; border: none !important; }\n"
+    "headerbar button:hover, .titlebar button:hover { background-color: #334155 !important; }\n",
+    -1, NULL);
+  gtk_style_context_add_provider_for_screen(
+    gdk_screen_get_default(),
+    GTK_STYLE_PROVIDER(css_provider),
+    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
   gboolean use_header_bar = TRUE;
 #ifdef GDK_WINDOWING_X11
   GdkScreen* screen = gtk_window_get_screen(window);
