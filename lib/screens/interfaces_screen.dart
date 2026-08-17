@@ -332,6 +332,7 @@ class InterfacesScreen extends StatelessWidget {
                   services: cfg.services,
                   policies: cfg.policies,
                   settings: cfg.settings,
+                  wireguard: cfg.wireguard,
                 ));
                 Navigator.pop(ctx);
               },
@@ -369,6 +370,7 @@ class InterfacesScreen extends StatelessWidget {
       services: cfg.services,
       policies: cfg.policies,
       settings: cfg.settings,
+      wireguard: cfg.wireguard,
     ));
   }
 
@@ -495,6 +497,7 @@ class InterfacesScreen extends StatelessWidget {
                     services: cfg.services,
                     policies: cfg.policies,
                     settings: cfg.settings,
+                    wireguard: cfg.wireguard,
                   ));
                 }
                 Navigator.pop(ctx);
@@ -599,6 +602,7 @@ class InterfacesScreen extends StatelessWidget {
                 services: cfg.services,
                 policies: cfg.policies,
                 settings: cfg.settings,
+                wireguard: cfg.wireguard,
               ));
               Navigator.pop(ctx);
                     },

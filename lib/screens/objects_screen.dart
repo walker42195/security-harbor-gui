@@ -12,54 +12,61 @@ class ObjectsScreen extends StatelessWidget {
     final provider = Provider.of<ConfigProvider>(context);
     final cfg = provider.candidateConfig ?? provider.runningConfig;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Objekt & Grupper',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.dns),
-                label: const Text('+ Skapa Objekt'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
-                onPressed: () => _showAddObjectDialog(context, provider),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          if (cfg != null && cfg.objects.isEmpty)
-            const Card(
-              color: Color(0xFF1E293B),
-              child: Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Center(child: Text('Inga sparade nätverksobjekt ännu.', style: TextStyle(color: Colors.grey))),
-              ),
-            )
-          else if (cfg != null)
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: cfg.objects.length,
-              itemBuilder: (context, idx) {
-                final obj = cfg.objects[idx];
-                return Card(
-                  color: const Color(0xFF1E293B),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: ListTile(
-                    leading: const Icon(Icons.category, color: Colors.cyanAccent),
-                    title: Text(obj.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    subtitle: Text('Typ: ${obj.type.toUpperCase()}  |  Värden: ${obj.values.join(", ")}'),
-                  ),
-                );
-              },
+    return Container(
+      color: const Color(0xFF0F172A),
+      alignment: Alignment.topLeft,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.category, color: Colors.cyanAccent, size: 22),
+                    SizedBox(width: 10),
+                    Text('Objekt & Grupper', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.dns, size: 14),
+                  label: const Text('+ Skapa Objekt', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                  onPressed: () => _showAddObjectDialog(context, provider),
+                ),
+              ],
             ),
-        ],
+            const SizedBox(height: 14),
+            if (cfg != null && cfg.objects.isEmpty)
+              const Card(
+                color: Color(0xFF1E293B),
+                child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(child: Text('Inga sparade nätverksobjekt ännu.', style: TextStyle(color: Colors.grey, fontSize: 12))),
+                ),
+              )
+            else if (cfg != null)
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: cfg.objects.length,
+                itemBuilder: (context, idx) {
+                  final obj = cfg.objects[idx];
+                  return Card(
+                    color: const Color(0xFF1E293B),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: const Icon(Icons.category, color: Colors.cyanAccent),
+                      title: Text(obj.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                      subtitle: Text('Typ: ${obj.type.toUpperCase()}  |  Värden: ${obj.values.join(", ")}', style: const TextStyle(fontSize: 11)),
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -118,6 +125,7 @@ class ObjectsScreen extends StatelessWidget {
                   services: cfg.services,
                   policies: cfg.policies,
                   settings: cfg.settings,
+                  wireguard: cfg.wireguard,
                 ));
               }
               Navigator.pop(ctx);

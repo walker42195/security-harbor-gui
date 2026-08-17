@@ -282,6 +282,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       services: cfg.services,
       policies: updatedPolicies,
       settings: cfg.settings,
+      wireguard: cfg.wireguard,
     ));
   }
 
@@ -319,6 +320,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       services: cfg.services,
       policies: updatedPolicies,
       settings: cfg.settings,
+      wireguard: cfg.wireguard,
     ));
   }
 
@@ -626,6 +628,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             services: cfg.services,
                             policies: updatedPolicies,
                             settings: cfg.settings,
+                            wireguard: cfg.wireguard,
                           ));
                         }
                         Navigator.pop(ctx);
@@ -938,6 +941,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           services: cfg.services,
                           policies: updated,
                           settings: cfg.settings,
+                          wireguard: cfg.wireguard,
                         ));
                       }
                       Navigator.pop(ctx);

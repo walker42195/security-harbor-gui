@@ -37,16 +37,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final provider = Provider.of<ConfigProvider>(context);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
+    return Container(
+      color: const Color(0xFF0F172A),
+      alignment: Alignment.topLeft,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Systeminställningar & Management',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+          const Row(
+            children: [
+              Icon(Icons.settings, color: Colors.cyanAccent, size: 22),
+              SizedBox(width: 10),
+              Text('Systeminställningar & Management', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+            ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 14),
 
           // Inloggning & Serveranslutningskort
           Card(
@@ -196,6 +202,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
