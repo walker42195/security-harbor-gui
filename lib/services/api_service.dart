@@ -75,6 +75,17 @@ class ApiService {
     return [];
   }
 
+  Future<List<FirewallLogModel>> getFirewallLog() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/api/v1/diagnostics/firewall-log'), headers: _headers);
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List;
+        return list.map((e) => FirewallLogModel.fromJson(e)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
   Future<String> ping(String host) async {
     try {
       final res = await http.post(

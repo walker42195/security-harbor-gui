@@ -349,6 +349,7 @@ class ConntrackModel {
   final String dstIp;
   final int dstPort;
   final String state;
+  final String srcMac;
 
   ConntrackModel({
     required this.protocol,
@@ -357,6 +358,7 @@ class ConntrackModel {
     required this.dstIp,
     required this.dstPort,
     required this.state,
+    this.srcMac = '',
   });
 
   factory ConntrackModel.fromJson(Map<String, dynamic> json) {
@@ -367,6 +369,50 @@ class ConntrackModel {
       dstIp: json['dst_ip'] ?? '',
       dstPort: json['dst_port'] ?? 0,
       state: json['state'] ?? '',
+      srcMac: json['src_mac'] ?? '',
+    );
+  }
+}
+
+/// Representerar en nekad/blockerad paket-händelse ur brandväggens
+/// deny-logg (nftables "log"-regler, se SH-DENY-*-prefixen i agenten).
+class FirewallLogModel {
+  final String timestamp;
+  final String chain; // "INPUT" eller "FWD"
+  final String inIface;
+  final String outIface;
+  final String srcMac;
+  final String srcIp;
+  final String dstIp;
+  final String protocol;
+  final int srcPort;
+  final int dstPort;
+
+  FirewallLogModel({
+    required this.timestamp,
+    required this.chain,
+    required this.inIface,
+    required this.outIface,
+    required this.srcMac,
+    required this.srcIp,
+    required this.dstIp,
+    required this.protocol,
+    required this.srcPort,
+    required this.dstPort,
+  });
+
+  factory FirewallLogModel.fromJson(Map<String, dynamic> json) {
+    return FirewallLogModel(
+      timestamp: json['timestamp'] ?? '',
+      chain: json['chain'] ?? '',
+      inIface: json['in_iface'] ?? '',
+      outIface: json['out_iface'] ?? '',
+      srcMac: json['src_mac'] ?? '',
+      srcIp: json['src_ip'] ?? '',
+      dstIp: json['dst_ip'] ?? '',
+      protocol: json['protocol'] ?? '',
+      srcPort: json['src_port'] ?? 0,
+      dstPort: json['dst_port'] ?? 0,
     );
   }
 }

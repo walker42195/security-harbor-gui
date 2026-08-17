@@ -6,6 +6,7 @@ import 'interfaces_screen.dart';
 import 'policies_screen.dart';
 import 'objects_screen.dart';
 import 'settings_screen.dart';
+import 'connections_screen.dart';
 
 import 'tools_screen.dart';
 
@@ -24,6 +25,7 @@ class _MainScreenState extends State<MainScreen> {
     InterfacesScreen(),
     PoliciesScreen(),
     ObjectsScreen(),
+    ConnectionsScreen(),
     ToolsScreen(),
     SettingsScreen(),
   ];
@@ -258,6 +260,7 @@ class _MainScreenState extends State<MainScreen> {
                     NavigationRailDestination(icon: Icon(Icons.router_outlined), selectedIcon: Icon(Icons.router), label: Text('Interfaces')),
                     NavigationRailDestination(icon: Icon(Icons.shield_outlined), selectedIcon: Icon(Icons.shield), label: Text('Policies')),
                     NavigationRailDestination(icon: Icon(Icons.category_outlined), selectedIcon: Icon(Icons.category), label: Text('Objekt')),
+                    NavigationRailDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: Text('Loggning')),
                     NavigationRailDestination(icon: Icon(Icons.build_circle_outlined), selectedIcon: Icon(Icons.build_circle), label: Text('Verktyg')),
                     NavigationRailDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: Text('Settings')),
                   ],
