@@ -8,6 +8,7 @@ class ConfigModel {
   final List<ServiceModel> services;
   final List<PolicyModel> policies;
   final SettingsModel settings;
+  final WireGuardConfigModel? wireguard;
 
   ConfigModel({
     required this.version,
@@ -19,6 +20,7 @@ class ConfigModel {
     required this.services,
     required this.policies,
     required this.settings,
+    this.wireguard,
   });
 
   factory ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -32,8 +34,22 @@ class ConfigModel {
       services: (json['services'] as List? ?? []).map((e) => ServiceModel.fromJson(e)).toList(),
       policies: (json['policies'] as List? ?? []).map((e) => PolicyModel.fromJson(e)).toList(),
       settings: SettingsModel.fromJson(json['settings'] ?? {}),
+      wireguard: json['wireguard'] != null ? WireGuardConfigModel.fromJson(json['wireguard']) : null,
     );
   }
+
+  ConfigModel copyWith({WireGuardConfigModel? wireguard}) => ConfigModel(
+        version: version,
+        revision: revision,
+        updatedAt: updatedAt,
+        interfaces: interfaces,
+        zones: zones,
+        objects: objects,
+        services: services,
+        policies: policies,
+        settings: settings,
+        wireguard: wireguard ?? this.wireguard,
+      );
 
   Map<String, dynamic> toJson() => {
         'version': version,
@@ -45,6 +61,97 @@ class ConfigModel {
         'services': services.map((e) => e.toJson()).toList(),
         'policies': policies.map((e) => e.toJson()).toList(),
         'settings': settings.toJson(),
+        if (wireguard != null) 'wireguard': wireguard!.toJson(),
+      };
+}
+
+/// Server-sidans WireGuard-inställningar (wg0). Den privata serverns nyckel
+/// lämnar aldrig agenten — endast `serverPublicKey` (fylld i av agenten,
+/// aldrig skriven härifrån) och peer-listans publika nycklar syns i GUI:t.
+class WireGuardConfigModel {
+  final bool enabled;
+  final int listenPort;
+  final String address;
+  final String endpoint;
+  final String serverPublicKey;
+  final List<WireGuardPeerModel> peers;
+
+  WireGuardConfigModel({
+    required this.enabled,
+    required this.listenPort,
+    required this.address,
+    required this.endpoint,
+    this.serverPublicKey = '',
+    required this.peers,
+  });
+
+  factory WireGuardConfigModel.fromJson(Map<String, dynamic> json) {
+    return WireGuardConfigModel(
+      enabled: json['enabled'] ?? false,
+      listenPort: json['listen_port'] ?? 51820,
+      address: json['address'] ?? '',
+      endpoint: json['endpoint'] ?? '',
+      serverPublicKey: json['server_public_key'] ?? '',
+      peers: (json['peers'] as List? ?? []).map((e) => WireGuardPeerModel.fromJson(e)).toList(),
+    );
+  }
+
+  WireGuardConfigModel copyWith({
+    bool? enabled,
+    int? listenPort,
+    String? address,
+    String? endpoint,
+    List<WireGuardPeerModel>? peers,
+  }) =>
+      WireGuardConfigModel(
+        enabled: enabled ?? this.enabled,
+        listenPort: listenPort ?? this.listenPort,
+        address: address ?? this.address,
+        endpoint: endpoint ?? this.endpoint,
+        serverPublicKey: serverPublicKey,
+        peers: peers ?? this.peers,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'enabled': enabled,
+        'listen_port': listenPort,
+        'address': address,
+        'endpoint': endpoint,
+        'peers': peers.map((e) => e.toJson()).toList(),
+      };
+}
+
+class WireGuardPeerModel {
+  final String id;
+  final String name;
+  final String publicKey;
+  final String allowedIps;
+  final bool enabled;
+
+  WireGuardPeerModel({
+    required this.id,
+    required this.name,
+    required this.publicKey,
+    required this.allowedIps,
+    required this.enabled,
+  });
+
+  factory WireGuardPeerModel.fromJson(Map<String, dynamic> json) {
+    return WireGuardPeerModel(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      publicKey: json['public_key'] ?? '',
+      allowedIps: json['allowed_ips'] ?? '',
+      enabled: json['enabled'] ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'public_key': publicKey,
+        'allowed_ips': allowedIps,
+        'enabled': enabled,
       };
 }
 

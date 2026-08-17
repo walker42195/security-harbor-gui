@@ -86,6 +86,30 @@ class ApiService {
     return [];
   }
 
+  Future<Map<String, dynamic>?> getWireGuardServerInfo() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/api/v1/vpn/wireguard/server-info'), headers: _headers);
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Genererar ett engångsnyckelpar åt en ny VPN-klient. Returnerar
+  /// {private_key, public_key} — den privata nyckeln lagras ALDRIG på
+  /// brandväggen, bara den publika ska sparas i candidate-konfigurationen.
+  Future<Map<String, String>?> generateWireGuardPeerKeys() async {
+    try {
+      final res = await http.post(Uri.parse('$baseUrl/api/v1/vpn/wireguard/generate-peer-keys'), headers: _headers);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        return data.map((k, v) => MapEntry(k, v.toString()));
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<String> ping(String host) async {
     try {
       final res = await http.post(
