@@ -104,11 +104,21 @@ class ConnectionsScreen extends StatefulWidget {
   State<ConnectionsScreen> createState() => _ConnectionsScreenState();
 }
 
+/// Kolumnordning delad mellan rubrikraden och varje datarad, så att
+/// bredderna alltid är synkade. Källa/Mål var tidigare Expanded(flex: 3) men
+/// måste vara fasta bredder för att kunna dras i storlek.
+const List<double> _defaultColWidths = [62, 130, 60, 220, 220, 130, 90];
+const List<String> _colLabels = ['Åtgärd', 'Tid', 'Protokoll', 'Källa', 'Mål', 'MAC', 'State/Kedja'];
+const double _colMinWidth = 40;
+const double _resizeHandleWidth = 8;
+
 class _ConnectionsScreenState extends State<ConnectionsScreen> {
   Timer? _pollTimer;
   List<ConntrackModel> _accepted = [];
   List<FirewallLogModel> _denied = [];
   bool _isLoading = false;
+  final List<double> _colWidths = List<double>.from(_defaultColWidths);
+  final ScrollController _hScrollController = ScrollController();
 
   // Filter
   final TextEditingController _ipController = TextEditingController();
@@ -130,6 +140,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     _ipController.dispose();
     _macController.dispose();
     _nameController.dispose();
+    _hScrollController.dispose();
     super.dispose();
   }
 
@@ -332,6 +343,92 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     );
   }
 
+  double get _totalTableWidth => _colWidths.fold(0.0, (sum, w) => sum + w) + _resizeHandleWidth * _colWidths.length;
+
+  Widget _resizeHandle(int colIndex) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onHorizontalDragUpdate: (details) {
+          setState(() {
+            _colWidths[colIndex] = (_colWidths[colIndex] + details.delta.dx).clamp(_colMinWidth, 800.0);
+          });
+        },
+        child: Container(
+          width: _resizeHandleWidth,
+          alignment: Alignment.center,
+          child: Container(width: 1, color: const Color(0xFF334155)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderRow() {
+    return Row(
+      children: [
+        for (int i = 0; i < _colWidths.length; i++) ...[
+          SizedBox(width: _colWidths[i], child: Text(_colLabels[i], style: _headerStyle)),
+          _resizeHandle(i),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDataRow(_TrafficRow r, List<ObjectModel> objects) {
+    final srcName = _resolveObjectName(objects, r.srcIp);
+    final dstName = _resolveObjectName(objects, r.dstIp);
+    final cells = <Widget>[
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: (r.accepted ? Colors.tealAccent : Colors.redAccent).withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(3),
+        ),
+        child: Text(
+          r.accepted ? 'ACCEPT' : 'DENY',
+          style: TextStyle(color: r.accepted ? Colors.tealAccent : Colors.redAccent, fontSize: 9, fontWeight: FontWeight.bold),
+        ),
+      ),
+      Text(r.timestamp.isEmpty ? '—' : r.timestamp, style: _cellStyle, overflow: TextOverflow.ellipsis),
+      Text(r.protocol.toUpperCase(), style: _cellStyle, overflow: TextOverflow.ellipsis),
+      Text(
+        '${r.srcIp}${r.srcPort > 0 ? ':${r.srcPort}' : ''}${srcName != null ? '\n$srcName' : ''}',
+        style: _cellStyle,
+        overflow: TextOverflow.ellipsis,
+      ),
+      Text(
+        '${r.dstIp}${r.dstPort > 0 ? ':${r.dstPort}' : ''}${dstName != null ? '\n$dstName' : ''}',
+        style: _cellStyle,
+        overflow: TextOverflow.ellipsis,
+      ),
+      Text(r.srcMac.isEmpty ? '—' : r.srcMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
+      Text(r.stateOrChain, style: _cellStyle, overflow: TextOverflow.ellipsis),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: const Color(0xFF334155).withValues(alpha: 0.5))),
+      ),
+      child: Row(
+        children: [
+          for (int i = 0; i < _colWidths.length; i++) ...[
+            SizedBox(width: _colWidths[i], child: cells[i]),
+            SizedBox(width: _resizeHandleWidth),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // Header och rader delar EN horisontell SingleChildScrollView (inte två
+  // separata med samma ScrollController — att dela en controller mellan två
+  // Scrollables synkar INTE automatiskt deras offset, bara att de kan
+  // koexistera). Rubrikraden ligger utanför den vertikala ListView men
+  // innanför samma horisontella scroll-region, så den förblir vertikalt
+  // fast ("sticky") medan raderna scrollar, men rör sig i sidled i takt med
+  // dem eftersom det är exakt samma scroll-offset.
   Widget _buildTable(List<_TrafficRow> rows, List<ObjectModel> objects) {
     return Container(
       width: double.infinity,
@@ -340,92 +437,37 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         border: Border.all(color: const Color(0xFF334155)),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFF334155))),
-            ),
-            child: const Row(
-              children: [
-                SizedBox(width: 62, child: Text('Åtgärd', style: _headerStyle)),
-                SizedBox(width: 130, child: Text('Tid', style: _headerStyle)),
-                SizedBox(width: 60, child: Text('Protokoll', style: _headerStyle)),
-                Expanded(flex: 3, child: Text('Källa', style: _headerStyle)),
-                Expanded(flex: 3, child: Text('Mål', style: _headerStyle)),
-                SizedBox(width: 130, child: Text('MAC', style: _headerStyle)),
-                SizedBox(width: 90, child: Text('State/Kedja', style: _headerStyle)),
-              ],
-            ),
-          ),
-          Expanded(
-            child: rows.isEmpty
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24.0),
-                      child: Text('Ingen trafik matchar filtret.', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: rows.length,
-                    itemBuilder: (context, i) {
-                      final r = rows[i];
-                      final srcName = _resolveObjectName(objects, r.srcIp);
-                      final dstName = _resolveObjectName(objects, r.dstIp);
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          border: Border(bottom: BorderSide(color: const Color(0xFF334155).withValues(alpha: 0.5))),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        controller: _hScrollController,
+        child: SizedBox(
+          width: _totalTableWidth,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Color(0xFF334155))),
+                ),
+                child: _buildHeaderRow(),
+              ),
+              Expanded(
+                child: rows.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24.0),
+                          child: Text('Ingen trafik matchar filtret.', style: TextStyle(color: Colors.grey, fontSize: 12)),
                         ),
-                        child: Row(
-                          children: [
-                            SizedBox(
-                              width: 62,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: (r.accepted ? Colors.tealAccent : Colors.redAccent).withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                                child: Text(
-                                  r.accepted ? 'ACCEPT' : 'DENY',
-                                  style: TextStyle(
-                                    color: r.accepted ? Colors.tealAccent : Colors.redAccent,
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(
-                              width: 130,
-                              child: Text(r.timestamp.isEmpty ? '—' : r.timestamp, style: _cellStyle),
-                            ),
-                            SizedBox(width: 60, child: Text(r.protocol.toUpperCase(), style: _cellStyle)),
-                            Expanded(
-                              flex: 3,
-                              child: Text(
-                                '${r.srcIp}${r.srcPort > 0 ? ':${r.srcPort}' : ''}${srcName != null ? '\n$srcName' : ''}',
-                                style: _cellStyle,
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Text(
-                                '${r.dstIp}${r.dstPort > 0 ? ':${r.dstPort}' : ''}${dstName != null ? '\n$dstName' : ''}',
-                                style: _cellStyle,
-                              ),
-                            ),
-                            SizedBox(width: 130, child: Text(r.srcMac.isEmpty ? '—' : r.srcMac, style: _cellStyle)),
-                            SizedBox(width: 90, child: Text(r.stateOrChain, style: _cellStyle)),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: rows.length,
+                        itemBuilder: (context, i) => _buildDataRow(rows[i], objects),
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
