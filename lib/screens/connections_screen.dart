@@ -4,11 +4,15 @@ import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 
-/// En rad i den kombinerade anslutnings-/loggvyn. Slår ihop aktiva
-/// (accepterade) anslutningar från conntrack med nekade paket från
-/// brandväggens deny-logg till en gemensam, filtrerbar modell.
+/// En rad i loggvyn — läst direkt ur brandväggens kärnlogg (både
+/// tillåten OCH nekad trafik loggas numera med ett policynamns-bärande
+/// prefix, se pkg/adapter/nftables SH-ACCEPT-*/SH-DENY-*). Ersätter den
+/// tidigare uppdelningen mellan "aktiva conntrack-anslutningar" (som
+/// aldrig kunde visa VILKEN regel som tillät något) och en separat
+/// deny-logg — nu är allt EN källa, med regelnamn på båda sidor.
 class _TrafficRow {
   final bool accepted;
+  final String policyName;
   final String protocol;
   final String srcIp;
   final int srcPort;
@@ -18,9 +22,12 @@ class _TrafficRow {
   final String dstMac;
   final String stateOrChain;
   final String timestamp;
+  final String inIface;
+  final String outIface;
 
   _TrafficRow({
     required this.accepted,
+    required this.policyName,
     required this.protocol,
     required this.srcIp,
     required this.srcPort,
@@ -30,23 +37,13 @@ class _TrafficRow {
     required this.dstMac,
     required this.stateOrChain,
     required this.timestamp,
+    required this.inIface,
+    required this.outIface,
   });
 
-  factory _TrafficRow.fromConntrack(ConntrackModel m) => _TrafficRow(
-        accepted: true,
-        protocol: m.protocol,
-        srcIp: m.srcIp,
-        srcPort: m.srcPort,
-        dstIp: m.dstIp,
-        dstPort: m.dstPort,
-        srcMac: m.srcMac,
-        dstMac: m.dstMac,
-        stateOrChain: m.state,
-        timestamp: '',
-      );
-
   factory _TrafficRow.fromFirewallLog(FirewallLogModel m) => _TrafficRow(
-        accepted: false,
+        accepted: m.action == 'accept',
+        policyName: m.policyName,
         protocol: m.protocol,
         srcIp: m.srcIp,
         srcPort: m.srcPort,
@@ -56,7 +53,24 @@ class _TrafficRow {
         dstMac: m.dstMac,
         stateOrChain: m.chain,
         timestamp: m.timestamp,
+        inIface: m.inIface,
+        outIface: m.outIface,
       );
+}
+
+/// Riktning relativt brandväggen, avgjord via vilken zon (WAN/LAN) käll-
+/// respektive mål-gränssnittet tillhör — inte bara vilken IP:et pratar
+/// med, eftersom en och samma IP kan nås via olika gränssnitt. "IN" är
+/// trafik som kommer in via ett WAN-gränssnitt (mot brandväggen själv
+/// ELLER vidarebefordrad till en LAN-enhet, t.ex. port forwarding),
+/// "OUT" är LAN mot WAN, resten (LAN mot LAN, eller lokal åtkomst mot
+/// brandväggen själv) är "INTERNAL".
+String _classifyDirection(_TrafficRow r, Map<String, String> deviceZone) {
+  final inZone = (deviceZone[r.inIface] ?? '').toUpperCase();
+  final outZone = (deviceZone[r.outIface] ?? '').toUpperCase();
+  if (inZone == 'WAN') return 'IN';
+  if (inZone == 'LAN' && outZone == 'WAN') return 'OUT';
+  return 'INTERNAL';
 }
 
 /// Slår upp ett läsbart objektnamn för en IP-adress mot de Host/Network-objekt
@@ -115,15 +129,14 @@ class ConnectionsScreen extends StatefulWidget {
 /// Kolumnordning delad mellan rubrikraden och varje datarad, så att
 /// bredderna alltid är synkade. Källa/Mål var tidigare Expanded(flex: 3) men
 /// måste vara fasta bredder för att kunna dras i storlek.
-const List<double> _defaultColWidths = [62, 130, 60, 200, 130, 200, 130, 90];
-const List<String> _colLabels = ['Åtgärd', 'Tid', 'Protokoll', 'Källa', 'Källans MAC', 'Mål', 'Målets MAC', 'State/Kedja'];
+const List<double> _defaultColWidths = [62, 130, 90, 170, 60, 200, 130, 200, 130, 90];
+const List<String> _colLabels = ['Åtgärd', 'Tid', 'Riktning', 'Regel', 'Protokoll', 'Källa', 'Källans MAC', 'Mål', 'Målets MAC', 'State/Kedja'];
 const double _colMinWidth = 40;
 const double _resizeHandleWidth = 14;
 
 class _ConnectionsScreenState extends State<ConnectionsScreen> {
   Timer? _pollTimer;
-  List<ConntrackModel> _accepted = [];
-  List<FirewallLogModel> _denied = [];
+  List<FirewallLogModel> _entries = [];
   bool _isLoading = false;
   int? _hoveredResizeHandle;
   int? _activeResizeIndex; // Se identisk kommentar i policies_screen.dart
@@ -134,12 +147,16 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _macController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
-  String _directionFilter = 'ANY'; // ANY, FROM, TO
+  String _directionFilterField = 'ANY'; // ANY, FROM, TO — för IP-fältet ovan
   String _actionFilter = 'ALL'; // ALL, ACCEPT, DENY
   // IPv4 aktivt som default — det är i praktiken all trafik i det här
   // nätet idag, så IPv6 (om något någonsin dyker upp) eller "Alla" får
   // väljas medvetet istället för att blanda in i vyn från start.
   String _ipVersionFilter = 'IPV4'; // ALL, IPV4, IPV6
+  // Riktning relativt brandväggen (WAN/LAN-zonbaserad, se
+  // _classifyDirection) — separat från _directionFilterField ovan, som
+  // bara styr IP-fältets Från/Till-tolkning.
+  String _trafficDirectionFilter = 'ALL'; // ALL, IN, OUT, INTERNAL
 
   @override
   void initState() {
@@ -161,12 +178,10 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   Future<void> _poll() async {
     final provider = Provider.of<ConfigProvider>(context, listen: false);
     setState(() => _isLoading = true);
-    final accepted = await provider.api.getConntrack();
-    final denied = await provider.api.getFirewallLog();
+    final entries = await provider.api.getFirewallLog();
     if (!mounted) return;
     setState(() {
-      _accepted = accepted;
-      _denied = denied;
+      _entries = entries;
       _isLoading = false;
     });
   }
@@ -174,17 +189,20 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ConfigProvider>(context);
-    final objects = (provider.candidateConfig ?? provider.runningConfig)?.objects ?? [];
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    final objects = cfg?.objects ?? [];
+    final deviceZone = <String, String>{for (final iface in cfg?.interfaces ?? <InterfaceModel>[]) iface.device: iface.zone};
 
-    List<_TrafficRow> rows = [
-      ..._accepted.map(_TrafficRow.fromConntrack),
-      ..._denied.map(_TrafficRow.fromFirewallLog),
-    ];
+    List<_TrafficRow> rows = _entries.map(_TrafficRow.fromFirewallLog).toList();
 
     if (_actionFilter == 'ACCEPT') {
       rows = rows.where((r) => r.accepted).toList();
     } else if (_actionFilter == 'DENY') {
       rows = rows.where((r) => !r.accepted).toList();
+    }
+
+    if (_trafficDirectionFilter != 'ALL') {
+      rows = rows.where((r) => _classifyDirection(r, deviceZone) == _trafficDirectionFilter).toList();
     }
 
     if (_ipVersionFilter != 'ALL') {
@@ -197,8 +215,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       rows = rows.where((r) {
         final matchesSrc = r.srcIp.contains(ipFilter);
         final matchesDst = r.dstIp.contains(ipFilter);
-        if (_directionFilter == 'FROM') return matchesSrc;
-        if (_directionFilter == 'TO') return matchesDst;
+        if (_directionFilterField == 'FROM') return matchesSrc;
+        if (_directionFilterField == 'TO') return matchesDst;
         return matchesSrc || matchesDst;
       }).toList();
     }
@@ -213,18 +231,12 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       rows = rows.where((r) {
         final srcName = _resolveObjectName(objects, r.srcIp)?.toLowerCase() ?? '';
         final dstName = _resolveObjectName(objects, r.dstIp)?.toLowerCase() ?? '';
-        return srcName.contains(nameFilter) || dstName.contains(nameFilter);
+        final policyName = r.policyName.toLowerCase();
+        return srcName.contains(nameFilter) || dstName.contains(nameFilter) || policyName.contains(nameFilter);
       }).toList();
     }
 
-    // Nyast/mest relevant överst: nekad trafik har tidsstämpel, sortera på den
-    // fallande; accepterade anslutningar (utan tidsstämpel) hamnar sist.
-    rows.sort((a, b) {
-      if (a.timestamp.isEmpty && b.timestamp.isEmpty) return 0;
-      if (a.timestamp.isEmpty) return 1;
-      if (b.timestamp.isEmpty) return -1;
-      return b.timestamp.compareTo(a.timestamp);
-    });
+    rows.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     return Container(
       color: const Color(0xFF0F172A),
@@ -268,7 +280,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             const SizedBox(height: 10),
             _buildFilterBar(),
             const SizedBox(height: 10),
-            Expanded(child: _buildTable(rows, objects)),
+            Expanded(child: _buildTable(rows, objects, deviceZone)),
           ],
         ),
       ),
@@ -290,12 +302,22 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         children: [
           _buildFilterField('IP-adress', _ipController, width: 160),
           _buildFilterField('MAC-adress', _macController, width: 160),
-          _buildFilterField('Namn (objekt)', _nameController, width: 160),
-          _buildDropdown('Riktning', _directionFilter, const {
+          Tooltip(
+            message: 'Söker på namnet på ett sparat Objekt (Host/Network) vars IP matchar källan eller målet,\n'
+                'OCH på namnet på den brandväggsregel som tillät/nekade trafiken.',
+            child: _buildFilterField('Namn / Regel', _nameController, width: 180),
+          ),
+          _buildDropdown('Från/Till', _directionFilterField, const {
             'ANY': 'Från/Till',
             'FROM': 'Från (källa)',
             'TO': 'Till (mål)',
-          }, (v) => setState(() => _directionFilter = v)),
+          }, (v) => setState(() => _directionFilterField = v)),
+          _buildDropdown('Riktning', _trafficDirectionFilter, const {
+            'ALL': 'Alla',
+            'IN': 'Inkommande (från WAN)',
+            'OUT': 'Utgående (till WAN)',
+            'INTERNAL': 'Internt/Lokalt',
+          }, (v) => setState(() => _trafficDirectionFilter = v)),
           _buildDropdown('Åtgärd', _actionFilter, const {
             'ALL': 'Alla',
             'ACCEPT': 'Endast Accept',
@@ -313,7 +335,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
               _ipController.clear();
               _macController.clear();
               _nameController.clear();
-              _directionFilter = 'ANY';
+              _directionFilterField = 'ANY';
+              _trafficDirectionFilter = 'ALL';
               _actionFilter = 'ALL';
               _ipVersionFilter = 'IPV4';
             }),
@@ -445,9 +468,10 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     );
   }
 
-  Widget _buildDataRow(_TrafficRow r, List<ObjectModel> objects, List<double> widths) {
+  Widget _buildDataRow(_TrafficRow r, List<ObjectModel> objects, Map<String, String> deviceZone, List<double> widths) {
     final srcName = _resolveObjectName(objects, r.srcIp);
     final dstName = _resolveObjectName(objects, r.dstIp);
+    final direction = _classifyDirection(r, deviceZone);
     final cells = <Widget>[
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -461,6 +485,23 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         ),
       ),
       Text(r.timestamp.isEmpty ? '—' : r.timestamp, style: _cellStyle, overflow: TextOverflow.ellipsis),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            direction == 'IN' ? Icons.arrow_downward : (direction == 'OUT' ? Icons.arrow_upward : Icons.swap_horiz),
+            size: 12,
+            color: direction == 'IN' ? Colors.amber : (direction == 'OUT' ? Colors.cyanAccent : Colors.grey),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            direction == 'IN' ? 'Inkommande' : (direction == 'OUT' ? 'Utgående' : 'Internt'),
+            style: _cellStyle,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+      Text(r.policyName.isEmpty ? '—' : r.policyName, style: _cellStyle, overflow: TextOverflow.ellipsis),
       Text(r.protocol.toUpperCase(), style: _cellStyle, overflow: TextOverflow.ellipsis),
       Text(
         '${r.srcIp}${r.srcPort > 0 ? ':${r.srcPort}' : ''}${srcName != null ? '\n$srcName' : ''}',
@@ -507,7 +548,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   // trots att varje cell för sig var korrekt centrerad. Med SelectionArea
   // slipper vi det problemet helt eftersom cellerna är rena Text-widgetar
   // igen, och man kan dessutom markera text över FLERA celler i ett drag.
-  Widget _buildTable(List<_TrafficRow> rows, List<ObjectModel> objects) {
+  Widget _buildTable(List<_TrafficRow> rows, List<ObjectModel> objects, Map<String, String> deviceZone) {
     return SelectionArea(
       child: Container(
       width: double.infinity,
@@ -546,7 +587,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                         : ListView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             itemCount: rows.length,
-                            itemBuilder: (context, i) => _buildDataRow(rows[i], objects, widths),
+                            itemBuilder: (context, i) => _buildDataRow(rows[i], objects, deviceZone, widths),
                           ),
                   ),
                 ],

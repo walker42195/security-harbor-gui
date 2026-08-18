@@ -864,11 +864,15 @@ class ConntrackModel {
   }
 }
 
-/// Representerar en nekad/blockerad paket-händelse ur brandväggens
-/// deny-logg (nftables "log"-regler, se SH-DENY-*-prefixen i agenten).
+/// Representerar EN loggad paket-händelse (både tillåten OCH nekad, se
+/// action) ur brandväggens kärnlogg (nftables "log"-regler, se
+/// SH-ACCEPT-*/SH-DENY-*-prefixen i agenten). policyName är namnet på
+/// den regel som fattade beslutet, uttaget ur själva log-prefixet.
 class FirewallLogModel {
   final String timestamp;
+  final String action; // "accept" eller "deny"
   final String chain; // "INPUT" eller "FWD"
+  final String policyName;
   final String inIface;
   final String outIface;
   final String srcMac;
@@ -881,7 +885,9 @@ class FirewallLogModel {
 
   FirewallLogModel({
     required this.timestamp,
+    this.action = 'deny',
     required this.chain,
+    this.policyName = '',
     required this.inIface,
     required this.outIface,
     required this.srcMac,
@@ -896,7 +902,9 @@ class FirewallLogModel {
   factory FirewallLogModel.fromJson(Map<String, dynamic> json) {
     return FirewallLogModel(
       timestamp: json['timestamp'] ?? '',
+      action: json['action'] ?? 'deny',
       chain: json['chain'] ?? '',
+      policyName: json['policy_name'] ?? '',
       inIface: json['in_iface'] ?? '',
       outIface: json['out_iface'] ?? '',
       srcMac: json['src_mac'] ?? '',
