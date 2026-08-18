@@ -415,8 +415,9 @@ class ObjectModel {
   final String type;
   final List<String> values;
   final String description;
+  final ObjectSourceModel? source;
 
-  ObjectModel({required this.id, required this.name, required this.type, required this.values, required this.description});
+  ObjectModel({required this.id, required this.name, required this.type, required this.values, required this.description, this.source});
 
   factory ObjectModel.fromJson(Map<String, dynamic> json) {
     return ObjectModel(
@@ -425,10 +426,61 @@ class ObjectModel {
       type: json['type'] ?? 'host',
       values: List<String>.from(json['values'] ?? []),
       description: json['description'] ?? '',
+      source: json['source'] != null ? ObjectSourceModel.fromJson(json['source']) : null,
     );
   }
 
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'type': type, 'values': values, 'description': description};
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'type': type,
+        'values': values,
+        'description': description,
+        if (source != null) 'source': source!.toJson(),
+      };
+}
+
+/// Beskriver en extern, automatiskt uppdaterad källa för ett iplist-/geoip-
+/// objekts values (Fas 5 — Hot-listor & GeoIP). Agenten hämtar och skriver
+/// om values med jämna mellanrum (pkg/threatfeed) — GUI:t visar bara status
+/// och kan trigga en omedelbar uppdatering.
+class ObjectSourceModel {
+  final String kind; // "spamhaus_drop" | "spamhaus_edrop" | "tor_exit_nodes" | "custom_url" | "geoip_country"
+  final String url;
+  final String countryCode;
+  final int refreshHours;
+  final String lastUpdated;
+  final String lastError;
+  final int entryCount;
+
+  ObjectSourceModel({
+    required this.kind,
+    this.url = '',
+    this.countryCode = '',
+    this.refreshHours = 24,
+    this.lastUpdated = '',
+    this.lastError = '',
+    this.entryCount = 0,
+  });
+
+  factory ObjectSourceModel.fromJson(Map<String, dynamic> json) {
+    return ObjectSourceModel(
+      kind: json['kind'] ?? '',
+      url: json['url'] ?? '',
+      countryCode: json['country_code'] ?? '',
+      refreshHours: json['refresh_hours'] ?? 24,
+      lastUpdated: json['last_updated'] ?? '',
+      lastError: json['last_error'] ?? '',
+      entryCount: json['entry_count'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'kind': kind,
+        'url': url,
+        'country_code': countryCode,
+        'refresh_hours': refreshHours,
+      };
 }
 
 class ServiceModel {

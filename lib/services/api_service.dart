@@ -141,6 +141,22 @@ class ApiService {
     return null;
   }
 
+  /// Triggar en omedelbar uppdatering av ett Object med automatisk källa
+  /// (hot-lista/GeoIP, Fas 5) istället för att vänta på nästa periodiska
+  /// tillfälle (var 15:e minut på agentsidan).
+  Future<bool> refreshObjectSource(String objectId) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/v1/objects/refresh-source'),
+        headers: _headers,
+        body: jsonEncode({'object_id': objectId}),
+      );
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<String> ping(String host) async {
     try {
       final res = await http.post(

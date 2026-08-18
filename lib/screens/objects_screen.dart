@@ -4,8 +4,15 @@ import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import '../widgets/dialog_helpers.dart';
 
-class ObjectsScreen extends StatelessWidget {
+class ObjectsScreen extends StatefulWidget {
   const ObjectsScreen({super.key});
+
+  @override
+  State<ObjectsScreen> createState() => _ObjectsScreenState();
+}
+
+class _ObjectsScreenState extends State<ObjectsScreen> {
+  final Set<String> _refreshingIds = {};
 
   @override
   Widget build(BuildContext context) {
@@ -30,11 +37,22 @@ class ObjectsScreen extends StatelessWidget {
                     Text('Objekt & Grupper', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
                 ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.dns, size: 14),
-                  label: const Text('+ Skapa Objekt', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
-                  onPressed: () => _showAddObjectDialog(context, provider),
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.dns, size: 14),
+                      label: const Text('+ Skapa Objekt', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                      onPressed: () => _showAddObjectDialog(context, provider),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.shield, size: 14),
+                      label: const Text('+ Hot-lista / GeoIP', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                      onPressed: () => _showAddThreatFeedDialog(context, provider),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -52,23 +70,114 @@ class ObjectsScreen extends StatelessWidget {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: cfg.objects.length,
-                itemBuilder: (context, idx) {
-                  final obj = cfg.objects[idx];
-                  return Card(
-                    color: const Color(0xFF1E293B),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: const Icon(Icons.category, color: Colors.cyanAccent),
-                      title: Text(obj.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                      subtitle: Text('Typ: ${obj.type.toUpperCase()}  |  Värden: ${obj.values.join(", ")}', style: const TextStyle(fontSize: 11)),
-                    ),
-                  );
-                },
+                itemBuilder: (context, idx) => _buildObjectCard(context, provider, cfg.objects[idx]),
               ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildObjectCard(BuildContext context, ConfigProvider provider, ObjectModel obj) {
+    final src = obj.source;
+    final refreshing = _refreshingIds.contains(obj.id);
+
+    return Card(
+      color: const Color(0xFF1E293B),
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              leading: Icon(src != null ? Icons.shield : Icons.category, color: src != null ? Colors.tealAccent : Colors.cyanAccent),
+              title: Text(obj.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+              subtitle: Text(
+                src != null
+                    ? 'Typ: ${obj.type.toUpperCase()}  |  ${obj.values.length} poster (automatisk källa: ${_kindLabel(src.kind)})'
+                    : 'Typ: ${obj.type.toUpperCase()}  |  Värden: ${obj.values.join(", ")}',
+                style: const TextStyle(fontSize: 11),
+              ),
+              trailing: src == null
+                  ? null
+                  : refreshing
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.tealAccent))
+                      : IconButton(
+                          icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
+                          tooltip: 'Uppdatera nu',
+                          onPressed: () => _refreshSource(provider, obj),
+                        ),
+            ),
+            if (src != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: Wrap(
+                  spacing: 14,
+                  runSpacing: 4,
+                  children: [
+                    _statusChip(Icons.update, src.lastUpdated.isEmpty ? 'Aldrig uppdaterad' : 'Uppdaterad: ${_shortTime(src.lastUpdated)}', src.lastError.isNotEmpty ? Colors.amberAccent : Colors.grey),
+                    _statusChip(Icons.timer, 'Var ${src.refreshHours}:e timme', Colors.grey),
+                    if (src.lastError.isNotEmpty) _statusChip(Icons.error_outline, 'Fel: ${src.lastError}', Colors.redAccent),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statusChip(IconData icon, String text, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 12, color: color),
+        const SizedBox(width: 4),
+        Text(text, style: TextStyle(fontSize: 10, color: color)),
+      ],
+    );
+  }
+
+  String _shortTime(String iso) {
+    try {
+      final dt = DateTime.parse(iso).toLocal();
+      return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return iso;
+    }
+  }
+
+  String _kindLabel(String kind) {
+    switch (kind) {
+      case 'spamhaus_drop':
+        return 'Spamhaus DROP';
+      case 'spamhaus_edrop':
+        return 'Spamhaus EDROP';
+      case 'tor_exit_nodes':
+        return 'Tor-exit-noder';
+      case 'custom_url':
+        return 'Anpassad URL';
+      case 'geoip_country':
+        return 'GeoIP-land';
+      default:
+        return kind;
+    }
+  }
+
+  Future<void> _refreshSource(ConfigProvider provider, ObjectModel obj) async {
+    setState(() => _refreshingIds.add(obj.id));
+    final ok = await provider.api.refreshObjectSource(obj.id);
+    await provider.fetchAll();
+    if (mounted) {
+      setState(() => _refreshingIds.remove(obj.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(ok ? '"${obj.name}" uppdaterad' : 'Misslyckades uppdatera "${obj.name}" — se felmeddelande på objektet'),
+          backgroundColor: ok ? Colors.teal : Colors.red,
+        ),
+      );
+    }
   }
 
   void _showAddObjectDialog(BuildContext context, ConfigProvider provider) {
@@ -135,6 +244,116 @@ class ObjectsScreen extends StatelessWidget {
                 ],
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAddThreatFeedDialog(BuildContext context, ConfigProvider provider) {
+    final nameCtrl = TextEditingController(text: 'Spamhaus DROP');
+    final urlCtrl = TextEditingController();
+    final countryCtrl = TextEditingController(text: 'RU');
+    final refreshHoursCtrl = TextEditingController(text: '24');
+    String kind = 'spamhaus_drop';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          backgroundColor: const Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          child: Container(
+            width: 460,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                dialogTitleRow(context, 'Lägg till Hot-lista / GeoIP-objekt', () => Navigator.pop(ctx)),
+                const SizedBox(height: 12),
+                dialogSection(title: 'KÄLLA', children: [
+                  dialogField(nameCtrl, 'Objektnamn'),
+                  const SizedBox(height: 12),
+                  const Text('Källtyp', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  DropdownButtonFormField<String>(
+                    initialValue: kind,
+                    dropdownColor: const Color(0xFF1E293B),
+                    style: const TextStyle(fontSize: 12, color: Colors.white),
+                    decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
+                    items: const [
+                      DropdownMenuItem(value: 'spamhaus_drop', child: Text('Spamhaus DROP (kända spam/botnät-nät)')),
+                      DropdownMenuItem(value: 'spamhaus_edrop', child: Text('Spamhaus EDROP (utökad DROP)')),
+                      DropdownMenuItem(value: 'tor_exit_nodes', child: Text('Tor-exit-noder')),
+                      DropdownMenuItem(value: 'custom_url', child: Text('Anpassad URL (en CIDR/IP per rad)')),
+                      DropdownMenuItem(value: 'geoip_country', child: Text('GeoIP — helt land (landskod)')),
+                    ],
+                    onChanged: (v) => setDialogState(() => kind = v ?? kind),
+                  ),
+                  const SizedBox(height: 12),
+                  if (kind == 'custom_url') dialogField(urlCtrl, 'URL', hint: 'https://exempel.se/blocklist.txt'),
+                  if (kind == 'geoip_country') dialogField(countryCtrl, 'Landskod (ISO 3166-1 alpha-2)', hint: 't.ex. RU, CN, KP'),
+                  if (kind == 'custom_url' || kind == 'geoip_country') const SizedBox(height: 12),
+                  dialogField(refreshHoursCtrl, 'Uppdateringsintervall (timmar)', hint: '24'),
+                ]),
+                const SizedBox(height: 6),
+                const Text(
+                  'Listan hämtas automatiskt av brandväggen enligt intervallet ovan. Innehållet syns här efter första hämtningen (kan ta en liten stund).',
+                  style: TextStyle(color: Colors.amberAccent, fontSize: 10),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                      child: const Text('Skapa & hämta nu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () async {
+                        final cfg = provider.candidateConfig ?? provider.runningConfig;
+                        if (cfg == null) {
+                          Navigator.pop(ctx);
+                          return;
+                        }
+                        final objType = kind == 'geoip_country' ? 'geoip' : 'iplist';
+                        final newObj = ObjectModel(
+                          id: 'obj_${DateTime.now().millisecondsSinceEpoch}',
+                          name: nameCtrl.text.trim().isEmpty ? _kindLabel(kind) : nameCtrl.text.trim(),
+                          type: objType,
+                          values: const [],
+                          description: 'Automatiskt uppdaterad (${_kindLabel(kind)})',
+                          source: ObjectSourceModel(
+                            kind: kind,
+                            url: urlCtrl.text.trim(),
+                            countryCode: countryCtrl.text.trim(),
+                            refreshHours: int.tryParse(refreshHoursCtrl.text.trim()) ?? 24,
+                          ),
+                        );
+                        final updatedObjs = List<ObjectModel>.from(cfg.objects)..add(newObj);
+                        await provider.updateCandidate(ConfigModel(
+                          version: cfg.version,
+                          revision: cfg.revision,
+                          updatedAt: cfg.updatedAt,
+                          interfaces: cfg.interfaces,
+                          zones: cfg.zones,
+                          objects: updatedObjs,
+                          services: cfg.services,
+                          policies: cfg.policies,
+                          settings: cfg.settings,
+                          wireguard: cfg.wireguard,
+                          openvpn: cfg.openvpn,
+                        ));
+                        Navigator.pop(ctx);
+                        await provider.api.refreshObjectSource(newObj.id);
+                        await provider.fetchAll();
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
