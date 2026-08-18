@@ -249,61 +249,74 @@ class InterfacesScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
+        builder: (context, setState) => Dialog(
           backgroundColor: const Color(0xFF1E293B),
-          title: Text('Redigera ${iface.id} (${iface.device})', style: const TextStyle(color: Colors.white, fontSize: 13)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Adresseringstyp:', style: TextStyle(color: Colors.grey, fontSize: 11)),
-                const SizedBox(height: 4),
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'static', label: Text('Statisk IP', style: TextStyle(fontSize: 11)), icon: Icon(Icons.pin, size: 14)),
-                    ButtonSegment(value: 'dhcp', label: Text('DHCP Klient', style: TextStyle(fontSize: 11)), icon: Icon(Icons.sync, size: 14)),
-                  ],
-                  selected: {selectedType},
-                  onSelectionChanged: (val) => setState(() => selectedType = val.first),
-                ),
-                const SizedBox(height: 12),
-                if (selectedType == 'static')
-                  TextField(controller: ipCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'IPv4 / CIDR (t.ex. 10.0.0.163/24)', isDense: true)),
-                TextField(controller: gwCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Default Gateway IP (Valfri)', isDense: true)),
-                TextField(controller: dnsCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'DNS-servrar (t.ex. 1.1.1.1, 8.8.8.8)', isDense: true)),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<String>(
-                  initialValue: _zoneExistsInMenu(selectedZonePreset, cfg) ? selectedZonePreset : 'CUSTOM',
-                  dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white, fontSize: 11),
-                  decoration: const InputDecoration(labelText: 'Tilldelad Zon', isDense: true),
-                  items: _getZoneDropdownItems(cfg),
-                  onChanged: (val) {
-                    if (val != null) setState(() => selectedZonePreset = val);
-                  },
-                ),
-                if (selectedZonePreset == 'CUSTOM')
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6.0),
-                    child: TextField(
-                      controller: customZoneCtrl,
-                      style: const TextStyle(fontSize: 11, color: Colors.white),
-                      decoration: const InputDecoration(
-                        labelText: 'Ange nytt Zon-namn',
-                        hintText: 't.ex. DMZ, MANAGEMENT, CAMERAS',
-                        isDense: true,
-                      ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          child: Container(
+            width: 480,
+            padding: const EdgeInsets.all(16),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  dialogTitleRow(context, 'Redigera ${iface.id} (${iface.device})', () => Navigator.pop(ctx)),
+                  const SizedBox(height: 12),
+
+                  dialogSection(title: 'ADRESSERINGSTYP', children: [
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'static', label: Text('Statisk IP', style: TextStyle(fontSize: 11)), icon: Icon(Icons.pin, size: 14)),
+                        ButtonSegment(value: 'dhcp', label: Text('DHCP Klient', style: TextStyle(fontSize: 11)), icon: Icon(Icons.sync, size: 14)),
+                      ],
+                      selected: {selectedType},
+                      onSelectionChanged: (val) => setState(() => selectedType = val.first),
                     ),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 11))),
-            ElevatedButton(
-              child: const Text('Spara Ändringar', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-              onPressed: () {
+                  ]),
+                  const SizedBox(height: 12),
+
+                  dialogSection(title: 'NÄTVERK', children: [
+                    if (selectedType == 'static') ...[
+                      dialogField(ipCtrl, 'IPv4 / CIDR', hint: 't.ex. 10.0.0.163/24'),
+                      const SizedBox(height: 12),
+                    ],
+                    dialogField(gwCtrl, 'Default Gateway IP (Valfri)'),
+                    const SizedBox(height: 12),
+                    dialogField(dnsCtrl, 'DNS-servrar', hint: 't.ex. 1.1.1.1, 8.8.8.8'),
+                  ]),
+                  const SizedBox(height: 12),
+
+                  dialogSection(title: 'ZON', children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: _zoneExistsInMenu(selectedZonePreset, cfg) ? selectedZonePreset : 'CUSTOM',
+                      dropdownColor: const Color(0xFF1E293B),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      decoration: const InputDecoration(
+                        labelText: 'Tilldelad Zon',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                      ),
+                      items: _getZoneDropdownItems(cfg),
+                      onChanged: (val) {
+                        if (val != null) setState(() => selectedZonePreset = val);
+                      },
+                    ),
+                    if (selectedZonePreset == 'CUSTOM') ...[
+                      const SizedBox(height: 12),
+                      dialogField(customZoneCtrl, 'Ange nytt Zon-namn', hint: 't.ex. DMZ, MANAGEMENT, CAMERAS'),
+                    ],
+                  ]),
+                  const SizedBox(height: 16),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        child: const Text('Spara Ändringar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () {
                 final dnsList = dnsCtrl.text
                     .split(',')
                     .map((e) => e.trim())
@@ -352,9 +365,14 @@ class InterfacesScreen extends StatelessWidget {
                   dns: cfg.dns,
                 ));
                 Navigator.pop(ctx);
-              },
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -75,6 +75,13 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   // scrollande SingleChildScrollView, och två konkurrerande
   // HorizontalDragGestureRecognizers gav opålitlig resize eftersom
   // scrollvyn ofta vann gesture-arenan.
+  // OBS: den här widgeten MÅSTE sitta innanför en IntrinsicHeight-anfader
+  // (se _buildPolicyHeaderRow) — annars ger den omgivande Row:en en olöst
+  // ("loose", 0..oändligt) höjd-constraint i sidled, och den synliga
+  // skiljelinjen (som saknar egen `height`/child) kollapsar tyst till 0
+  // pixlars höjd. Det gjorde linjen både osynlig OCH i praktiken
+  // odragbar (träffytan var 0px hög) — roten till att breddjustering
+  // upplevdes helt trasig trots att pekar-hanteringen i sig var korrekt.
   Widget _resizeHandle(int colIndex) {
     final hovered = _hoveredResizeHandle == colIndex;
     final active = _activeResizeIndex == colIndex;
@@ -95,8 +102,13 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         onPointerCancel: (_) => setState(() => _activeResizeIndex = null),
         child: SizedBox(
           width: _policyResizeHandleWidth,
+          height: double.infinity,
           child: Center(
-            child: Container(width: (hovered || active) ? 3 : 2, color: (hovered || active) ? Colors.cyanAccent : Colors.white38),
+            child: SizedBox(
+              width: (hovered || active) ? 3 : 2,
+              height: double.infinity,
+              child: ColoredBox(color: (hovered || active) ? Colors.cyanAccent : Colors.white38),
+            ),
           ),
         ),
       ),
@@ -104,16 +116,18 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   }
 
   Widget _buildPolicyHeaderRow(List<double> widths) {
-    return Row(
-      children: [
-        for (int i = 0; i < widths.length; i++) ...[
-          SizedBox(
-            width: widths[i],
-            child: Text(_policyColLabels[i], style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
-          ),
-          _resizeHandle(i),
+    return IntrinsicHeight(
+      child: Row(
+        children: [
+          for (int i = 0; i < widths.length; i++) ...[
+            SizedBox(
+              width: widths[i],
+              child: Text(_policyColLabels[i], style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+            ),
+            _resizeHandle(i),
+          ],
         ],
-      ],
+      ),
     );
   }
 

@@ -371,6 +371,11 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   // resize — scrollvyn vann ofta arenan istället för det lilla handtaget.
   // Listener kringgår hela gesture-arena-mekanismen genom att läsa
   // pekarrörelser direkt.
+  // OBS: måste sitta innanför en IntrinsicHeight-anfader (se _buildHeaderRow)
+  // — se identisk kommentar/motivering i policies_screen.dart. Utan den
+  // kollapsar den synliga skiljelinjen (ingen egen `height`/child) tyst
+  // till 0 pixlars höjd i Row:ens olösta höjd-constraint, vilket gjorde
+  // den både osynlig och i praktiken odragbar (0px hög träffyta).
   Widget _resizeHandle(int colIndex) {
     final hovered = _hoveredResizeHandle == colIndex;
     final active = _activeResizeIndex == colIndex;
@@ -389,23 +394,31 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         },
         onPointerUp: (_) => setState(() => _activeResizeIndex = null),
         onPointerCancel: (_) => setState(() => _activeResizeIndex = null),
-        child: Container(
+        child: SizedBox(
           width: _resizeHandleWidth,
-          alignment: Alignment.center,
-          child: Container(width: (hovered || active) ? 3 : 2, color: (hovered || active) ? Colors.cyanAccent : Colors.white38),
+          height: double.infinity,
+          child: Center(
+            child: SizedBox(
+              width: (hovered || active) ? 3 : 2,
+              height: double.infinity,
+              child: ColoredBox(color: (hovered || active) ? Colors.cyanAccent : Colors.white38),
+            ),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildHeaderRow(List<double> widths) {
-    return Row(
-      children: [
-        for (int i = 0; i < widths.length; i++) ...[
-          SizedBox(width: widths[i], child: Text(_colLabels[i], style: _headerStyle)),
-          _resizeHandle(i),
+    return IntrinsicHeight(
+      child: Row(
+        children: [
+          for (int i = 0; i < widths.length; i++) ...[
+            SizedBox(width: widths[i], child: Text(_colLabels[i], style: _headerStyle)),
+            _resizeHandle(i),
+          ],
         ],
-      ],
+      ),
     );
   }
 
