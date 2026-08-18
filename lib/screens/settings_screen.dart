@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
+import '../widgets/tls_trust_dialogs.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -104,7 +106,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: const TextStyle(color: Colors.white, fontSize: 12),
                     decoration: const InputDecoration(
                       labelText: 'Brandväggens Agent URL (IP och Port)',
-                      hintText: 'http://10.0.0.163:8443',
+                      hintText: 'https://10.0.0.163:8443',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.link, color: Colors.cyanAccent, size: 18),
                       isDense: true,
@@ -168,6 +170,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             : () async {
                                 setState(() => _isLoggingIn = true);
                                 await provider.changeAgentUrl(_urlController.text);
+                                if (!kIsWeb) {
+                                  final proceed = await runTlsTrustCheck(context, provider.api);
+                                  if (!context.mounted || !proceed) {
+                                    setState(() => _isLoggingIn = false);
+                                    return;
+                                  }
+                                }
                                 await provider.login(_usernameController.text, _passwordController.text);
                                 setState(() => _isLoggingIn = false);
 

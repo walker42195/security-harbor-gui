@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
+import '../widgets/tls_trust_dialogs.dart';
 
 /// Visas vid appstart (och efter utloggning) istället för att kräva att
 /// användaren navigerar till Settings-vyn för att logga in. Brandväggens
@@ -31,6 +33,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login(ConfigProvider provider) async {
     await provider.changeAgentUrl(_urlController.text);
+
+    // Trust-on-first-use: kolla brandväggens TLS-certifikat INNAN vi
+    // faktiskt loggar in. Hoppas över helt på web (webbläsaren sköter sin
+    // egen certifikatvarning) eller om URL:en inte är https://.
+    if (!kIsWeb) {
+      final proceed = await runTlsTrustCheck(context, provider.api);
+      if (!mounted || !proceed) return;
+    }
+
     await provider.login(_usernameController.text, _passwordController.text);
   }
 
@@ -42,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // hunnit läsas in, så fältet inte hinner visas tomt och sedan hoppa
     // till ett värde efter att SharedPreferences svarat.
     if (!_urlControllerInitialized && !provider.isInitializing) {
-      _urlController = TextEditingController(text: provider.api.baseUrl == 'http://localhost:8443' ? '' : provider.api.baseUrl);
+      _urlController = TextEditingController(text: provider.api.baseUrl == 'https://localhost:8443' ? '' : provider.api.baseUrl);
       _urlControllerInitialized = true;
     }
 
@@ -74,18 +85,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            TextField(
-                              controller: _urlController,
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
-                              decoration: const InputDecoration(
-                                labelText: 'Brandväggens adress',
-                                hintText: 'http://10.0.0.163:8443',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.link, color: Colors.cyanAccent, size: 18),
-                                isDense: true,
+                            if (!kIsWeb) ...[
+                              TextField(
+                                controller: _urlController,
+                                style: const TextStyle(color: Colors.white, fontSize: 13),
+                                decoration: const InputDecoration(
+                                  labelText: 'Brandväggens adress',
+                                  hintText: 'https://10.0.0.163:8443',
+                                  border: OutlineInputBorder(),
+                                  prefixIcon: Icon(Icons.link, color: Colors.cyanAccent, size: 18),
+                                  isDense: true,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 14),
+                              const SizedBox(height: 14),
+                            ],
                             TextField(
                               controller: _usernameController,
                               style: const TextStyle(color: Colors.white, fontSize: 13),
@@ -140,7 +153,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 14),
                       Text(
-                        'Adressen sparas lokalt för nästa gång — lösenordet sparas aldrig.',
+                        kIsWeb
+                            ? 'Lösenordet sparas aldrig.'
+                            : 'Adressen sparas lokalt för nästa gång — lösenordet sparas aldrig.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
                       ),

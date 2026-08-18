@@ -45,8 +45,16 @@ class ConfigProvider extends ChangeNotifier {
 
   Future<void> _loadSavedUrl() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedUrl = prefs.getString(_prefsUrlKey);
+    var savedUrl = prefs.getString(_prefsUrlKey);
     if (savedUrl != null && savedUrl.isNotEmpty) {
+      // Migrera automatiskt en tidigare sparad http://-URL till https://
+      // — Management-API:t kräver numera alltid TLS (Fas 8+), så en gammal
+      // installation ska inte behöva mata in adressen manuellt igen bara
+      // för att skemat ändrats.
+      if (savedUrl.startsWith('http://')) {
+        savedUrl = 'https://${savedUrl.substring('http://'.length)}';
+        await prefs.setString(_prefsUrlKey, savedUrl);
+      }
       api.setBaseUrl(savedUrl);
     }
     isInitializing = false;

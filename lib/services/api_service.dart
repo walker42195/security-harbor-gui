@@ -1,27 +1,99 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import '../models/config_model.dart';
+import 'http_client_factory.dart';
+import 'tls_trust.dart' as tls_trust;
+
+/// Resultatet av en TOFU-certifikatkontroll (se ApiService.checkServerCertificate).
+enum TlsTrustStatus { trustedMatch, newUnknown, mismatch, skipped }
+
+class TlsCheckResult {
+  final TlsTrustStatus status;
+  final String? fingerprint; // Vid newUnknown: det nya. Vid mismatch: det NYA (aktuella).
+  final String? expectedFingerprint; // Endast vid mismatch: det tidigare sparade.
+  TlsCheckResult(this.status, {this.fingerprint, this.expectedFingerprint});
+}
 
 class ApiService {
   String baseUrl;
   String? token;
 
+  // Trust-on-first-use: fingeravtrycket måste finnas SYNKRONT i minnet
+  // eftersom badCertificateCallback (i http_client_factory_io.dart) är en
+  // synkron callback — den kan inte invänta en SharedPreferences-läsning.
+  // _client fångar EXAKT den här map-instansen via referens, så att
+  // uppdatera den (trustFingerprint) räcker — ingen ombyggnad av klienten
+  // behövs.
+  final Map<String, String> _trustedFingerprints = {};
+  late final http.Client _client = createHttpClient(_trustedFingerprints);
+
   // Ingen riktig servers LAN-IP som standardvärde här — appen distribueras
   // publikt, och ett hop-kodat internt IP hade läckt nätverkstopologi till
   // varje nedladdning. Användaren anger sin egen brandväggs adress i
-  // Settings-vyn.
-  ApiService({this.baseUrl = 'http://localhost:8443'});
+  // Settings-vyn. https:// som standard eftersom Management-API:t numera
+  // alltid kräver TLS (Fas 8+, se pkg/api/server.go).
+  ApiService({this.baseUrl = 'https://localhost:8443'}) {
+    // På web är GUI:t alltid samma-origin med agenten (serveras direkt
+    // från dess --webui-dir) — ignorera en ev. sparad/inskriven URL helt
+    // och använd relativa anrop, annars skulle t.ex. Settings-fältet
+    // kunna peka fel och orsaka onödiga CORS-problem.
+    if (kIsWeb) baseUrl = '';
+  }
 
   void setBaseUrl(String newUrl) {
+    if (kIsWeb) return;
     var formatted = newUrl.trim();
     if (!formatted.startsWith('http://') && !formatted.startsWith('https://')) {
-      formatted = 'http://$formatted';
+      formatted = 'https://$formatted';
     }
     if (formatted.endsWith('/')) {
       formatted = formatted.substring(0, formatted.length - 1);
     }
     baseUrl = formatted;
     token = null;
+  }
+
+  /// Kontrollerar brandväggens TLS-certifikat mot ett tidigare sparat
+  /// fingeravtryck (trust-on-first-use). Ska anropas INNAN login() vid
+  /// varje ny anslutning till en https://-URL på icke-web-plattformar —
+  /// på web sköter webbläsaren sin egen certifikatvarning och detta hoppas
+  /// helt över (returnerar `skipped`).
+  Future<TlsCheckResult> checkServerCertificate() async {
+    if (kIsWeb || !baseUrl.startsWith('https://')) {
+      return TlsCheckResult(TlsTrustStatus.skipped);
+    }
+    final uri = Uri.parse(baseUrl);
+    final host = uri.host;
+    final port = uri.hasPort ? uri.port : 443;
+    final hostPort = '$host:$port';
+
+    final actual = await tls_trust.probeCertificateSha256(host, port);
+    if (actual == null) {
+      // Kunde inte hämta certifikatet (t.ex. servern är nere) — låt
+      // det faktiska anropet i login() ge det riktiga felmeddelandet.
+      return TlsCheckResult(TlsTrustStatus.skipped);
+    }
+
+    final expected = await tls_trust.getTrustedFingerprint(hostPort);
+    if (expected == null) {
+      return TlsCheckResult(TlsTrustStatus.newUnknown, fingerprint: actual);
+    }
+    if (expected != actual) {
+      return TlsCheckResult(TlsTrustStatus.mismatch, fingerprint: actual, expectedFingerprint: expected);
+    }
+    _trustedFingerprints[hostPort] = actual;
+    return TlsCheckResult(TlsTrustStatus.trustedMatch, fingerprint: actual);
+  }
+
+  /// Sparar (eller uppdaterar, vid ett medvetet godkänt certifikatbyte)
+  /// fingeravtrycket som betrott för den aktuella baseUrl.
+  Future<void> trustFingerprint(String fingerprint) async {
+    if (kIsWeb || !baseUrl.startsWith('https://')) return;
+    final uri = Uri.parse(baseUrl);
+    final hostPort = '${uri.host}:${uri.hasPort ? uri.port : 443}';
+    _trustedFingerprints[hostPort] = fingerprint;
+    await tls_trust.setTrustedFingerprint(hostPort, fingerprint);
   }
 
   Map<String, String> get _headers => {
@@ -35,7 +107,7 @@ class ApiService {
 
   Future<bool> login(String username, String password) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'username': username, 'password': password}),
@@ -57,7 +129,7 @@ class ApiService {
   /// lösenord (Fas 8).
   Future<String?> changePassword(String currentPassword, String newPassword) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/auth/change-password'),
         headers: _headers,
         body: jsonEncode({'current_password': currentPassword, 'new_password': newPassword}),
@@ -72,7 +144,7 @@ class ApiService {
   /// Listar alla administrationsanvändare (admin-only, Fas 8).
   Future<List<Map<String, dynamic>>> getUsers() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/auth/users'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/auth/users'), headers: _headers);
       if (res.statusCode == 200) {
         return List<Map<String, dynamic>>.from(jsonDecode(res.body));
       }
@@ -83,7 +155,7 @@ class ApiService {
   /// Skapar en ny användare (admin-only). role är "admin" eller "viewer".
   Future<String?> createUser(String username, String password, String role) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/auth/users/create'),
         headers: _headers,
         body: jsonEncode({'username': username, 'password': password, 'role': role}),
@@ -97,7 +169,7 @@ class ApiService {
 
   Future<String?> deleteUser(String id) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/auth/users/delete'),
         headers: _headers,
         body: jsonEncode({'id': id}),
@@ -113,7 +185,7 @@ class ApiService {
   /// behöva känna till dennes nuvarande lösenord).
   Future<String?> resetUserPassword(String id, String newPassword) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/auth/users/reset-password'),
         headers: _headers,
         body: jsonEncode({'id': id, 'new_password': newPassword}),
@@ -127,7 +199,7 @@ class ApiService {
 
   Future<Map<String, dynamic>?> getSystemStatus() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/system'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/system'), headers: _headers);
       if (res.statusCode == 200) {
         return jsonDecode(res.body);
       }
@@ -137,7 +209,7 @@ class ApiService {
 
   Future<List<dynamic>> discoverInterfaces() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/interfaces/discover'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/interfaces/discover'), headers: _headers);
       if (res.statusCode == 200) {
         return jsonDecode(res.body);
       }
@@ -147,7 +219,7 @@ class ApiService {
 
   Future<List<ConntrackModel>> getConntrack() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/diagnostics/conntrack'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/diagnostics/conntrack'), headers: _headers);
       if (res.statusCode == 200) {
         final list = jsonDecode(res.body) as List;
         return list.map((e) => ConntrackModel.fromJson(e)).toList();
@@ -158,7 +230,7 @@ class ApiService {
 
   Future<List<FirewallLogModel>> getFirewallLog() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/diagnostics/firewall-log'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/diagnostics/firewall-log'), headers: _headers);
       if (res.statusCode == 200) {
         final list = jsonDecode(res.body) as List;
         return list.map((e) => FirewallLogModel.fromJson(e)).toList();
@@ -169,7 +241,7 @@ class ApiService {
 
   Future<Map<String, dynamic>?> getWireGuardServerInfo() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/vpn/wireguard/server-info'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/vpn/wireguard/server-info'), headers: _headers);
       if (res.statusCode == 200) {
         return jsonDecode(res.body);
       }
@@ -182,7 +254,7 @@ class ApiService {
   /// brandväggen, bara den publika ska sparas i candidate-konfigurationen.
   Future<Map<String, String>?> generateWireGuardPeerKeys() async {
     try {
-      final res = await http.post(Uri.parse('$baseUrl/api/v1/vpn/wireguard/generate-peer-keys'), headers: _headers);
+      final res = await _client.post(Uri.parse('$baseUrl/api/v1/vpn/wireguard/generate-peer-keys'), headers: _headers);
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
         return data.map((k, v) => MapEntry(k, v.toString()));
@@ -193,7 +265,7 @@ class ApiService {
 
   Future<String?> getOpenVPNCACertPem() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/vpn/openvpn/ca-info'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/vpn/openvpn/ca-info'), headers: _headers);
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
         return data['ca_cert_pem'] as String?;
@@ -209,7 +281,7 @@ class ApiService {
   /// candidate-konfigurationens OpenVPN.clients).
   Future<Map<String, String>?> generateOpenVPNClient(String name) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/vpn/openvpn/generate-client'),
         headers: _headers,
         body: jsonEncode({'name': name}),
@@ -227,7 +299,7 @@ class ApiService {
   /// tillfälle (var 15:e minut på agentsidan).
   Future<bool> refreshObjectSource(String objectId) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/objects/refresh-source'),
         headers: _headers,
         body: jsonEncode({'object_id': objectId}),
@@ -242,7 +314,7 @@ class ApiService {
   /// flera kan vara aktiva samtidigt — matchas på DNSBlocklistSource.id).
   Future<bool> refreshDNSBlocklist(String blocklistId) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/dns/refresh-blocklist'),
         headers: _headers,
         body: jsonEncode({'blocklist_id': blocklistId}),
@@ -257,7 +329,7 @@ class ApiService {
   /// kan visa (inte bara räkna) vad som faktiskt är blockerat.
   Future<List<String>> getDNSBlocklistDomains(String blocklistId) async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/dns/blocklist-domains?id=$blocklistId'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/dns/blocklist-domains?id=$blocklistId'), headers: _headers);
       if (res.statusCode == 200) {
         return List<String>.from(jsonDecode(res.body) ?? []);
       }
@@ -270,7 +342,7 @@ class ApiService {
   /// nftables-ruleseten, inte något agenten själv räknar/lagrar.
   Future<Map<String, Map<String, int>>> getHitCounts() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/policies/hit-counts'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/policies/hit-counts'), headers: _headers);
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
         return data.map((k, v) => MapEntry(k, (v as Map<String, dynamic>).map((k2, v2) => MapEntry(k2, v2 as int))));
@@ -281,7 +353,7 @@ class ApiService {
 
   Future<String> ping(String host) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/diagnostics/ping'),
         headers: _headers,
         body: jsonEncode({'host': host}),
@@ -299,7 +371,7 @@ class ApiService {
   /// Kör nmap mot host med valfri kombination av skanningstyper.
   Future<String> nmap(String host, {bool synScan = false, bool fullTcp = false, bool udpScan = false, bool osDetect = false}) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/diagnostics/nmap'),
         headers: _headers,
         body: jsonEncode({
@@ -322,7 +394,7 @@ class ApiService {
 
   Future<String> traceroute(String host) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/diagnostics/traceroute'),
         headers: _headers,
         body: jsonEncode({'host': host}),
@@ -339,7 +411,7 @@ class ApiService {
 
   Future<ConfigModel?> getRunningConfig() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/config/running'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/config/running'), headers: _headers);
       if (res.statusCode == 200) {
         return ConfigModel.fromJson(jsonDecode(res.body));
       }
@@ -349,7 +421,7 @@ class ApiService {
 
   Future<ConfigModel?> getCandidateConfig() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/config/candidate'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/config/candidate'), headers: _headers);
       if (res.statusCode == 200) {
         return ConfigModel.fromJson(jsonDecode(res.body));
       }
@@ -359,7 +431,7 @@ class ApiService {
 
   Future<bool> setCandidateConfig(ConfigModel config) async {
     try {
-      final res = await http.post(
+      final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/config/candidate'),
         headers: _headers,
         body: jsonEncode(config.toJson()),
@@ -374,7 +446,7 @@ class ApiService {
 
   Future<bool> applyConfig() async {
     try {
-      final res = await http.post(Uri.parse('$baseUrl/api/v1/config/apply'), headers: _headers);
+      final res = await _client.post(Uri.parse('$baseUrl/api/v1/config/apply'), headers: _headers);
       return res.statusCode == 200;
     } catch (_) {
       return false;
@@ -385,7 +457,7 @@ class ApiService {
 
   Future<bool> confirmConfig() async {
     try {
-      final res = await http.post(Uri.parse('$baseUrl/api/v1/config/confirm'), headers: _headers);
+      final res = await _client.post(Uri.parse('$baseUrl/api/v1/config/confirm'), headers: _headers);
       return res.statusCode == 200;
     } catch (_) {
       return false;
@@ -396,7 +468,7 @@ class ApiService {
 
   Future<bool> rollbackConfig() async {
     try {
-      final res = await http.post(Uri.parse('$baseUrl/api/v1/config/rollback'), headers: _headers);
+      final res = await _client.post(Uri.parse('$baseUrl/api/v1/config/rollback'), headers: _headers);
       return res.statusCode == 200;
     } catch (_) {
       return false;
@@ -407,7 +479,7 @@ class ApiService {
 
   Future<List<Map<String, dynamic>>> fetchBandwidthStats() async {
     try {
-      final res = await http.get(Uri.parse('$baseUrl/api/v1/diagnostics/bandwidth'), headers: _headers);
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/diagnostics/bandwidth'), headers: _headers);
       if (res.statusCode == 200) {
         final List dynamicList = jsonDecode(res.body);
         return dynamicList.cast<Map<String, dynamic>>();
