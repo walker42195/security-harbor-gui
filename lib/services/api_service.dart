@@ -157,6 +157,30 @@ class ApiService {
     }
   }
 
+  /// Triggar en omedelbar uppdatering av DNS-domänblocklistan (Fas 6).
+  Future<bool> refreshDNSBlocklist() async {
+    try {
+      final res = await http.post(Uri.parse('$baseUrl/api/v1/dns/refresh-blocklist'), headers: _headers);
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Läser LIVE paket-/bytesräknare för brandväggens regler (Fas 7 — Hit
+  /// counters), summerade per Policy-namn. Kommer direkt ur den skarpa
+  /// nftables-ruleseten, inte något agenten själv räknar/lagrar.
+  Future<Map<String, Map<String, int>>> getHitCounts() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/api/v1/policies/hit-counts'), headers: _headers);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        return data.map((k, v) => MapEntry(k, (v as Map<String, dynamic>).map((k2, v2) => MapEntry(k2, v2 as int))));
+      }
+    } catch (_) {}
+    return {};
+  }
+
   Future<String> ping(String host) async {
     try {
       final res = await http.post(

@@ -10,6 +10,7 @@ class ConfigModel {
   final SettingsModel settings;
   final WireGuardConfigModel? wireguard;
   final OpenVPNConfigModel? openvpn;
+  final DNSConfigModel? dns;
 
   ConfigModel({
     required this.version,
@@ -23,6 +24,7 @@ class ConfigModel {
     required this.settings,
     this.wireguard,
     this.openvpn,
+    this.dns,
   });
 
   factory ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -38,10 +40,11 @@ class ConfigModel {
       settings: SettingsModel.fromJson(json['settings'] ?? {}),
       wireguard: json['wireguard'] != null ? WireGuardConfigModel.fromJson(json['wireguard']) : null,
       openvpn: json['openvpn'] != null ? OpenVPNConfigModel.fromJson(json['openvpn']) : null,
+      dns: json['dns'] != null ? DNSConfigModel.fromJson(json['dns']) : null,
     );
   }
 
-  ConfigModel copyWith({WireGuardConfigModel? wireguard, OpenVPNConfigModel? openvpn}) => ConfigModel(
+  ConfigModel copyWith({WireGuardConfigModel? wireguard, OpenVPNConfigModel? openvpn, DNSConfigModel? dns}) => ConfigModel(
         version: version,
         revision: revision,
         updatedAt: updatedAt,
@@ -53,6 +56,7 @@ class ConfigModel {
         settings: settings,
         wireguard: wireguard ?? this.wireguard,
         openvpn: openvpn ?? this.openvpn,
+        dns: dns ?? this.dns,
       );
 
   Map<String, dynamic> toJson() => {
@@ -67,6 +71,7 @@ class ConfigModel {
         'settings': settings.toJson(),
         if (wireguard != null) 'wireguard': wireguard!.toJson(),
         if (openvpn != null) 'openvpn': openvpn!.toJson(),
+        if (dns != null) 'dns': dns!.toJson(),
       };
 }
 
@@ -486,11 +491,12 @@ class ObjectSourceModel {
 class ServiceModel {
   final String id;
   final String name;
-  final String protocol;
+  final String protocol; // "tcp", "udp", "icmp", "any", eller "group" (Fas 7)
   final List<String> ports;
   final String description;
+  final List<String> members; // Andra Service-ID:n, bara när protocol=="group"
 
-  ServiceModel({required this.id, required this.name, required this.protocol, required this.ports, required this.description});
+  ServiceModel({required this.id, required this.name, required this.protocol, required this.ports, required this.description, this.members = const []});
 
   factory ServiceModel.fromJson(Map<String, dynamic> json) {
     return ServiceModel(
@@ -499,10 +505,18 @@ class ServiceModel {
       protocol: json['protocol'] ?? 'tcp',
       ports: List<String>.from(json['ports'] ?? []),
       description: json['description'] ?? '',
+      members: List<String>.from(json['members'] ?? []),
     );
   }
 
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'protocol': protocol, 'ports': ports, 'description': description};
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'protocol': protocol,
+        'ports': ports,
+        'description': description,
+        if (members.isNotEmpty) 'members': members,
+      };
 }
 
 class PolicyModel {
@@ -521,6 +535,7 @@ class PolicyModel {
   final String description;
   final bool local; // Gäller åtkomst till brandväggen själv (INPUT), t.ex. SSH
   final bool critical; // Kräver bekräftelse innan den inaktiveras/tas bort
+  final PolicyScheduleModel? schedule; // Fas 7: tidsstyrd policy
 
   PolicyModel({
     required this.id,
@@ -538,6 +553,7 @@ class PolicyModel {
     this.description = '',
     this.local = false,
     this.critical = false,
+    this.schedule,
   });
 
   factory PolicyModel.fromJson(Map<String, dynamic> json) {
@@ -557,6 +573,7 @@ class PolicyModel {
       description: json['description'] ?? '',
       local: json['local'] ?? false,
       critical: json['critical'] ?? false,
+      schedule: json['schedule'] != null ? PolicyScheduleModel.fromJson(json['schedule']) : null,
     );
   }
 
@@ -576,7 +593,31 @@ class PolicyModel {
         'description': description,
         'local': local,
         'critical': critical,
+        if (schedule != null) 'schedule': schedule!.toJson(),
       };
+}
+
+/// Begränsar när en Policy är aktiv (Fas 7 — Schema/tidsbaserade regler).
+/// Days är engelska veckodagsnamn ("Monday".."Sunday", nftables kräver
+/// engelska), tom lista = alla dagar.
+class PolicyScheduleModel {
+  final bool enabled;
+  final List<String> days;
+  final String startTime; // "HH:MM"
+  final String endTime; // "HH:MM"
+
+  PolicyScheduleModel({required this.enabled, this.days = const [], this.startTime = '08:00', this.endTime = '17:00'});
+
+  factory PolicyScheduleModel.fromJson(Map<String, dynamic> json) {
+    return PolicyScheduleModel(
+      enabled: json['enabled'] ?? false,
+      days: List<String>.from(json['days'] ?? []),
+      startTime: json['start_time'] ?? '08:00',
+      endTime: json['end_time'] ?? '17:00',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {'enabled': enabled, 'days': days, 'start_time': startTime, 'end_time': endTime};
 }
 
 class NATConfigModel {
@@ -584,8 +625,9 @@ class NATConfigModel {
   final String internalIp;
   final int internalPort;
   final String protocol;
+  final String externalIp; // Fas 7: 1:1 NAT (dnat) eller SNAT-override (snat)
 
-  NATConfigModel({required this.externalPort, required this.internalIp, required this.internalPort, required this.protocol});
+  NATConfigModel({required this.externalPort, required this.internalIp, required this.internalPort, required this.protocol, this.externalIp = ''});
 
   factory NATConfigModel.fromJson(Map<String, dynamic> json) {
     return NATConfigModel(
@@ -593,14 +635,109 @@ class NATConfigModel {
       internalIp: json['internal_ip'] ?? '',
       internalPort: json['internal_port'] ?? 0,
       protocol: json['protocol'] ?? 'tcp',
+      externalIp: json['external_ip'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() => {
         'external_port': externalPort,
         'internal_ip': internalIp,
+        if (externalIp.isNotEmpty) 'external_ip': externalIp,
         'internal_port': internalPort,
         'protocol': protocol,
+      };
+}
+
+/// Styr brandväggens lokala DNS-resolver (Fas 6). Domänblocklistans
+/// innehåll lämnar aldrig agenten över API:t — bara källmetadata/status.
+class DNSConfigModel {
+  final bool enabled;
+  final List<String> upstreamServers;
+  final bool dotEnabled;
+  final String dotHostname;
+  final bool blocklistEnabled;
+  final String blocklistKind; // "stevenblack_hosts" | "custom_url"
+  final String blocklistUrl;
+  final int blocklistRefreshHours;
+  final String blocklistLastUpdated;
+  final String blocklistLastError;
+  final int blocklistEntryCount;
+  final List<String> customBlockedDomains;
+  final List<String> customAllowedDomains;
+
+  DNSConfigModel({
+    required this.enabled,
+    this.upstreamServers = const [],
+    this.dotEnabled = false,
+    this.dotHostname = '',
+    this.blocklistEnabled = false,
+    this.blocklistKind = 'stevenblack_hosts',
+    this.blocklistUrl = '',
+    this.blocklistRefreshHours = 24,
+    this.blocklistLastUpdated = '',
+    this.blocklistLastError = '',
+    this.blocklistEntryCount = 0,
+    this.customBlockedDomains = const [],
+    this.customAllowedDomains = const [],
+  });
+
+  factory DNSConfigModel.fromJson(Map<String, dynamic> json) {
+    return DNSConfigModel(
+      enabled: json['enabled'] ?? false,
+      upstreamServers: List<String>.from(json['upstream_servers'] ?? []),
+      dotEnabled: json['dot_enabled'] ?? false,
+      dotHostname: json['dot_hostname'] ?? '',
+      blocklistEnabled: json['blocklist_enabled'] ?? false,
+      blocklistKind: json['blocklist_kind'] ?? 'stevenblack_hosts',
+      blocklistUrl: json['blocklist_url'] ?? '',
+      blocklistRefreshHours: json['blocklist_refresh_hours'] ?? 24,
+      blocklistLastUpdated: json['blocklist_last_updated'] ?? '',
+      blocklistLastError: json['blocklist_last_error'] ?? '',
+      blocklistEntryCount: json['blocklist_entry_count'] ?? 0,
+      customBlockedDomains: List<String>.from(json['custom_blocked_domains'] ?? []),
+      customAllowedDomains: List<String>.from(json['custom_allowed_domains'] ?? []),
+    );
+  }
+
+  DNSConfigModel copyWith({
+    bool? enabled,
+    List<String>? upstreamServers,
+    bool? dotEnabled,
+    String? dotHostname,
+    bool? blocklistEnabled,
+    String? blocklistKind,
+    String? blocklistUrl,
+    int? blocklistRefreshHours,
+    List<String>? customBlockedDomains,
+    List<String>? customAllowedDomains,
+  }) =>
+      DNSConfigModel(
+        enabled: enabled ?? this.enabled,
+        upstreamServers: upstreamServers ?? this.upstreamServers,
+        dotEnabled: dotEnabled ?? this.dotEnabled,
+        dotHostname: dotHostname ?? this.dotHostname,
+        blocklistEnabled: blocklistEnabled ?? this.blocklistEnabled,
+        blocklistKind: blocklistKind ?? this.blocklistKind,
+        blocklistUrl: blocklistUrl ?? this.blocklistUrl,
+        blocklistRefreshHours: blocklistRefreshHours ?? this.blocklistRefreshHours,
+        blocklistLastUpdated: blocklistLastUpdated,
+        blocklistLastError: blocklistLastError,
+        blocklistEntryCount: blocklistEntryCount,
+        customBlockedDomains: customBlockedDomains ?? this.customBlockedDomains,
+        customAllowedDomains: customAllowedDomains ?? this.customAllowedDomains,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'enabled': enabled,
+        'upstream_servers': upstreamServers,
+        'dot_enabled': dotEnabled,
+        'dot_hostname': dotHostname,
+        'blocklist_enabled': blocklistEnabled,
+        'blocklist_kind': blocklistKind,
+        'blocklist_url': blocklistUrl,
+        'blocklist_refresh_hours': blocklistRefreshHours,
+        'custom_blocked_domains': customBlockedDomains,
+        'custom_allowed_domains': customAllowedDomains,
       };
 }
 

@@ -11,7 +11,7 @@ class PoliciesScreen extends StatefulWidget {
 }
 
 const List<String> _policyColLabels = ['#', 'Action', 'Policy Name', 'Type / Service', 'From (Källa)', 'To (Mål)', 'Port', 'Åtgärder'];
-const List<double> _policyDefaultColWidths = [28, 70, 160, 90, 150, 150, 70, 100];
+const List<double> _policyDefaultColWidths = [28, 70, 160, 90, 150, 150, 70, 160];
 const double _policyColMinWidth = 28;
 const double _policyResizeHandleWidth = 8;
 
@@ -19,11 +19,24 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   int? _selectedRowIndex;
   final List<double> _colWidths = List<double>.from(_policyDefaultColWidths);
   final ScrollController _hScrollController = ScrollController();
+  Map<String, Map<String, int>> _hitCounts = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHitCounts();
+  }
 
   @override
   void dispose() {
     _hScrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadHitCounts() async {
+    final provider = Provider.of<ConfigProvider>(context, listen: false);
+    final counts = await provider.api.getHitCounts();
+    if (mounted) setState(() => _hitCounts = counts);
   }
 
   double get _totalTableWidth => _colWidths.fold(0.0, (sum, w) => sum + w) + _policyResizeHandleWidth * _colWidths.length;
@@ -103,6 +116,12 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     side: const BorderSide(color: Colors.lightBlueAccent),
                   ),
                   onPressed: () => _showAddDNATDialog(context, provider),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
+                  tooltip: 'Uppdatera träffräknare (Hit Counters)',
+                  onPressed: _loadHitCounts,
                 ),
               ],
             ),
@@ -185,14 +204,17 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           ),
         ],
       ),
-      Text(
-        pol.name,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: pol.enabled ? Colors.white : Colors.grey,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          decoration: pol.enabled ? null : TextDecoration.lineThrough,
+      Tooltip(
+        message: 'Träffar: ${_hitCountFor(pol.name).$1} paket, ${_hitCountFor(pol.name).$2} bytes',
+        child: Text(
+          pol.name,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: pol.enabled ? Colors.white : Colors.grey,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            decoration: pol.enabled ? null : TextDecoration.lineThrough,
+          ),
         ),
       ),
       Text(pol.service, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
@@ -202,6 +224,21 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_upward, size: 13, color: Colors.grey),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Flytta upp (högre prioritet)',
+            onPressed: idx == 0 ? null : () => _movePolicy(provider, cfg, idx, idx - 1),
+          ),
+          IconButton(
+            icon: const Icon(Icons.arrow_downward, size: 13, color: Colors.grey),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Flytta ner (lägre prioritet)',
+            onPressed: idx == cfg.policies.length - 1 ? null : () => _movePolicy(provider, cfg, idx, idx + 1),
+          ),
+          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.edit, size: 14, color: Colors.cyanAccent),
             padding: EdgeInsets.zero,
@@ -261,6 +298,48 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     );
   }
 
+  // Slår upp Hit Counter-data (Fas 7) för en policy. Nyckeln i
+  // API-svaret är den exakta nftables-regelkommentaren, som skiljer sig
+  // mellan FORWARD-policies ("Namn (Tjänst)") och lokala INPUT-policies
+  // ("Namn on LAN <iface>") — summerar därför alla nycklar som börjar med
+  // policyns namn istället för att återskapa exakt kommentarformat här.
+  (int, int) _hitCountFor(String policyName) {
+    int packets = 0, bytes = 0;
+    for (final entry in _hitCounts.entries) {
+      if (entry.key == policyName || entry.key.startsWith('$policyName (') || entry.key.startsWith('$policyName on LAN')) {
+        packets += entry.value['packets'] ?? 0;
+        bytes += entry.value['bytes'] ?? 0;
+      }
+    }
+    return (packets, bytes);
+  }
+
+  String _dayLabel(String enDay) {
+    const labels = {
+      'Monday': 'Mån', 'Tuesday': 'Tis', 'Wednesday': 'Ons', 'Thursday': 'Tors',
+      'Friday': 'Fre', 'Saturday': 'Lör', 'Sunday': 'Sön',
+    };
+    return labels[enDay] ?? enDay;
+  }
+
+  Widget _dialogTimeField(String label, TextEditingController ctrl) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 34,
+          child: TextField(
+            controller: ctrl,
+            style: const TextStyle(fontSize: 12, color: Colors.white),
+            decoration: const InputDecoration(isDense: true, hintText: 'HH:MM', contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
+          ),
+        ),
+      ],
+    );
+  }
+
   String _getPortForService(String service) {
     final s = service.toUpperCase().trim();
     if (s == 'HTTP') return 'tcp:80';
@@ -309,6 +388,31 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     return result ?? false;
   }
 
+  // Byter plats på två policies i listan (Fas 7 — regelordning styr
+  // faktisk matchningsordning i nftables-adaptern, som itererar
+  // cfg.Policies i array-ordning — Policy.priority-fältet i sig läses
+  // INTE av adaptern, så en flytt måste byta plats i listan, inte bara
+  // ändra ett nummer).
+  void _movePolicy(ConfigProvider provider, ConfigModel cfg, int fromIdx, int toIdx) {
+    final updatedPolicies = List<PolicyModel>.from(cfg.policies);
+    final moved = updatedPolicies.removeAt(fromIdx);
+    updatedPolicies.insert(toIdx, moved);
+    provider.updateCandidate(ConfigModel(
+      version: cfg.version,
+      revision: cfg.revision,
+      updatedAt: cfg.updatedAt,
+      interfaces: cfg.interfaces,
+      zones: cfg.zones,
+      objects: cfg.objects,
+      services: cfg.services,
+      policies: updatedPolicies,
+      settings: cfg.settings,
+      wireguard: cfg.wireguard,
+      openvpn: cfg.openvpn,
+      dns: cfg.dns,
+    ));
+  }
+
   Future<void> _deletePolicy(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx) async {
     final pol = cfg.policies[idx];
     if (pol.critical) {
@@ -328,6 +432,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       settings: cfg.settings,
       wireguard: cfg.wireguard,
       openvpn: cfg.openvpn,
+      dns: cfg.dns,
     ));
   }
 
@@ -354,6 +459,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       description: cur.description,
       local: cur.local,
       critical: cur.critical,
+      schedule: cur.schedule,
     );
     provider.updateCandidate(ConfigModel(
       version: cfg.version,
@@ -367,6 +473,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       settings: cfg.settings,
       wireguard: cfg.wireguard,
       openvpn: cfg.openvpn,
+      dns: cfg.dns,
     ));
   }
 
@@ -377,7 +484,13 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     final nameCtrl = TextEditingController(text: pol?.name ?? 'Ny Brandväggsregel');
     bool enabled = pol?.enabled ?? true;
     String action = pol?.action ?? 'accept';
-    
+
+    // Schema (Fas 7 — tidsstyrda regler)
+    bool scheduleEnabled = pol?.schedule?.enabled ?? false;
+    Set<String> scheduleDays = Set<String>.from(pol?.schedule?.days ?? const ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']);
+    final scheduleStartCtrl = TextEditingController(text: pol?.schedule?.startTime ?? '08:00');
+    final scheduleEndCtrl = TextEditingController(text: pol?.schedule?.endTime ?? '17:00');
+
     // Tjänst & Port
     final existingService = pol?.service ?? 'ANY';
     final isPreset = ['ANY', 'HTTP', 'HTTPS', 'SSH', 'DNS', 'RDP', 'ICMP'].contains(existingService);
@@ -632,7 +745,54 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     style: TextStyle(color: Colors.grey, fontSize: 10),
                   ),
                 ] else ...[
-                  const Text('Avancerade brandväggsinställningar (Logging, TCP Sync timeout, PBR)', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  const Text('Schema (Fas 7 — tidsstyrd regel)', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Switch(
+                        value: scheduleEnabled,
+                        activeThumbColor: Colors.tealAccent,
+                        onChanged: (v) => setState(() => scheduleEnabled = v),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        scheduleEnabled ? 'Aktiv bara under angivna dagar/tider' : 'Alltid aktiv (inget schema)',
+                        style: TextStyle(color: scheduleEnabled ? Colors.tealAccent : Colors.grey, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                  if (scheduleEnabled) ...[
+                    const SizedBox(height: 10),
+                    const Text('Veckodagar', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 6,
+                      children: [
+                        for (final day in const ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+                          FilterChip(
+                            label: Text(_dayLabel(day), style: const TextStyle(fontSize: 11)),
+                            selected: scheduleDays.contains(day),
+                            selectedColor: Colors.tealAccent.withValues(alpha: 0.3),
+                            checkmarkColor: Colors.tealAccent,
+                            onSelected: (sel) => setState(() {
+                              if (sel) {
+                                scheduleDays.add(day);
+                              } else {
+                                scheduleDays.remove(day);
+                              }
+                            }),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(child: _dialogTimeField('Från (HH:MM)', scheduleStartCtrl)),
+                        const SizedBox(width: 10),
+                        Expanded(child: _dialogTimeField('Till (HH:MM)', scheduleEndCtrl)),
+                      ],
+                    ),
+                  ],
                 ],
 
                 const SizedBox(height: 16),
@@ -704,6 +864,14 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             nat: updatedNAT,
                             local: pol?.local ?? false,
                             critical: pol?.critical ?? false,
+                            schedule: scheduleEnabled
+                                ? PolicyScheduleModel(
+                                    enabled: true,
+                                    days: scheduleDays.toList(),
+                                    startTime: scheduleStartCtrl.text.trim(),
+                                    endTime: scheduleEndCtrl.text.trim(),
+                                  )
+                                : null,
                           );
 
                           if (isEditing) {
@@ -724,6 +892,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             settings: cfg.settings,
                             wireguard: cfg.wireguard,
                             openvpn: cfg.openvpn,
+                            dns: cfg.dns,
                           ));
                         }
                         Navigator.pop(ctx);
@@ -1038,6 +1207,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           settings: cfg.settings,
                           wireguard: cfg.wireguard,
                           openvpn: cfg.openvpn,
+                          dns: cfg.dns,
                         ));
                       }
                       Navigator.pop(ctx);

@@ -233,6 +233,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
       settings: cfg.settings,
       wireguard: cfg.wireguard,
       openvpn: cfg.openvpn,
+      dns: cfg.dns,
     ));
   }
 
@@ -294,6 +295,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                   settings: cfg.settings,
                   wireguard: cfg.wireguard,
                   openvpn: cfg.openvpn,
+                  dns: cfg.dns,
                 ));
               }
               Navigator.pop(ctx);
@@ -410,6 +412,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                           settings: cfg.settings,
                           wireguard: cfg.wireguard,
                           openvpn: cfg.openvpn,
+                          dns: cfg.dns,
                         ));
                         Navigator.pop(ctx);
                         await provider.api.refreshObjectSource(savedObj.id);
