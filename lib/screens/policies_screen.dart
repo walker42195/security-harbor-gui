@@ -340,8 +340,30 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     String selectedServicePreset = isPreset ? existingService : 'CUSTOM';
     final customPortCtrl = TextEditingController(text: isPreset ? '' : existingService);
 
-    List<String> fromMembers = pol != null ? pol.sourceZone.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : ['LAN'];
-    List<String> toMembers = pol != null ? pol.destZone.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : ['SERVERS'];
+    // Objektnamnet (om sourceObj/destObj är satt, t.ex. en hot-lista) tas med
+    // i From/To-rutan tillsammans med ev. zoner, så att en befintlig
+    // objekt-baserad policy visas och kan sparas om korrekt (se
+    // resolveObjOrZones nedan vid Spara).
+    String? objNameById(String? objId) {
+      if (objId == null || objId == 'ANY' || cfg == null) return null;
+      for (final o in cfg.objects) {
+        if (o.id == objId) return o.name;
+      }
+      return null;
+    }
+
+    List<String> fromMembers = pol != null
+        ? [
+            ...pol.sourceZone.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty),
+            if (objNameById(pol.sourceObj) != null) objNameById(pol.sourceObj)!,
+          ]
+        : ['LAN'];
+    List<String> toMembers = pol != null
+        ? [
+            ...pol.destZone.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty),
+            if (objNameById(pol.destObj) != null) objNameById(pol.destObj)!,
+          ]
+        : ['SERVERS'];
 
     // DNAT
     final extPortCtrl = TextEditingController(text: pol?.nat?.externalPort.toString() ?? '443');
@@ -597,16 +619,42 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             finalService = selectedServicePreset;
                           }
 
+                          // Ett valt medlemsnamn i From/To-rutan kan antingen vara en zon
+                          // (LAN/WAN/SERVERS/...) eller ett Objekt (t.ex. en Spamhaus-hot-
+                          // lista, Fas 5) — bara objekt matchas faktiskt av brandväggen
+                          // (Policy.SourceObj/DestObj, se nftables-adapterns
+                          // objectMatchExpr), så ett valt objekt måste hamna där, inte bara
+                          // som text i SourceZone/DestZone. Backend-modellen har plats för
+                          // EN källa/mål-objekt per policy — väljs fler än ett används det
+                          // först valda och resten ignoreras.
+                          String resolveObjOrZones(List<String> members, List<String> zonesOut) {
+                            String objId = 'ANY';
+                            for (final m in members) {
+                              final match = cfg.objects.where((o) => o.name == m);
+                              if (match.isNotEmpty) {
+                                if (objId == 'ANY') objId = match.first.id;
+                              } else {
+                                zonesOut.add(m);
+                              }
+                            }
+                            return objId;
+                          }
+
+                          final srcZones = <String>[];
+                          final dstZones = <String>[];
+                          final srcObjId = resolveObjOrZones(fromMembers, srcZones);
+                          final dstObjId = resolveObjOrZones(toMembers, dstZones);
+
                           final updatedPolicies = List<PolicyModel>.from(cfg.policies);
                           final newPol = PolicyModel(
                             id: isEditing ? pol!.id : 'pol_${DateTime.now().millisecondsSinceEpoch}',
                             name: nameCtrl.text,
                             enabled: enabled,
                             priority: pol?.priority ?? (cfg.policies.length + 1),
-                            sourceZone: fromMembers.join(', '),
-                            destZone: toMembers.join(', '),
-                            sourceObj: 'ANY',
-                            destObj: 'ANY',
+                            sourceZone: srcZones.join(', '),
+                            destZone: dstZones.join(', '),
+                            sourceObj: srcObjId,
+                            destObj: dstObjId,
                             service: finalService,
                             action: action,
                             nat: updatedNAT,
@@ -757,7 +805,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         if (!available.contains(z.name)) available.add(z.name);
       }
       for (final o in cfg.objects) {
-        if (!available.contains(o.name)) available.add('${o.name} (${o.values.join(", ")})');
+        if (!available.contains(o.name)) available.add(o.name);
       }
     }
 

@@ -99,15 +99,34 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                     : 'Typ: ${obj.type.toUpperCase()}  |  Värden: ${obj.values.join(", ")}',
                 style: const TextStyle(fontSize: 11),
               ),
-              trailing: src == null
-                  ? null
-                  : refreshing
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.tealAccent))
-                      : IconButton(
-                          icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
-                          tooltip: 'Uppdatera nu',
-                          onPressed: () => _refreshSource(provider, obj),
-                        ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (src != null)
+                    refreshing
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 8),
+                            child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.tealAccent)),
+                          )
+                        : IconButton(
+                            icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
+                            tooltip: 'Uppdatera nu',
+                            onPressed: () => _refreshSource(provider, obj),
+                          ),
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 18, color: Colors.cyanAccent),
+                    tooltip: 'Redigera',
+                    onPressed: () => src != null
+                        ? _showAddThreatFeedDialog(context, provider, existing: obj)
+                        : _showAddObjectDialog(context, provider, existing: obj),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                    tooltip: 'Ta bort',
+                    onPressed: () => _deleteObject(context, provider, obj),
+                  ),
+                ],
+              ),
             ),
             if (src != null)
               Padding(
@@ -180,9 +199,46 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
     }
   }
 
-  void _showAddObjectDialog(BuildContext context, ConfigProvider provider) {
-    final nameCtrl = TextEditingController(text: 'WEB-SERVERS');
-    final valCtrl = TextEditingController(text: '192.168.10.10, 192.168.10.11');
+  Future<void> _deleteObject(BuildContext context, ConfigProvider provider, ObjectModel obj) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: const Text('Ta bort objekt?', style: TextStyle(color: Colors.white, fontSize: 14)),
+        content: Text('Är du säker på att du vill ta bort "${obj.name}"? Policies som refererar till det slutar fungera som avsett.', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.black),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Ta bort', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    if (cfg == null) return;
+    final updatedObjs = cfg.objects.where((o) => o.id != obj.id).toList();
+    await provider.updateCandidate(ConfigModel(
+      version: cfg.version,
+      revision: cfg.revision,
+      updatedAt: cfg.updatedAt,
+      interfaces: cfg.interfaces,
+      zones: cfg.zones,
+      objects: updatedObjs,
+      services: cfg.services,
+      policies: cfg.policies,
+      settings: cfg.settings,
+      wireguard: cfg.wireguard,
+      openvpn: cfg.openvpn,
+    ));
+  }
+
+  void _showAddObjectDialog(BuildContext context, ConfigProvider provider, {ObjectModel? existing}) {
+    final nameCtrl = TextEditingController(text: existing?.name ?? 'WEB-SERVERS');
+    final valCtrl = TextEditingController(text: existing != null ? existing.values.join(', ') : '192.168.10.10, 192.168.10.11');
 
     showDialog(
       context: context,
@@ -196,7 +252,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              dialogTitleRow(context, 'Skapa nytt Nätverksobjekt', () => Navigator.pop(ctx)),
+              dialogTitleRow(context, existing != null ? 'Redigera Nätverksobjekt' : 'Skapa nytt Nätverksobjekt', () => Navigator.pop(ctx)),
               const SizedBox(height: 12),
 
               dialogSection(title: 'OBJEKT', children: [
@@ -216,14 +272,16 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                     onPressed: () {
               final cfg = provider.candidateConfig ?? provider.runningConfig;
               if (cfg != null) {
-                final newObj = ObjectModel(
-                  id: 'obj_${DateTime.now().millisecondsSinceEpoch}',
+                final savedObj = ObjectModel(
+                  id: existing?.id ?? 'obj_${DateTime.now().millisecondsSinceEpoch}',
                   name: nameCtrl.text,
-                  type: 'host',
-                  values: valCtrl.text.split(',').map((e) => e.trim()).toList(),
-                  description: 'Skapad i GUI',
+                  type: existing?.type ?? 'host',
+                  values: valCtrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+                  description: existing?.description ?? 'Skapad i GUI',
                 );
-                final updatedObjs = List<ObjectModel>.from(cfg.objects)..add(newObj);
+                final updatedObjs = existing != null
+                    ? cfg.objects.map((o) => o.id == existing.id ? savedObj : o).toList()
+                    : (List<ObjectModel>.from(cfg.objects)..add(savedObj));
                 provider.updateCandidate(ConfigModel(
                   version: cfg.version,
                   revision: cfg.revision,
@@ -250,12 +308,13 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
     );
   }
 
-  void _showAddThreatFeedDialog(BuildContext context, ConfigProvider provider) {
-    final nameCtrl = TextEditingController(text: 'Spamhaus DROP');
-    final urlCtrl = TextEditingController();
-    final countryCtrl = TextEditingController(text: 'RU');
-    final refreshHoursCtrl = TextEditingController(text: '24');
-    String kind = 'spamhaus_drop';
+  void _showAddThreatFeedDialog(BuildContext context, ConfigProvider provider, {ObjectModel? existing}) {
+    final src = existing?.source;
+    final nameCtrl = TextEditingController(text: existing?.name ?? 'Spamhaus DROP');
+    final urlCtrl = TextEditingController(text: src?.url ?? '');
+    final countryCtrl = TextEditingController(text: src != null && src.countryCode.isNotEmpty ? src.countryCode : 'RU');
+    final refreshHoursCtrl = TextEditingController(text: (src?.refreshHours ?? 24).toString());
+    String kind = src?.kind ?? 'spamhaus_drop';
 
     showDialog(
       context: context,
@@ -270,7 +329,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                dialogTitleRow(context, 'Lägg till Hot-lista / GeoIP-objekt', () => Navigator.pop(ctx)),
+                dialogTitleRow(context, existing != null ? 'Redigera Hot-lista / GeoIP-objekt' : 'Lägg till Hot-lista / GeoIP-objekt', () => Navigator.pop(ctx)),
                 const SizedBox(height: 12),
                 dialogSection(title: 'KÄLLA', children: [
                   dialogField(nameCtrl, 'Objektnamn'),
@@ -310,7 +369,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                     const SizedBox(width: 8),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
-                      child: const Text('Skapa & hämta nu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      child: Text(existing != null ? 'Spara & hämta nu' : 'Skapa & hämta nu', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () async {
                         final cfg = provider.candidateConfig ?? provider.runningConfig;
                         if (cfg == null) {
@@ -318,12 +377,17 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                           return;
                         }
                         final objType = kind == 'geoip_country' ? 'geoip' : 'iplist';
-                        final newObj = ObjectModel(
-                          id: 'obj_${DateTime.now().millisecondsSinceEpoch}',
+                        // Behåller befintliga values vid redigering (uppdateras ändå
+                        // vid nästa "Uppdatera nu"/periodisk hämtning) — nollställs
+                        // bara om källtypen faktiskt bytts, eftersom gamla postar
+                        // annars skulle vara missvisande för en helt annan källa.
+                        final kindChanged = existing != null && existing.source?.kind != kind;
+                        final savedObj = ObjectModel(
+                          id: existing?.id ?? 'obj_${DateTime.now().millisecondsSinceEpoch}',
                           name: nameCtrl.text.trim().isEmpty ? _kindLabel(kind) : nameCtrl.text.trim(),
                           type: objType,
-                          values: const [],
-                          description: 'Automatiskt uppdaterad (${_kindLabel(kind)})',
+                          values: (existing == null || kindChanged) ? const [] : existing.values,
+                          description: existing?.description ?? 'Automatiskt uppdaterad (${_kindLabel(kind)})',
                           source: ObjectSourceModel(
                             kind: kind,
                             url: urlCtrl.text.trim(),
@@ -331,7 +395,9 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                             refreshHours: int.tryParse(refreshHoursCtrl.text.trim()) ?? 24,
                           ),
                         );
-                        final updatedObjs = List<ObjectModel>.from(cfg.objects)..add(newObj);
+                        final updatedObjs = existing != null
+                            ? cfg.objects.map((o) => o.id == existing.id ? savedObj : o).toList()
+                            : (List<ObjectModel>.from(cfg.objects)..add(savedObj));
                         await provider.updateCandidate(ConfigModel(
                           version: cfg.version,
                           revision: cfg.revision,
@@ -346,7 +412,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                           openvpn: cfg.openvpn,
                         ));
                         Navigator.pop(ctx);
-                        await provider.api.refreshObjectSource(newObj.id);
+                        await provider.api.refreshObjectSource(savedObj.id);
                         await provider.fetchAll();
                       },
                     ),
