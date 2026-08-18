@@ -123,7 +123,10 @@ class InterfacesScreen extends StatelessWidget {
                         '${iface.id} (${iface.device})${isVLAN ? " [VLAN ${iface.vlanId}]" : ""}',
                         style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text('Zon: ${iface.zone}  |  Typ: ${isStatic ? "Statisk IP (${iface.ipv4})" : "DHCP-Klient"}', style: const TextStyle(fontSize: 11)),
+                      subtitle: Text(
+                        'Zon: ${iface.zone}  |  Typ: ${isStatic ? "Statisk IP (${iface.ipv4})" : "DHCP-Klient${iface.ipv4.isNotEmpty ? " (${iface.ipv4})" : ""}"}',
+                        style: const TextStyle(fontSize: 11),
+                      ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -157,6 +160,18 @@ class InterfacesScreen extends StatelessWidget {
                                     backgroundColor: isStatic ? Colors.lightBlueAccent.withValues(alpha: 0.15) : Colors.amber.withValues(alpha: 0.15),
                                     visualDensity: VisualDensity.compact,
                                   ),
+                                  if (iface.ipv4.isNotEmpty)
+                                    Chip(
+                                      label: Text('${isWAN ? "Extern IP" : "IP"}: ${_cidrAddress(iface.ipv4)}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                      backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                  if (iface.ipv4.contains('/'))
+                                    Chip(
+                                      label: Text('Subnät: ${iface.ipv4} (${_cidrNetmask(iface.ipv4)})', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                                      backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
                                   if (iface.gateway.isNotEmpty)
                                     Chip(
                                       label: Text('Gateway: ${iface.gateway}', style: const TextStyle(color: Colors.white, fontSize: 10)),
@@ -622,5 +637,20 @@ class InterfacesScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Adressen ur ett "x.x.x.x/yy"-CIDR-uttryck, utan prefixlängden.
+  String _cidrAddress(String cidr) => cidr.split('/').first;
+
+  /// Nätmasken (t.ex. "255.255.255.0") som motsvarar CIDR-prefixlängden
+  /// i ett "x.x.x.x/yy"-uttryck. Returnerar tom sträng om formatet inte
+  /// kan tolkas.
+  String _cidrNetmask(String cidr) {
+    final parts = cidr.split('/');
+    if (parts.length != 2) return '';
+    final prefix = int.tryParse(parts[1]);
+    if (prefix == null || prefix < 0 || prefix > 32) return '';
+    final mask = prefix == 0 ? 0 : (0xFFFFFFFF << (32 - prefix)) & 0xFFFFFFFF;
+    return [24, 16, 8, 0].map((shift) => (mask >> shift) & 0xFF).join('.');
   }
 }
