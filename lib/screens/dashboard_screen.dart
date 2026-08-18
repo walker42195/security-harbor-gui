@@ -35,6 +35,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   Timer? _metricsTimer;
+  Timer? _statusTimer;
   final Map<String, InterfaceMetricHistory> _metrics = {};
 
   @override
@@ -46,6 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _metricsTimer?.cancel();
+    _statusTimer?.cancel();
     super.dispose();
   }
 
@@ -53,6 +55,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _pollBandwidth();
     _metricsTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _pollBandwidth();
+    });
+
+    // Separat, glesare timer för CPU/RAM/uptime (systemStatus) — annars
+    // stod dessa siffror still efter första inloggningen (bara hämtade en
+    // gång i ConfigProvider.fetchAll), trots att gränssnittet såg ut att
+    // vara "live". 3 sekunder räcker gott för värden som ändå bara ändras
+    // sakta, och håller nere belastningen från backendens CPU-provtagning
+    // (blockerar ~100ms per anrop, se readCPUPercent).
+    Provider.of<ConfigProvider>(context, listen: false).refreshSystemStatus();
+    _statusTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+      Provider.of<ConfigProvider>(context, listen: false).refreshSystemStatus();
     });
   }
 

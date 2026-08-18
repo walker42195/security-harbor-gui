@@ -104,19 +104,23 @@ class ApiService {
   // "admin" eller "viewer" (Fas 8 — flera användare/roller). Sätts av
   // login() från serverns svar.
   String? role;
+  // Den faktiskt inloggade användaren — sätts av login() från serverns
+  // svar (inte bara ekot av vad man skrev in i fältet).
+  String? username;
 
-  Future<bool> login(String username, String password) async {
+  Future<bool> login(String usernameInput, String password) async {
     try {
       final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/auth/login'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': username, 'password': password}),
+        body: jsonEncode({'username': usernameInput, 'password': password}),
       );
 
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         token = data['token'];
         role = data['role'];
+        username = data['user'];
         return true;
       }
       return false;

@@ -67,7 +67,10 @@ class _MainScreenState extends State<MainScreen> {
                     color: Colors.cyanAccent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(3),
                   ),
-                  child: const Text('FIREWALL OS v0.2.2', style: TextStyle(color: Colors.cyanAccent, fontSize: 9, fontWeight: FontWeight.bold)),
+                  child: Text(
+                    'FIREWALL OS ${provider.systemStatus?['version'] ?? '—'}',
+                    style: const TextStyle(color: Colors.cyanAccent, fontSize: 9, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 const Spacer(),
                 Container(
@@ -108,10 +111,10 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 const SizedBox(width: 4),
                 Row(
-                  children: const [
-                    Icon(Icons.person_outline, size: 14, color: Colors.grey),
-                    SizedBox(width: 4),
-                    Text('admin', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  children: [
+                    const Icon(Icons.person_outline, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(provider.api.username ?? '—', style: const TextStyle(color: Colors.grey, fontSize: 11)),
                   ],
                 ),
               ],

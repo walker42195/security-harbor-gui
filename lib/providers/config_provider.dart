@@ -95,9 +95,20 @@ class ConfigProvider extends ChangeNotifier {
   Future<void> logout() async {
     isAuthenticated = false;
     api.token = null;
+    api.role = null;
+    api.username = null;
     runningConfig = null;
     candidateConfig = null;
     systemStatus = null;
+    notifyListeners();
+  }
+
+  /// Uppdaterar ENDAST systemStatus (CPU/RAM/uptime m.m.) utan att röra
+  /// running/candidate-configen — anropas periodiskt från Dashboard så
+  /// siffrorna faktiskt lever, se _pollBandwidth i dashboard_screen.dart.
+  Future<void> refreshSystemStatus() async {
+    if (!isAuthenticated) return;
+    systemStatus = await api.getSystemStatus();
     notifyListeners();
   }
 

@@ -119,9 +119,6 @@ const List<double> _defaultColWidths = [62, 130, 60, 200, 130, 200, 130, 90];
 const List<String> _colLabels = ['Åtgärd', 'Tid', 'Protokoll', 'Källa', 'Källans MAC', 'Mål', 'Målets MAC', 'State/Kedja'];
 const double _colMinWidth = 40;
 const double _resizeHandleWidth = 14;
-// Rymmer två textrader (Källa/Mål med objektnamn på egen rad) — se
-// _buildDataRow för varför ALLA celler ges exakt den här höjden.
-const double _rowCellHeight = 34;
 
 class _ConnectionsScreenState extends State<ConnectionsScreen> {
   Timer? _pollTimer;
@@ -463,21 +460,21 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
           style: TextStyle(color: r.accepted ? Colors.tealAccent : Colors.redAccent, fontSize: 9, fontWeight: FontWeight.bold),
         ),
       ),
-      SelectableText(r.timestamp.isEmpty ? '—' : r.timestamp, style: _cellStyle, maxLines: 1),
-      SelectableText(r.protocol.toUpperCase(), style: _cellStyle, maxLines: 1),
-      SelectableText(
+      Text(r.timestamp.isEmpty ? '—' : r.timestamp, style: _cellStyle, overflow: TextOverflow.ellipsis),
+      Text(r.protocol.toUpperCase(), style: _cellStyle, overflow: TextOverflow.ellipsis),
+      Text(
         '${r.srcIp}${r.srcPort > 0 ? ':${r.srcPort}' : ''}${srcName != null ? '\n$srcName' : ''}',
         style: _cellStyle,
-        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
-      SelectableText(r.srcMac.isEmpty ? '—' : r.srcMac, style: _cellStyle, maxLines: 1),
-      SelectableText(
+      Text(r.srcMac.isEmpty ? '—' : r.srcMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
+      Text(
         '${r.dstIp}${r.dstPort > 0 ? ':${r.dstPort}' : ''}${dstName != null ? '\n$dstName' : ''}',
         style: _cellStyle,
-        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
       ),
-      SelectableText(r.dstMac.isEmpty ? '—' : r.dstMac, style: _cellStyle, maxLines: 1),
-      SelectableText(r.stateOrChain, style: _cellStyle, maxLines: 1),
+      Text(r.dstMac.isEmpty ? '—' : r.dstMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
+      Text(r.stateOrChain, style: _cellStyle, overflow: TextOverflow.ellipsis),
     ];
 
     return Container(
@@ -486,20 +483,9 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         border: Border(bottom: BorderSide(color: const Color(0xFF334155).withValues(alpha: 0.5))),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           for (int i = 0; i < widths.length; i++) ...[
-            // Alla celler tvingas till EXAKT samma boxhöjd — annars centrerar
-            // Row varje cell efter sin EGEN naturliga höjd, och SelectableText
-            // (använd för att texten ska gå att markera/kopiera) har inte
-            // exakt samma inbyggda vertikala mått som en vanlig Text eller
-            // badge-Containern, vilket gav synligt omjukt text-baseline
-            // mellan kolumnerna trots att varje cell för sig var "centrerad".
-            SizedBox(
-              width: widths[i],
-              height: _rowCellHeight,
-              child: Align(alignment: Alignment.centerLeft, child: cells[i]),
-            ),
+            SizedBox(width: widths[i], child: cells[i]),
             SizedBox(width: _resizeHandleWidth),
           ],
         ],
@@ -514,8 +500,16 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   // innanför samma horisontella scroll-region, så den förblir vertikalt
   // fast ("sticky") medan raderna scrollar, men rör sig i sidled i takt med
   // dem eftersom det är exakt samma scroll-offset.
+  // SelectionArea (istället för SelectableText per cell) gör hela tabellen
+  // musmarkerbar med vanliga Text-widgetar — SelectableText har inte exakt
+  // samma layoutmått som Text (extra utrymme reserverat för markörer/
+  // handtag), vilket gav ett synligt ojämnt baseline mellan kolumnerna
+  // trots att varje cell för sig var korrekt centrerad. Med SelectionArea
+  // slipper vi det problemet helt eftersom cellerna är rena Text-widgetar
+  // igen, och man kan dessutom markera text över FLERA celler i ett drag.
   Widget _buildTable(List<_TrafficRow> rows, List<ObjectModel> objects) {
-    return Container(
+    return SelectionArea(
+      child: Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
@@ -560,6 +554,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             ),
           );
         },
+      ),
       ),
     );
   }

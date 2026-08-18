@@ -92,6 +92,11 @@ static void my_application_activate(GApplication* application) {
     "  background-image: none;\n"
     "  color: #FFFFFF;\n"
     "  border-bottom: 1px solid #334155;\n"
+    // Adwaita ritar normalt en ljus 1px "inset"-highlight högst upp på
+    // headerbar (för att ge ett upphöjt/glansigt intryck) — det är oftast
+    // DEN, inte den yttre decoration-ramen nedan, som syns som en ljus
+    // linje ovanför den mörka titelraden. Nollställ explicit.
+    "  box-shadow: none;\n"
     "}\n"
     "headerbar label, .titlebar label {\n"
     "  color: #FFFFFF;\n"
