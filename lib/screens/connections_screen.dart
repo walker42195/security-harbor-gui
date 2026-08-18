@@ -460,21 +460,21 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
           style: TextStyle(color: r.accepted ? Colors.tealAccent : Colors.redAccent, fontSize: 9, fontWeight: FontWeight.bold),
         ),
       ),
-      Text(r.timestamp.isEmpty ? '—' : r.timestamp, style: _cellStyle, overflow: TextOverflow.ellipsis),
-      Text(r.protocol.toUpperCase(), style: _cellStyle, overflow: TextOverflow.ellipsis),
-      Text(
+      SelectableText(r.timestamp.isEmpty ? '—' : r.timestamp, style: _cellStyle, maxLines: 1),
+      SelectableText(r.protocol.toUpperCase(), style: _cellStyle, maxLines: 1),
+      SelectableText(
         '${r.srcIp}${r.srcPort > 0 ? ':${r.srcPort}' : ''}${srcName != null ? '\n$srcName' : ''}',
         style: _cellStyle,
-        overflow: TextOverflow.ellipsis,
+        maxLines: 2,
       ),
-      Text(r.srcMac.isEmpty ? '—' : r.srcMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
-      Text(
+      SelectableText(r.srcMac.isEmpty ? '—' : r.srcMac, style: _cellStyle, maxLines: 1),
+      SelectableText(
         '${r.dstIp}${r.dstPort > 0 ? ':${r.dstPort}' : ''}${dstName != null ? '\n$dstName' : ''}',
         style: _cellStyle,
-        overflow: TextOverflow.ellipsis,
+        maxLines: 2,
       ),
-      Text(r.dstMac.isEmpty ? '—' : r.dstMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
-      Text(r.stateOrChain, style: _cellStyle, overflow: TextOverflow.ellipsis),
+      SelectableText(r.dstMac.isEmpty ? '—' : r.dstMac, style: _cellStyle, maxLines: 1),
+      SelectableText(r.stateOrChain, style: _cellStyle, maxLines: 1),
     ];
 
     return Container(
