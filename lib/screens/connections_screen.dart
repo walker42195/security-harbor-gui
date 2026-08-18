@@ -62,6 +62,10 @@ class _TrafficRow {
 /// Slår upp ett läsbart objektnamn för en IP-adress mot de Host/Network-objekt
 /// som finns i den körande konfigurationen (samma objekt som används i
 /// Policy-editorn). Enkel exakt-match för Host och CIDR-innehåll för Network.
+/// Grov men tillräcklig avgörning av IP-version: en IPv6-adress innehåller
+/// alltid ":", en IPv4-adress (eller en IPv4:port-sträng) aldrig.
+bool _isIPv6(String ip) => ip.contains(':');
+
 String? _resolveObjectName(List<ObjectModel> objects, String ip) {
   if (ip.isEmpty) return null;
   for (final obj in objects) {
@@ -132,6 +136,10 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   final TextEditingController _nameController = TextEditingController();
   String _directionFilter = 'ANY'; // ANY, FROM, TO
   String _actionFilter = 'ALL'; // ALL, ACCEPT, DENY
+  // IPv4 aktivt som default — det är i praktiken all trafik i det här
+  // nätet idag, så IPv6 (om något någonsin dyker upp) eller "Alla" får
+  // väljas medvetet istället för att blanda in i vyn från start.
+  String _ipVersionFilter = 'IPV4'; // ALL, IPV4, IPV6
 
   @override
   void initState() {
@@ -177,6 +185,11 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       rows = rows.where((r) => r.accepted).toList();
     } else if (_actionFilter == 'DENY') {
       rows = rows.where((r) => !r.accepted).toList();
+    }
+
+    if (_ipVersionFilter != 'ALL') {
+      final wantIPv6 = _ipVersionFilter == 'IPV6';
+      rows = rows.where((r) => _isIPv6(r.srcIp.isNotEmpty ? r.srcIp : r.dstIp) == wantIPv6).toList();
     }
 
     final ipFilter = _ipController.text.trim();
@@ -288,6 +301,11 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             'ACCEPT': 'Endast Accept',
             'DENY': 'Endast Deny',
           }, (v) => setState(() => _actionFilter = v)),
+          _buildDropdown('IP-version', _ipVersionFilter, const {
+            'ALL': 'Alla',
+            'IPV4': 'Endast IPv4',
+            'IPV6': 'Endast IPv6',
+          }, (v) => setState(() => _ipVersionFilter = v)),
           TextButton.icon(
             icon: const Icon(Icons.clear, size: 14, color: Colors.grey),
             label: const Text('Rensa filter', style: TextStyle(fontSize: 11, color: Colors.grey)),
@@ -297,6 +315,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
               _nameController.clear();
               _directionFilter = 'ANY';
               _actionFilter = 'ALL';
+              _ipVersionFilter = 'IPV4';
             }),
           ),
         ],
