@@ -10,8 +10,55 @@ class PoliciesScreen extends StatefulWidget {
   State<PoliciesScreen> createState() => _PoliciesScreenState();
 }
 
+const List<String> _policyColLabels = ['#', 'Action', 'Policy Name', 'Type / Service', 'From (Källa)', 'To (Mål)', 'Port', 'Åtgärder'];
+const List<double> _policyDefaultColWidths = [28, 70, 160, 90, 150, 150, 70, 100];
+const double _policyColMinWidth = 28;
+const double _policyResizeHandleWidth = 8;
+
 class _PoliciesScreenState extends State<PoliciesScreen> {
   int? _selectedRowIndex;
+  final List<double> _colWidths = List<double>.from(_policyDefaultColWidths);
+  final ScrollController _hScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _hScrollController.dispose();
+    super.dispose();
+  }
+
+  double get _totalTableWidth => _colWidths.fold(0.0, (sum, w) => sum + w) + _policyResizeHandleWidth * _colWidths.length;
+
+  Widget _resizeHandle(int colIndex) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onHorizontalDragUpdate: (details) {
+          setState(() {
+            _colWidths[colIndex] = (_colWidths[colIndex] + details.delta.dx).clamp(_policyColMinWidth, 900.0);
+          });
+        },
+        child: SizedBox(
+          width: _policyResizeHandleWidth,
+          child: const Center(child: VerticalDivider(color: Color(0xFF334155), thickness: 1, width: 1)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPolicyHeaderRow() {
+    return Row(
+      children: [
+        for (int i = 0; i < _colWidths.length; i++) ...[
+          SizedBox(
+            width: _colWidths[i],
+            child: Text(_policyColLabels[i], style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+          ),
+          _resizeHandle(i),
+        ],
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,140 +126,137 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                       ),
                     )
                   : SingleChildScrollView(
-                      scrollDirection: Axis.vertical,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          showCheckboxColumn: false,
-                          columnSpacing: 18,
-                          horizontalMargin: 12,
-                          headingRowHeight: 28,
-                          dataRowMinHeight: 30,
-                          dataRowMaxHeight: 32,
-                          headingRowColor: WidgetStateProperty.all(const Color(0xFF334155)),
-                          columns: const [
-                            DataColumn(label: Text('#', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Action', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Policy Name', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Type / Service', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('From (Källa)', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('To (Mål)', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Port', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Åtgärder', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold))),
+                      scrollDirection: Axis.horizontal,
+                      controller: _hScrollController,
+                      child: SizedBox(
+                        width: _totalTableWidth,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              color: const Color(0xFF334155),
+                              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                              child: _buildPolicyHeaderRow(),
+                            ),
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: cfg.policies.length,
+                                itemBuilder: (context, idx) => _buildPolicyDataRow(context, provider, cfg, idx),
+                              ),
+                            ),
                           ],
-                          rows: List.generate(cfg.policies.length, (idx) {
-                            final pol = cfg.policies[idx];
-                            final isDNAT = pol.action == 'dnat';
-                            final isAllow = pol.action == 'accept';
-                            final isSelected = _selectedRowIndex == idx;
-
-                            return DataRow(
-                              selected: isSelected,
-                              onSelectChanged: (_) {
-                                setState(() {
-                                  if (_selectedRowIndex == idx) {
-                                    _selectedRowIndex = null;
-                                  } else {
-                                    _selectedRowIndex = idx;
-                                  }
-                                });
-                              },
-                              color: WidgetStateProperty.resolveWith((states) {
-                                if (isSelected) return Colors.cyan.withValues(alpha: 0.2);
-                                return idx % 2 == 0 ? const Color(0xFF1E293B) : const Color(0xFF0F172A);
-                              }),
-                              cells: [
-                                DataCell(Text('${idx + 1}', style: const TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataCell(
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        isDNAT
-                                            ? Icons.input
-                                            : isAllow
-                                                ? Icons.check_circle
-                                                : Icons.cancel,
-                                        size: 15,
-                                        color: isDNAT
-                                            ? Colors.lightBlueAccent
-                                            : isAllow
-                                                ? Colors.tealAccent
-                                                : Colors.redAccent,
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        isDNAT
-                                            ? 'DNAT'
-                                            : isAllow
-                                                ? 'Allow'
-                                                : 'Deny',
-                                        style: TextStyle(
-                                          color: isDNAT
-                                              ? Colors.lightBlueAccent
-                                              : isAllow
-                                                  ? Colors.tealAccent
-                                                  : Colors.redAccent,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                DataCell(
-                                  Text(
-                                    pol.name,
-                                    style: TextStyle(
-                                      color: pol.enabled ? Colors.white : Colors.grey,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      decoration: pol.enabled ? null : TextDecoration.lineThrough,
-                                    ),
-                                  ),
-                                ),
-                                DataCell(Text(pol.service, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11))),
-                                DataCell(Text(pol.sourceZone, style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                DataCell(Text(isDNAT && pol.nat != null ? '${pol.nat!.internalIp}:${pol.nat!.internalPort}' : pol.destZone, style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                DataCell(Text(isDNAT && pol.nat != null ? 'tcp:${pol.nat!.externalPort}' : _getPortForService(pol.service), style: const TextStyle(color: Colors.amber, fontSize: 11))),
-                                DataCell(
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(Icons.edit, size: 14, color: Colors.cyanAccent),
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                        tooltip: 'Redigera Policy Properties',
-                                        onPressed: () => _showEditPolicyDialog(context, provider, cfg, idx),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      IconButton(
-                                        icon: const Icon(Icons.delete_outline, size: 14, color: Colors.redAccent),
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
-                                        tooltip: 'Ta bort Policy',
-                                        onPressed: () => _deletePolicy(context, provider, cfg, idx),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Switch(
-                                        value: pol.enabled,
-                                        activeThumbColor: Colors.tealAccent,
-                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                        onChanged: (val) => _togglePolicy(context, provider, cfg, idx, val),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            );
-                          }),
                         ),
                       ),
                     ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPolicyDataRow(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx) {
+    final pol = cfg.policies[idx];
+    final isDNAT = pol.action == 'dnat';
+    final isAllow = pol.action == 'accept';
+    final isSelected = _selectedRowIndex == idx;
+
+    final cells = <Widget>[
+      Text('${idx + 1}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isDNAT ? Icons.input : (isAllow ? Icons.check_circle : Icons.cancel),
+            size: 15,
+            color: isDNAT ? Colors.lightBlueAccent : (isAllow ? Colors.tealAccent : Colors.redAccent),
+          ),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              isDNAT ? 'DNAT' : (isAllow ? 'Allow' : 'Deny'),
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isDNAT ? Colors.lightBlueAccent : (isAllow ? Colors.tealAccent : Colors.redAccent),
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+      Text(
+        pol.name,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: pol.enabled ? Colors.white : Colors.grey,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          decoration: pol.enabled ? null : TextDecoration.lineThrough,
+        ),
+      ),
+      Text(pol.service, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+      _truncatedCell(pol.sourceZone),
+      _truncatedCell(isDNAT && pol.nat != null ? '${pol.nat!.internalIp}:${pol.nat!.internalPort}' : pol.destZone),
+      Text(isDNAT && pol.nat != null ? 'tcp:${pol.nat!.externalPort}' : _getPortForService(pol.service), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.amber, fontSize: 11)),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.edit, size: 14, color: Colors.cyanAccent),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Redigera Policy Properties',
+            onPressed: () => _showEditPolicyDialog(context, provider, cfg, idx),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, size: 14, color: Colors.redAccent),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Ta bort Policy',
+            onPressed: () => _deletePolicy(context, provider, cfg, idx),
+          ),
+          const SizedBox(width: 8),
+          Switch(
+            value: pol.enabled,
+            activeThumbColor: Colors.tealAccent,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            onChanged: (val) => _togglePolicy(context, provider, cfg, idx, val),
+          ),
+        ],
+      ),
+    ];
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedRowIndex = isSelected ? null : idx),
+      child: Container(
+        color: isSelected ? Colors.cyan.withValues(alpha: 0.2) : (idx % 2 == 0 ? const Color(0xFF1E293B) : const Color(0xFF0F172A)),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        child: Row(
+          children: [
+            for (int i = 0; i < _colWidths.length; i++) ...[
+              SizedBox(width: _colWidths[i], child: cells[i]),
+              const SizedBox(width: _policyResizeHandleWidth),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Begränsar From/To-cellens bredd oavsett innehåll — en policy vars
+  // SourceZone/DestZone (eller, historiskt, ett buggigt sparat objektnamn
+  // fullt av IP-adresser, se commit 2ed7c90) innehåller väldigt lång text
+  // fick annars hela DataTable-raden att svälla ut så långt åt höger att
+  // Åtgärder-kolumnen blev praktiskt taget onåbar utan att scrolla mycket
+  // långt horisontellt. Hela texten syns fortfarande i en tooltip vid hover.
+  Widget _truncatedCell(String text) {
+    return Tooltip(
+      message: text,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 160),
+        child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 11), overflow: TextOverflow.ellipsis, maxLines: 1),
       ),
     );
   }
