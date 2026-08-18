@@ -112,6 +112,16 @@ static void my_application_activate(GApplication* application) {
     "  font-family: monospace;\n"
     "  font-size: 13px;\n"
     "  font-weight: normal;\n"
+    "}\n"
+    // GTK ritar en ljus highlight-linje högst upp på hela fönsterramen
+    // (client-side-decoration-"decoration"-noden, skild från headerbar) i
+    // Adwaita-temat, särskilt när fönstret är i fokus — den ligger UTANFÖR
+    // headerbar-stylingen ovan och syns som en ljus rand ovanför den mörka
+    // titelraden. Nollställ den och ersätt med samma diskreta gränslinje
+    // som redan används på headerbar/titlebar.
+    "decoration, decoration:backdrop {\n"
+    "  box-shadow: none;\n"
+    "  border-top: 1px solid #334155;\n"
     "}\n",
     -1, NULL);
 

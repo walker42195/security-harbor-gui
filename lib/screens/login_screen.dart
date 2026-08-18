@@ -151,14 +151,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 14),
-                      Text(
-                        kIsWeb
-                            ? 'Lösenordet sparas aldrig.'
-                            : 'Adressen sparas lokalt för nästa gång — lösenordet sparas aldrig.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-                      ),
                     ],
                   ),
                 ),

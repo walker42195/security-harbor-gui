@@ -119,6 +119,9 @@ const List<double> _defaultColWidths = [62, 130, 60, 200, 130, 200, 130, 90];
 const List<String> _colLabels = ['Åtgärd', 'Tid', 'Protokoll', 'Källa', 'Källans MAC', 'Mål', 'Målets MAC', 'State/Kedja'];
 const double _colMinWidth = 40;
 const double _resizeHandleWidth = 14;
+// Rymmer två textrader (Källa/Mål med objektnamn på egen rad) — se
+// _buildDataRow för varför ALLA celler ges exakt den här höjden.
+const double _rowCellHeight = 34;
 
 class _ConnectionsScreenState extends State<ConnectionsScreen> {
   Timer? _pollTimer;
@@ -483,9 +486,20 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         border: Border(bottom: BorderSide(color: const Color(0xFF334155).withValues(alpha: 0.5))),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           for (int i = 0; i < widths.length; i++) ...[
-            SizedBox(width: widths[i], child: cells[i]),
+            // Alla celler tvingas till EXAKT samma boxhöjd — annars centrerar
+            // Row varje cell efter sin EGEN naturliga höjd, och SelectableText
+            // (använd för att texten ska gå att markera/kopiera) har inte
+            // exakt samma inbyggda vertikala mått som en vanlig Text eller
+            // badge-Containern, vilket gav synligt omjukt text-baseline
+            // mellan kolumnerna trots att varje cell för sig var "centrerad".
+            SizedBox(
+              width: widths[i],
+              height: _rowCellHeight,
+              child: Align(alignment: Alignment.centerLeft, child: cells[i]),
+            ),
             SizedBox(width: _resizeHandleWidth),
           ],
         ],
