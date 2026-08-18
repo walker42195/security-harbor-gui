@@ -22,14 +22,14 @@ class ConfigProvider extends ChangeNotifier {
   int rollbackSecondsRemaining = 0;
   Timer? _rollbackCountdownTimer;
 
-  ConfigProvider() {
-    // Auto-login med dev credentials
-    login('admin', 'SecurityHarbor2026!');
-  }
+  // OBS: Ingen auto-login här med hop-kodade uppgifter. Appen
+  // distribueras publikt (APK/Linux-paket på security.novabase.se) —
+  // ett hårdkodat lösenord i klientkoden hade skickats ut till VARJE
+  // nedladdning, oavsett vilken server de sedan pekar appen mot.
+  // Inloggning sker alltid explicit via Settings-vyn.
 
   Future<void> changeAgentUrl(String newUrl) async {
     api.setBaseUrl(newUrl);
-    await login('admin', 'SecurityHarbor2026!');
   }
 
   Future<void> login(String user, String pass) async {

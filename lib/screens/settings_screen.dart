@@ -21,8 +21,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     final provider = Provider.of<ConfigProvider>(context, listen: false);
     _urlController = TextEditingController(text: provider.api.baseUrl);
+    // Inget hop-kodat lösenord här — appen distribueras publikt, och ett
+    // förifyllt lösenord i klientkoden hade skickats ut till varje
+    // nedladdning. Användarnamnet "admin" är inte känsligt i sig.
     _usernameController = TextEditingController(text: 'admin');
-    _passwordController = TextEditingController(text: 'SecurityHarbor2026!');
+    _passwordController = TextEditingController();
   }
 
   @override

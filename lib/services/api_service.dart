@@ -6,7 +6,11 @@ class ApiService {
   String baseUrl;
   String? token;
 
-  ApiService({this.baseUrl = 'http://10.0.0.163:8443'});
+  // Ingen riktig servers LAN-IP som standardvärde här — appen distribueras
+  // publikt, och ett hop-kodat internt IP hade läckt nätverkstopologi till
+  // varje nedladdning. Användaren anger sin egen brandväggs adress i
+  // Settings-vyn.
+  ApiService({this.baseUrl = 'http://localhost:8443'});
 
   void setBaseUrl(String newUrl) {
     var formatted = newUrl.trim();
