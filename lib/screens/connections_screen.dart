@@ -110,13 +110,14 @@ class ConnectionsScreen extends StatefulWidget {
 const List<double> _defaultColWidths = [62, 130, 60, 220, 220, 130, 90];
 const List<String> _colLabels = ['Åtgärd', 'Tid', 'Protokoll', 'Källa', 'Mål', 'MAC', 'State/Kedja'];
 const double _colMinWidth = 40;
-const double _resizeHandleWidth = 8;
+const double _resizeHandleWidth = 14;
 
 class _ConnectionsScreenState extends State<ConnectionsScreen> {
   Timer? _pollTimer;
   List<ConntrackModel> _accepted = [];
   List<FirewallLogModel> _denied = [];
   bool _isLoading = false;
+  int? _hoveredResizeHandle;
   final List<double> _colWidths = List<double>.from(_defaultColWidths);
   final ScrollController _hScrollController = ScrollController();
 
@@ -354,8 +355,11 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   // Listener kringgår hela gesture-arena-mekanismen genom att läsa
   // pekarrörelser direkt.
   Widget _resizeHandle(int colIndex) {
+    final hovered = _hoveredResizeHandle == colIndex;
     return MouseRegion(
       cursor: SystemMouseCursors.resizeColumn,
+      onEnter: (_) => setState(() => _hoveredResizeHandle = colIndex),
+      onExit: (_) => setState(() => _hoveredResizeHandle = null),
       child: Listener(
         behavior: HitTestBehavior.opaque,
         onPointerMove: (event) {
@@ -366,7 +370,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         child: Container(
           width: _resizeHandleWidth,
           alignment: Alignment.center,
-          child: Container(width: 1, color: const Color(0xFF334155)),
+          child: Container(width: hovered ? 3 : 2, color: hovered ? Colors.cyanAccent : Colors.white38),
         ),
       ),
     );

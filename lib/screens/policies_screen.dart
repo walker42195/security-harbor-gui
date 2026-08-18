@@ -13,10 +13,11 @@ class PoliciesScreen extends StatefulWidget {
 const List<String> _policyColLabels = ['#', 'Action', 'Policy Name', 'Type / Service', 'From (Källa)', 'To (Mål)', 'Port', 'Åtgärder'];
 const List<double> _policyDefaultColWidths = [28, 70, 160, 90, 150, 150, 70, 160];
 const double _policyColMinWidth = 28;
-const double _policyResizeHandleWidth = 8;
+const double _policyResizeHandleWidth = 14;
 
 class _PoliciesScreenState extends State<PoliciesScreen> {
   int? _selectedRowIndex;
+  int? _hoveredResizeHandle;
   final List<double> _colWidths = List<double>.from(_policyDefaultColWidths);
   final ScrollController _hScrollController = ScrollController();
   Map<String, Map<String, int>> _hitCounts = {};
@@ -48,8 +49,11 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   // HorizontalDragGestureRecognizers gav opålitlig resize eftersom
   // scrollvyn ofta vann gesture-arenan.
   Widget _resizeHandle(int colIndex) {
+    final hovered = _hoveredResizeHandle == colIndex;
     return MouseRegion(
       cursor: SystemMouseCursors.resizeColumn,
+      onEnter: (_) => setState(() => _hoveredResizeHandle = colIndex),
+      onExit: (_) => setState(() => _hoveredResizeHandle = null),
       child: Listener(
         behavior: HitTestBehavior.opaque,
         onPointerMove: (event) {
@@ -59,7 +63,9 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         },
         child: SizedBox(
           width: _policyResizeHandleWidth,
-          child: const Center(child: VerticalDivider(color: Color(0xFF334155), thickness: 1, width: 1)),
+          child: Center(
+            child: Container(width: hovered ? 3 : 2, color: hovered ? Colors.cyanAccent : Colors.white38),
+          ),
         ),
       ),
     );
