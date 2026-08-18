@@ -11,7 +11,7 @@ class DnsScreen extends StatefulWidget {
 }
 
 class _DnsScreenState extends State<DnsScreen> {
-  bool _refreshing = false;
+  final Set<String> _refreshingIds = {};
 
   DNSConfigModel _current(ConfigProvider provider) {
     final cfg = provider.candidateConfig ?? provider.runningConfig;
@@ -24,19 +24,65 @@ class _DnsScreenState extends State<DnsScreen> {
     await provider.updateCandidate(cfg.copyWith(dns: dns));
   }
 
-  Future<void> _refreshBlocklist(ConfigProvider provider) async {
-    setState(() => _refreshing = true);
-    final ok = await provider.api.refreshDNSBlocklist();
+  Future<void> _refreshBlocklist(ConfigProvider provider, DNSConfigModel dns, DNSBlocklistSourceModel src) async {
+    setState(() => _refreshingIds.add(src.id));
+    final ok = await provider.api.refreshDNSBlocklist(src.id);
     await provider.fetchAll();
     if (mounted) {
-      setState(() => _refreshing = false);
+      setState(() => _refreshingIds.remove(src.id));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ok ? 'Domänblocklistan uppdaterad' : 'Misslyckades uppdatera blocklistan — se felmeddelande nedan'),
+          content: Text(ok ? '"${src.name}" uppdaterad' : 'Misslyckades uppdatera "${src.name}" — se felmeddelande på källan'),
           backgroundColor: ok ? Colors.teal : Colors.red,
         ),
       );
     }
+  }
+
+  Future<void> _viewDomains(ConfigProvider provider, DNSBlocklistSourceModel src) async {
+    final domains = await provider.api.getDNSBlocklistDomains(src.id);
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        child: Container(
+          width: 480,
+          height: 560,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Blockerade domäner — ${src.name} (${domains.length})',
+                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                  ),
+                  IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: domains.isEmpty
+                    ? const Center(child: Text('Inga domäner hämtade ännu.', style: TextStyle(color: Colors.grey, fontSize: 12)))
+                    : Container(
+                        decoration: BoxDecoration(color: const Color(0xFF0F172A), border: Border.all(color: const Color(0xFF334155)), borderRadius: BorderRadius.circular(4)),
+                        child: ListView.builder(
+                          itemCount: domains.length,
+                          itemBuilder: (c, i) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            child: Text(domains[i], style: const TextStyle(color: Colors.white70, fontSize: 11, fontFamily: 'monospace')),
+                          ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -62,7 +108,7 @@ class _DnsScreenState extends State<DnsScreen> {
             const SizedBox(height: 14),
             _buildResolverCard(provider, dns),
             const SizedBox(height: 14),
-            _buildBlocklistCard(provider, dns),
+            _buildBlocklistsCard(provider, dns),
           ],
         ),
       ),
@@ -137,10 +183,7 @@ class _DnsScreenState extends State<DnsScreen> {
     );
   }
 
-  Widget _buildBlocklistCard(ConfigProvider provider, DNSConfigModel dns) {
-    final urlCtrl = TextEditingController(text: dns.blocklistUrl);
-    final refreshHoursCtrl = TextEditingController(text: dns.blocklistRefreshHours.toString());
-
+  Widget _buildBlocklistsCard(ConfigProvider provider, DNSConfigModel dns) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -154,87 +197,200 @@ class _DnsScreenState extends State<DnsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Domänblockering', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-              Row(
-                children: [
-                  Switch(
-                    value: dns.blocklistEnabled,
-                    activeThumbColor: Colors.tealAccent,
-                    onChanged: (v) => _save(provider, dns.copyWith(blocklistEnabled: v)),
-                  ),
-                  Text(dns.blocklistEnabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: dns.blocklistEnabled ? Colors.tealAccent : Colors.grey, fontSize: 11)),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Text('Källa', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          DropdownButtonFormField<String>(
-            initialValue: dns.blocklistKind,
-            dropdownColor: const Color(0xFF1E293B),
-            style: const TextStyle(fontSize: 12, color: Colors.white),
-            decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
-            items: const [
-              DropdownMenuItem(value: 'stevenblack_hosts', child: Text('StevenBlack hosts (ads/malware/tracking)')),
-              DropdownMenuItem(value: 'custom_url', child: Text('Anpassad URL (en domän per rad)')),
-            ],
-            onChanged: (v) {
-              if (v != null) _save(provider, dns.copyWith(blocklistKind: v));
-            },
-          ),
-          if (dns.blocklistKind == 'custom_url') ...[
-            const SizedBox(height: 10),
-            _labeledField('URL', urlCtrl, hint: 'https://exempel.se/domains.txt'),
-          ],
-          const SizedBox(height: 10),
-          _labeledField('Uppdateringsintervall (timmar)', refreshHoursCtrl, hint: '24'),
-          const SizedBox(height: 10),
-          Row(
-            children: [
+              Text('Domänblocklistor (${dns.blocklists.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
               ElevatedButton.icon(
-                icon: const Icon(Icons.save, size: 14),
-                label: const Text('Spara', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
-                onPressed: () {
-                  _save(provider, dns.copyWith(blocklistUrl: urlCtrl.text.trim(), blocklistRefreshHours: int.tryParse(refreshHoursCtrl.text.trim()) ?? 24));
-                },
+                icon: const Icon(Icons.add, size: 14),
+                label: const Text('Lägg till blocklista', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                onPressed: () => _showAddBlocklistDialog(provider, dns),
               ),
-              const SizedBox(width: 10),
-              _refreshing
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.tealAccent))
-                  : OutlinedButton.icon(
-                      icon: const Icon(Icons.refresh, size: 14, color: Colors.tealAccent),
-                      label: const Text('Uppdatera nu', style: TextStyle(fontSize: 11, color: Colors.tealAccent)),
-                      style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.tealAccent)),
-                      onPressed: () => _refreshBlocklist(provider),
-                    ),
             ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Flera blocklistor kan vara aktiva samtidigt — de slås ihop till en gemensam lista i Unbound.',
+            style: TextStyle(color: Colors.grey, fontSize: 10),
           ),
           const SizedBox(height: 10),
-          Wrap(
-            spacing: 14,
-            runSpacing: 4,
-            children: [
-              _statusChip(Icons.list_alt, '${dns.blocklistEntryCount} blockerade domäner', Colors.grey),
-              _statusChip(Icons.update, dns.blocklistLastUpdated.isEmpty ? 'Aldrig uppdaterad' : 'Uppdaterad: ${_shortTime(dns.blocklistLastUpdated)}', Colors.grey),
-              if (dns.blocklistLastError.isNotEmpty) _statusChip(Icons.error_outline, 'Fel: ${dns.blocklistLastError}', Colors.redAccent),
-            ],
-          ),
+          if (dns.blocklists.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('Inga domänblocklistor tillagda ännu.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            )
+          else
+            ...dns.blocklists.map((src) => _buildBlocklistRow(provider, dns, src)),
         ],
       ),
     );
   }
 
-  Widget _statusChip(IconData icon, String text, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 12, color: color),
-        const SizedBox(width: 4),
-        Text(text, style: TextStyle(fontSize: 10, color: color)),
-      ],
+  Widget _buildBlocklistRow(ConfigProvider provider, DNSConfigModel dns, DNSBlocklistSourceModel src) {
+    final refreshing = _refreshingIds.contains(src.id);
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+      margin: const EdgeInsets.only(bottom: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        border: Border.all(color: const Color(0xFF334155)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(src.enabled ? Icons.block : Icons.block_outlined, size: 16, color: src.enabled ? Colors.tealAccent : Colors.grey),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: Text(src.name, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(_kindLabel(src.kind), style: const TextStyle(color: Colors.grey, fontSize: 11)),
+              ),
+              TextButton(
+                onPressed: () => _viewDomains(provider, src),
+                child: Text('${src.entryCount} domäner', style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+              ),
+              if (refreshing)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.tealAccent)),
+                )
+              else
+                IconButton(
+                  icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
+                  tooltip: 'Uppdatera nu',
+                  onPressed: () => _refreshBlocklist(provider, dns, src),
+                ),
+              Switch(
+                value: src.enabled,
+                activeThumbColor: Colors.tealAccent,
+                onChanged: (v) {
+                  final updated = dns.blocklists.map((b) => b.id == src.id ? b.copyWith(enabled: v) : b).toList();
+                  _save(provider, dns.copyWith(blocklists: updated));
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                tooltip: 'Ta bort',
+                onPressed: () {
+                  final updated = dns.blocklists.where((b) => b.id != src.id).toList();
+                  _save(provider, dns.copyWith(blocklists: updated));
+                },
+              ),
+            ],
+          ),
+          if (src.lastError.isNotEmpty || src.lastUpdated.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 26),
+              child: Wrap(
+                spacing: 14,
+                children: [
+                  Text(src.lastUpdated.isEmpty ? 'Aldrig uppdaterad' : 'Uppdaterad: ${_shortTime(src.lastUpdated)}', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                  if (src.lastError.isNotEmpty) Text('Fel: ${src.lastError}', style: const TextStyle(color: Colors.redAccent, fontSize: 10)),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
+  }
+
+  void _showAddBlocklistDialog(ConfigProvider provider, DNSConfigModel dns) {
+    final nameCtrl = TextEditingController(text: 'StevenBlack hosts');
+    final urlCtrl = TextEditingController();
+    final refreshHoursCtrl = TextEditingController(text: '24');
+    String kind = 'stevenblack_hosts';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          backgroundColor: const Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          child: Container(
+            width: 460,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Lägg till domänblocklista', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                _labeledField('Namn', nameCtrl),
+                const SizedBox(height: 12),
+                const Text('Källtyp', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                DropdownButtonFormField<String>(
+                  initialValue: kind,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(fontSize: 12, color: Colors.white),
+                  decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
+                  items: const [
+                    DropdownMenuItem(value: 'stevenblack_hosts', child: Text('StevenBlack hosts (ads/malware/tracking)')),
+                    DropdownMenuItem(value: 'custom_domain_url', child: Text('Anpassad URL (en domän per rad)')),
+                  ],
+                  onChanged: (v) => setDialogState(() {
+                    kind = v ?? kind;
+                    if (kind == 'stevenblack_hosts' && nameCtrl.text.trim().isEmpty) nameCtrl.text = 'StevenBlack hosts';
+                  }),
+                ),
+                if (kind == 'custom_domain_url') ...[
+                  const SizedBox(height: 12),
+                  _labeledField('URL', urlCtrl, hint: 'https://exempel.se/domains.txt'),
+                ],
+                const SizedBox(height: 12),
+                _labeledField('Uppdateringsintervall (timmar)', refreshHoursCtrl, hint: '24'),
+                const SizedBox(height: 6),
+                const Text(
+                  'Listan hämtas automatiskt enligt intervallet ovan. Innehållet syns i vyn efter första hämtningen.',
+                  style: TextStyle(color: Colors.amberAccent, fontSize: 10),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                      child: const Text('Skapa & hämta nu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () async {
+                        final newSrc = DNSBlocklistSourceModel(
+                          id: 'dnsbl_${DateTime.now().millisecondsSinceEpoch}',
+                          name: nameCtrl.text.trim().isEmpty ? _kindLabel(kind) : nameCtrl.text.trim(),
+                          enabled: true,
+                          kind: kind,
+                          url: urlCtrl.text.trim(),
+                          refreshHours: int.tryParse(refreshHoursCtrl.text.trim()) ?? 24,
+                        );
+                        await _save(provider, dns.copyWith(blocklists: [...dns.blocklists, newSrc]));
+                        Navigator.pop(ctx);
+                        await provider.api.refreshDNSBlocklist(newSrc.id);
+                        await provider.fetchAll();
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _kindLabel(String kind) {
+    switch (kind) {
+      case 'stevenblack_hosts':
+        return 'StevenBlack hosts';
+      case 'custom_domain_url':
+        return 'Anpassad URL';
+      default:
+        return kind;
+    }
   }
 
   String _shortTime(String iso) {

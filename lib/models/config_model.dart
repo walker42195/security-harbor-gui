@@ -655,13 +655,7 @@ class DNSConfigModel {
   final List<String> upstreamServers;
   final bool dotEnabled;
   final String dotHostname;
-  final bool blocklistEnabled;
-  final String blocklistKind; // "stevenblack_hosts" | "custom_url"
-  final String blocklistUrl;
-  final int blocklistRefreshHours;
-  final String blocklistLastUpdated;
-  final String blocklistLastError;
-  final int blocklistEntryCount;
+  final List<DNSBlocklistSourceModel> blocklists; // Flera kan vara aktiva samtidigt
   final List<String> customBlockedDomains;
   final List<String> customAllowedDomains;
 
@@ -670,13 +664,7 @@ class DNSConfigModel {
     this.upstreamServers = const [],
     this.dotEnabled = false,
     this.dotHostname = '',
-    this.blocklistEnabled = false,
-    this.blocklistKind = 'stevenblack_hosts',
-    this.blocklistUrl = '',
-    this.blocklistRefreshHours = 24,
-    this.blocklistLastUpdated = '',
-    this.blocklistLastError = '',
-    this.blocklistEntryCount = 0,
+    this.blocklists = const [],
     this.customBlockedDomains = const [],
     this.customAllowedDomains = const [],
   });
@@ -687,13 +675,7 @@ class DNSConfigModel {
       upstreamServers: List<String>.from(json['upstream_servers'] ?? []),
       dotEnabled: json['dot_enabled'] ?? false,
       dotHostname: json['dot_hostname'] ?? '',
-      blocklistEnabled: json['blocklist_enabled'] ?? false,
-      blocklistKind: json['blocklist_kind'] ?? 'stevenblack_hosts',
-      blocklistUrl: json['blocklist_url'] ?? '',
-      blocklistRefreshHours: json['blocklist_refresh_hours'] ?? 24,
-      blocklistLastUpdated: json['blocklist_last_updated'] ?? '',
-      blocklistLastError: json['blocklist_last_error'] ?? '',
-      blocklistEntryCount: json['blocklist_entry_count'] ?? 0,
+      blocklists: (json['blocklists'] as List? ?? []).map((e) => DNSBlocklistSourceModel.fromJson(e)).toList(),
       customBlockedDomains: List<String>.from(json['custom_blocked_domains'] ?? []),
       customAllowedDomains: List<String>.from(json['custom_allowed_domains'] ?? []),
     );
@@ -704,10 +686,7 @@ class DNSConfigModel {
     List<String>? upstreamServers,
     bool? dotEnabled,
     String? dotHostname,
-    bool? blocklistEnabled,
-    String? blocklistKind,
-    String? blocklistUrl,
-    int? blocklistRefreshHours,
+    List<DNSBlocklistSourceModel>? blocklists,
     List<String>? customBlockedDomains,
     List<String>? customAllowedDomains,
   }) =>
@@ -716,13 +695,7 @@ class DNSConfigModel {
         upstreamServers: upstreamServers ?? this.upstreamServers,
         dotEnabled: dotEnabled ?? this.dotEnabled,
         dotHostname: dotHostname ?? this.dotHostname,
-        blocklistEnabled: blocklistEnabled ?? this.blocklistEnabled,
-        blocklistKind: blocklistKind ?? this.blocklistKind,
-        blocklistUrl: blocklistUrl ?? this.blocklistUrl,
-        blocklistRefreshHours: blocklistRefreshHours ?? this.blocklistRefreshHours,
-        blocklistLastUpdated: blocklistLastUpdated,
-        blocklistLastError: blocklistLastError,
-        blocklistEntryCount: blocklistEntryCount,
+        blocklists: blocklists ?? this.blocklists,
         customBlockedDomains: customBlockedDomains ?? this.customBlockedDomains,
         customAllowedDomains: customAllowedDomains ?? this.customAllowedDomains,
       );
@@ -732,12 +705,70 @@ class DNSConfigModel {
         'upstream_servers': upstreamServers,
         'dot_enabled': dotEnabled,
         'dot_hostname': dotHostname,
-        'blocklist_enabled': blocklistEnabled,
-        'blocklist_kind': blocklistKind,
-        'blocklist_url': blocklistUrl,
-        'blocklist_refresh_hours': blocklistRefreshHours,
+        'blocklists': blocklists.map((e) => e.toJson()).toList(),
         'custom_blocked_domains': customBlockedDomains,
         'custom_allowed_domains': customAllowedDomains,
+      };
+}
+
+/// EN automatiskt uppdaterad domänblocklista (Fas 6). Flera kan vara
+/// aktiverade samtidigt (t.ex. StevenBlack hosts + en egen URL parallellt).
+class DNSBlocklistSourceModel {
+  final String id;
+  final String name;
+  final bool enabled;
+  final String kind; // "stevenblack_hosts" | "custom_domain_url"
+  final String url;
+  final int refreshHours;
+  final String lastUpdated;
+  final String lastError;
+  final int entryCount;
+
+  DNSBlocklistSourceModel({
+    required this.id,
+    required this.name,
+    required this.enabled,
+    this.kind = 'stevenblack_hosts',
+    this.url = '',
+    this.refreshHours = 24,
+    this.lastUpdated = '',
+    this.lastError = '',
+    this.entryCount = 0,
+  });
+
+  factory DNSBlocklistSourceModel.fromJson(Map<String, dynamic> json) {
+    return DNSBlocklistSourceModel(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      enabled: json['enabled'] ?? true,
+      kind: json['kind'] ?? 'stevenblack_hosts',
+      url: json['url'] ?? '',
+      refreshHours: json['refresh_hours'] ?? 24,
+      lastUpdated: json['last_updated'] ?? '',
+      lastError: json['last_error'] ?? '',
+      entryCount: json['entry_count'] ?? 0,
+    );
+  }
+
+  DNSBlocklistSourceModel copyWith({bool? enabled}) => DNSBlocklistSourceModel(
+        id: id,
+        name: name,
+        enabled: enabled ?? this.enabled,
+        kind: kind,
+        url: url,
+        refreshHours: refreshHours,
+        lastUpdated: lastUpdated,
+        lastError: lastError,
+        entryCount: entryCount,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'enabled': enabled,
+        'kind': kind,
+        'url': url,
+        'refresh_hours': refreshHours,
       };
 }
 

@@ -345,14 +345,22 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
 
   double get _totalTableWidth => _colWidths.fold(0.0, (sum, w) => sum + w) + _resizeHandleWidth * _colWidths.length;
 
+  // Använder rå pekar-events (Listener) istället för en
+  // HorizontalDragGestureRecognizer (GestureDetector.onHorizontalDragUpdate):
+  // handtaget sitter inuti en horisontellt scrollande SingleChildScrollView,
+  // och två HorizontalDragGestureRecognizers (handtaget + scrollvyns egen)
+  // som tävlar om samma drag i gesture-arenan gav opålitligt/obefintligt
+  // resize — scrollvyn vann ofta arenan istället för det lilla handtaget.
+  // Listener kringgår hela gesture-arena-mekanismen genom att läsa
+  // pekarrörelser direkt.
   Widget _resizeHandle(int colIndex) {
     return MouseRegion(
       cursor: SystemMouseCursors.resizeColumn,
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onHorizontalDragUpdate: (details) {
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerMove: (event) {
           setState(() {
-            _colWidths[colIndex] = (_colWidths[colIndex] + details.delta.dx).clamp(_colMinWidth, 800.0);
+            _colWidths[colIndex] = (_colWidths[colIndex] + event.delta.dx).clamp(_colMinWidth, 800.0);
           });
         },
         child: Container(

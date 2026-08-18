@@ -157,14 +157,31 @@ class ApiService {
     }
   }
 
-  /// Triggar en omedelbar uppdatering av DNS-domänblocklistan (Fas 6).
-  Future<bool> refreshDNSBlocklist() async {
+  /// Triggar en omedelbar uppdatering av EN DNS-domänblocklista (Fas 6,
+  /// flera kan vara aktiva samtidigt — matchas på DNSBlocklistSource.id).
+  Future<bool> refreshDNSBlocklist(String blocklistId) async {
     try {
-      final res = await http.post(Uri.parse('$baseUrl/api/v1/dns/refresh-blocklist'), headers: _headers);
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/v1/dns/refresh-blocklist'),
+        headers: _headers,
+        body: jsonEncode({'blocklist_id': blocklistId}),
+      );
       return res.statusCode == 200;
     } catch (_) {
       return false;
     }
+  }
+
+  /// Läser den cachade domänlistan för EN blocklist-källa — så att GUI:t
+  /// kan visa (inte bara räkna) vad som faktiskt är blockerat.
+  Future<List<String>> getDNSBlocklistDomains(String blocklistId) async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/api/v1/dns/blocklist-domains?id=$blocklistId'), headers: _headers);
+      if (res.statusCode == 200) {
+        return List<String>.from(jsonDecode(res.body) ?? []);
+      }
+    } catch (_) {}
+    return [];
   }
 
   /// Läser LIVE paket-/bytesräknare för brandväggens regler (Fas 7 — Hit

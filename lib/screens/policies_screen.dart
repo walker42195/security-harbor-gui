@@ -41,14 +41,20 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
 
   double get _totalTableWidth => _colWidths.fold(0.0, (sum, w) => sum + w) + _policyResizeHandleWidth * _colWidths.length;
 
+  // Rå pekar-events (Listener) istället för GestureDetector.
+  // onHorizontalDragUpdate — se identisk kommentar/fix i
+  // connections_screen.dart: handtaget sitter inuti en horisontellt
+  // scrollande SingleChildScrollView, och två konkurrerande
+  // HorizontalDragGestureRecognizers gav opålitlig resize eftersom
+  // scrollvyn ofta vann gesture-arenan.
   Widget _resizeHandle(int colIndex) {
     return MouseRegion(
       cursor: SystemMouseCursors.resizeColumn,
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onHorizontalDragUpdate: (details) {
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerMove: (event) {
           setState(() {
-            _colWidths[colIndex] = (_colWidths[colIndex] + details.delta.dx).clamp(_policyColMinWidth, 900.0);
+            _colWidths[colIndex] = (_colWidths[colIndex] + event.delta.dx).clamp(_policyColMinWidth, 900.0);
           });
         },
         child: SizedBox(
