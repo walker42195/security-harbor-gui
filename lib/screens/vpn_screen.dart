@@ -12,14 +12,31 @@ class VpnScreen extends StatefulWidget {
   State<VpnScreen> createState() => _VpnScreenState();
 }
 
-class _VpnScreenState extends State<VpnScreen> {
+class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMixin {
   Map<String, dynamic>? _serverInfo;
   bool _loadingServerInfo = true;
+  String? _openVpnCaCertPem;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadServerInfo();
+    _loadOpenVpnCa();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadOpenVpnCa() async {
+    final provider = Provider.of<ConfigProvider>(context, listen: false);
+    final ca = await provider.api.getOpenVPNCACertPem();
+    if (!mounted) return;
+    setState(() => _openVpnCaCertPem = ca);
   }
 
   Future<void> _loadServerInfo() async {
@@ -45,33 +62,86 @@ class _VpnScreenState extends State<VpnScreen> {
     if (mounted) await _loadServerInfo();
   }
 
+  OpenVPNConfigModel _currentOvpn(ConfigProvider provider) {
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    return cfg?.openvpn ??
+        OpenVPNConfigModel(enabled: false, listenPort: 1194, protocol: 'udp', address: '10.77.77.0/24', endpoint: '', clients: []);
+  }
+
+  Future<void> _saveOpenVpn(ConfigProvider provider, OpenVPNConfigModel ovpn) async {
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    if (cfg == null) return;
+    await provider.updateCandidate(cfg.copyWith(openvpn: ovpn));
+    if (mounted) await _loadOpenVpnCa();
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ConfigProvider>(context);
     final wg = _currentWg(provider);
     final serverPubKey = _serverInfo?['public_key'] as String? ?? '';
+    final ovpn = _currentOvpn(provider);
 
     return Container(
       color: const Color(0xFF0F172A),
       alignment: Alignment.topLeft,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Row(
               children: [
-                Icon(Icons.vpn_lock, color: Colors.cyanAccent, size: 22),
-                SizedBox(width: 10),
-                Text('WireGuard VPN', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                const Icon(Icons.vpn_lock, color: Colors.cyanAccent, size: 22),
+                const SizedBox(width: 10),
+                const Text('VPN', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
               ],
             ),
-            const SizedBox(height: 14),
-            _buildServerCard(provider, wg, serverPubKey),
-            const SizedBox(height: 14),
-            _buildPeersCard(provider, wg),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            indicatorColor: Colors.cyanAccent,
+            labelColor: Colors.cyanAccent,
+            unselectedLabelColor: Colors.grey,
+            labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            tabs: const [
+              Tab(text: 'WireGuard'),
+              Tab(text: 'OpenVPN'),
+            ],
+          ),
+          const Divider(color: Color(0xFF334155), height: 1),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildServerCard(provider, wg, serverPubKey),
+                      const SizedBox(height: 14),
+                      _buildPeersCard(provider, wg),
+                    ],
+                  ),
+                ),
+                SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildOpenVpnServerCard(provider, ovpn),
+                      const SizedBox(height: 14),
+                      _buildOpenVpnClientsCard(provider, ovpn),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -421,6 +491,342 @@ PersistentKeepalive = 25
                       Clipboard.setData(ClipboardData(text: clientConfig));
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Klientkonfiguration kopierad'), backgroundColor: Colors.teal),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Klart, jag har sparat den'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOpenVpnServerCard(ConfigProvider provider, OpenVPNConfigModel ovpn) {
+    final listenPortCtrl = TextEditingController(text: ovpn.listenPort.toString());
+    final addressCtrl = TextEditingController(text: ovpn.address);
+    final endpointCtrl = TextEditingController(text: ovpn.endpoint);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        border: Border.all(color: const Color(0xFF334155)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Serverinställningar (TLS/PKI)', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Row(
+                children: [
+                  Switch(
+                    value: ovpn.enabled,
+                    activeColor: Colors.tealAccent,
+                    onChanged: (v) => _saveOpenVpn(provider, ovpn.copyWith(enabled: v)),
+                  ),
+                  Text(ovpn.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: ovpn.enabled ? Colors.tealAccent : Colors.grey, fontSize: 11)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _labeledField('VPN-subnät (CIDR)', addressCtrl, hint: '10.77.77.0/24')),
+              const SizedBox(width: 10),
+              SizedBox(width: 140, child: _labeledField('Lyssningsport', listenPortCtrl, hint: '1194')),
+              const SizedBox(width: 10),
+              SizedBox(width: 110, child: _protocolDropdown(provider, ovpn)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _labeledField('Publik endpoint (klienter ansluter mot)', endpointCtrl, hint: 't.ex. din-domän.se eller WAN-IP'),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              ElevatedButton.icon(
+                icon: const Icon(Icons.save, size: 14),
+                label: const Text('Spara serverinställningar', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                onPressed: () {
+                  final port = int.tryParse(listenPortCtrl.text.trim()) ?? ovpn.listenPort;
+                  _saveOpenVpn(
+                    provider,
+                    ovpn.copyWith(listenPort: port, address: addressCtrl.text.trim(), endpoint: endpointCtrl.text.trim()),
+                  );
+                },
+              ),
+              const SizedBox(width: 14),
+              if (_openVpnCaCertPem != null && _openVpnCaCertPem!.isNotEmpty)
+                const Row(
+                  children: [
+                    Icon(Icons.verified_user, size: 13, color: Colors.tealAccent),
+                    SizedBox(width: 6),
+                    Text('CA-certifikat genererat och redo att signera klienter', style: TextStyle(color: Colors.tealAccent, fontSize: 10)),
+                  ],
+                )
+              else
+                const Text('CA:t genereras automatiskt vid första VPN-klienten.', style: TextStyle(color: Colors.grey, fontSize: 10)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Kom ihåg att applicera & bekräfta ändringarna (banderollen högst upp) för att öppna porten mot WAN och starta OpenVPN-tjänsten.',
+            style: TextStyle(color: Colors.amberAccent, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _protocolDropdown(ConfigProvider provider, OpenVPNConfigModel ovpn) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Protokoll', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 34,
+          child: DropdownButtonFormField<String>(
+            initialValue: ovpn.protocol,
+            dropdownColor: const Color(0xFF1E293B),
+            style: const TextStyle(fontSize: 12, color: Colors.white),
+            decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
+            items: const [
+              DropdownMenuItem(value: 'udp', child: Text('UDP')),
+              DropdownMenuItem(value: 'tcp', child: Text('TCP')),
+            ],
+            onChanged: (v) {
+              if (v != null) _saveOpenVpn(provider, ovpn.copyWith(protocol: v));
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOpenVpnClientsCard(ConfigProvider provider, OpenVPNConfigModel ovpn) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        border: Border.all(color: const Color(0xFF334155)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Klientprofiler (${ovpn.clients.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.add, size: 14),
+                label: const Text('Utfärda klientcertifikat', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                onPressed: () => _showAddOpenVpnClientFlow(provider, ovpn),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (ovpn.clients.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('Inga OpenVPN-klientprofiler utfärdade ännu.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            )
+          else
+            ...ovpn.clients.map((c) => _buildOpenVpnClientRow(provider, ovpn, c)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOpenVpnClientRow(ConfigProvider provider, OpenVPNConfigModel ovpn, OpenVPNClientModel client) {
+    final active = client.enabled && !client.revoked;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+      margin: const EdgeInsets.only(bottom: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        border: Border.all(color: const Color(0xFF334155)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        children: [
+          Icon(client.revoked ? Icons.block : (active ? Icons.person : Icons.person_off), size: 16, color: client.revoked ? Colors.redAccent : (active ? Colors.tealAccent : Colors.grey)),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 2,
+            child: Text(client.name, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              client.revoked ? 'SPÄRRAD' : (client.enabled ? 'Aktiv' : 'Inaktiverad'),
+              style: TextStyle(color: client.revoked ? Colors.redAccent : Colors.grey, fontSize: 11),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text('Serienr: ${client.certSerial}', style: const TextStyle(color: Colors.grey, fontSize: 10, fontFamily: 'monospace'), overflow: TextOverflow.ellipsis),
+          ),
+          if (!client.revoked)
+            Switch(
+              value: client.enabled,
+              activeColor: Colors.tealAccent,
+              onChanged: (v) {
+                final updated = ovpn.clients.map((c) => c.id == client.id ? c.copyWith(enabled: v) : c).toList();
+                _saveOpenVpn(provider, ovpn.copyWith(clients: updated));
+              },
+            ),
+          IconButton(
+            icon: Icon(client.revoked ? Icons.delete_forever : Icons.block, size: 16, color: Colors.redAccent),
+            tooltip: client.revoked ? 'Ta bort permanent' : 'Spärra certifikat (CRL)',
+            onPressed: () {
+              if (client.revoked) {
+                final updated = ovpn.clients.where((c) => c.id != client.id).toList();
+                _saveOpenVpn(provider, ovpn.copyWith(clients: updated));
+              } else {
+                final updated = ovpn.clients.map((c) => c.id == client.id ? c.copyWith(revoked: true, enabled: false) : c).toList();
+                _saveOpenVpn(provider, ovpn.copyWith(clients: updated));
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showAddOpenVpnClientFlow(ConfigProvider provider, OpenVPNConfigModel ovpn) async {
+    final nameCtrl = TextEditingController(text: 'Ny klient');
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Utfärda OpenVPN-klientcertifikat', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              _labeledField('Namn', nameCtrl, hint: 't.ex. Fredriks laptop'),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Avbryt', style: TextStyle(color: Colors.grey))),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text('Signera med CA & lägg till'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final name = nameCtrl.text.trim().isEmpty ? 'Klient' : nameCtrl.text.trim();
+    final result = await provider.api.generateOpenVPNClient(name);
+    if (result == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Misslyckades signera klientcertifikat på brandväggen'), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
+
+    final newClient = OpenVPNClientModel(
+      id: 'ovpn-client-${DateTime.now().millisecondsSinceEpoch}',
+      name: name,
+      enabled: true,
+      certSerial: result['serial'] ?? '',
+      certPem: result['cert_pem'] ?? '',
+      issuedAt: DateTime.now().toIso8601String(),
+    );
+
+    await _saveOpenVpn(provider, ovpn.copyWith(clients: [...ovpn.clients, newClient]));
+
+    if (mounted) {
+      _showOpenVpnConfigDialog(newClient, result['ovpn_config'] ?? '');
+    }
+  }
+
+  void _showOpenVpnConfigDialog(OpenVPNClientModel client, String ovpnConfig) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        child: Container(
+          width: 520,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.warning_amber, color: Colors.amberAccent, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text('Klientprofil för "${client.name}"', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Detta är en komplett .ovpn-fil med klientens privata nyckel inbäddad — den visas bara EN gång och sparas aldrig på brandväggen. Spara den nu.',
+                style: TextStyle(color: Colors.amberAccent, fontSize: 11),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                constraints: const BoxConstraints(maxHeight: 320),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  border: Border.all(color: const Color(0xFF334155)),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: SingleChildScrollView(
+                  child: SelectableText(ovpnConfig, style: const TextStyle(color: Colors.greenAccent, fontSize: 10, fontFamily: 'monospace')),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton.icon(
+                    icon: const Icon(Icons.copy, size: 14, color: Colors.cyanAccent),
+                    label: const Text('Kopiera', style: TextStyle(color: Colors.cyanAccent)),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: ovpnConfig));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('.ovpn-innehåll kopierat'), backgroundColor: Colors.teal),
                       );
                     },
                   ),

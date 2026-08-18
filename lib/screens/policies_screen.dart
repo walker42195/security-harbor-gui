@@ -283,6 +283,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       policies: updatedPolicies,
       settings: cfg.settings,
       wireguard: cfg.wireguard,
+      openvpn: cfg.openvpn,
     ));
   }
 
@@ -321,6 +322,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       policies: updatedPolicies,
       settings: cfg.settings,
       wireguard: cfg.wireguard,
+      openvpn: cfg.openvpn,
     ));
   }
 
@@ -629,6 +631,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             policies: updatedPolicies,
                             settings: cfg.settings,
                             wireguard: cfg.wireguard,
+                            openvpn: cfg.openvpn,
                           ));
                         }
                         Navigator.pop(ctx);
@@ -942,6 +945,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           policies: updated,
                           settings: cfg.settings,
                           wireguard: cfg.wireguard,
+                          openvpn: cfg.openvpn,
                         ));
                       }
                       Navigator.pop(ctx);

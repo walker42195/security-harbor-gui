@@ -110,6 +110,37 @@ class ApiService {
     return null;
   }
 
+  Future<String?> getOpenVPNCACertPem() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/api/v1/vpn/openvpn/ca-info'), headers: _headers);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        return data['ca_cert_pem'] as String?;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Signerar ett nytt OpenVPN-klientcertifikat med brandväggens CA och
+  /// returnerar {cert_pem, serial, ovpn_config}. ovpn_config innehåller
+  /// klientens privata nyckel inline och visas EN gång i GUI:t — den lagras
+  /// ALDRIG på brandväggen (bara cert_pem/serial ska sparas i
+  /// candidate-konfigurationens OpenVPN.clients).
+  Future<Map<String, String>?> generateOpenVPNClient(String name) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/v1/vpn/openvpn/generate-client'),
+        headers: _headers,
+        body: jsonEncode({'name': name}),
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        return data.map((k, v) => MapEntry(k, v.toString()));
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<String> ping(String host) async {
     try {
       final res = await http.post(

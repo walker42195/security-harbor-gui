@@ -333,6 +333,7 @@ class InterfacesScreen extends StatelessWidget {
                   policies: cfg.policies,
                   settings: cfg.settings,
                   wireguard: cfg.wireguard,
+                  openvpn: cfg.openvpn,
                 ));
                 Navigator.pop(ctx);
               },
@@ -371,6 +372,7 @@ class InterfacesScreen extends StatelessWidget {
       policies: cfg.policies,
       settings: cfg.settings,
       wireguard: cfg.wireguard,
+      openvpn: cfg.openvpn,
     ));
   }
 
@@ -498,6 +500,7 @@ class InterfacesScreen extends StatelessWidget {
                     policies: cfg.policies,
                     settings: cfg.settings,
                     wireguard: cfg.wireguard,
+                    openvpn: cfg.openvpn,
                   ));
                 }
                 Navigator.pop(ctx);
@@ -603,6 +606,7 @@ class InterfacesScreen extends StatelessWidget {
                 policies: cfg.policies,
                 settings: cfg.settings,
                 wireguard: cfg.wireguard,
+                openvpn: cfg.openvpn,
               ));
               Navigator.pop(ctx);
                     },

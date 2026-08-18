@@ -9,6 +9,7 @@ class ConfigModel {
   final List<PolicyModel> policies;
   final SettingsModel settings;
   final WireGuardConfigModel? wireguard;
+  final OpenVPNConfigModel? openvpn;
 
   ConfigModel({
     required this.version,
@@ -21,6 +22,7 @@ class ConfigModel {
     required this.policies,
     required this.settings,
     this.wireguard,
+    this.openvpn,
   });
 
   factory ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -35,10 +37,11 @@ class ConfigModel {
       policies: (json['policies'] as List? ?? []).map((e) => PolicyModel.fromJson(e)).toList(),
       settings: SettingsModel.fromJson(json['settings'] ?? {}),
       wireguard: json['wireguard'] != null ? WireGuardConfigModel.fromJson(json['wireguard']) : null,
+      openvpn: json['openvpn'] != null ? OpenVPNConfigModel.fromJson(json['openvpn']) : null,
     );
   }
 
-  ConfigModel copyWith({WireGuardConfigModel? wireguard}) => ConfigModel(
+  ConfigModel copyWith({WireGuardConfigModel? wireguard, OpenVPNConfigModel? openvpn}) => ConfigModel(
         version: version,
         revision: revision,
         updatedAt: updatedAt,
@@ -49,6 +52,7 @@ class ConfigModel {
         policies: policies,
         settings: settings,
         wireguard: wireguard ?? this.wireguard,
+        openvpn: openvpn ?? this.openvpn,
       );
 
   Map<String, dynamic> toJson() => {
@@ -62,6 +66,121 @@ class ConfigModel {
         'policies': policies.map((e) => e.toJson()).toList(),
         'settings': settings.toJson(),
         if (wireguard != null) 'wireguard': wireguard!.toJson(),
+        if (openvpn != null) 'openvpn': openvpn!.toJson(),
+      };
+}
+
+/// Server-sidans OpenVPN-inställningar (Fas 4). CA-nyckeln och klienternas
+/// privata nycklar lämnar aldrig agenten — bara caCertPem (publikt) och
+/// klienternas publika certifikat/serienummer syns i GUI:t.
+class OpenVPNConfigModel {
+  final bool enabled;
+  final int listenPort;
+  final String protocol; // "udp" eller "tcp"
+  final String address; // VPN-subnät, t.ex. "10.77.77.0/24"
+  final String endpoint;
+  final String caCertPem;
+  final List<OpenVPNClientModel> clients;
+
+  OpenVPNConfigModel({
+    required this.enabled,
+    required this.listenPort,
+    required this.protocol,
+    required this.address,
+    required this.endpoint,
+    this.caCertPem = '',
+    required this.clients,
+  });
+
+  factory OpenVPNConfigModel.fromJson(Map<String, dynamic> json) {
+    return OpenVPNConfigModel(
+      enabled: json['enabled'] ?? false,
+      listenPort: json['listen_port'] ?? 1194,
+      protocol: json['protocol'] ?? 'udp',
+      address: json['address'] ?? '',
+      endpoint: json['endpoint'] ?? '',
+      caCertPem: json['ca_cert_pem'] ?? '',
+      clients: (json['clients'] as List? ?? []).map((e) => OpenVPNClientModel.fromJson(e)).toList(),
+    );
+  }
+
+  OpenVPNConfigModel copyWith({
+    bool? enabled,
+    int? listenPort,
+    String? protocol,
+    String? address,
+    String? endpoint,
+    List<OpenVPNClientModel>? clients,
+  }) =>
+      OpenVPNConfigModel(
+        enabled: enabled ?? this.enabled,
+        listenPort: listenPort ?? this.listenPort,
+        protocol: protocol ?? this.protocol,
+        address: address ?? this.address,
+        endpoint: endpoint ?? this.endpoint,
+        caCertPem: caCertPem,
+        clients: clients ?? this.clients,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'enabled': enabled,
+        'listen_port': listenPort,
+        'protocol': protocol,
+        'address': address,
+        'endpoint': endpoint,
+        'clients': clients.map((e) => e.toJson()).toList(),
+      };
+}
+
+class OpenVPNClientModel {
+  final String id;
+  final String name;
+  final bool enabled;
+  final bool revoked;
+  final String certSerial;
+  final String certPem;
+  final String issuedAt;
+
+  OpenVPNClientModel({
+    required this.id,
+    required this.name,
+    required this.enabled,
+    this.revoked = false,
+    this.certSerial = '',
+    this.certPem = '',
+    this.issuedAt = '',
+  });
+
+  factory OpenVPNClientModel.fromJson(Map<String, dynamic> json) {
+    return OpenVPNClientModel(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      enabled: json['enabled'] ?? true,
+      revoked: json['revoked'] ?? false,
+      certSerial: json['cert_serial'] ?? '',
+      certPem: json['cert_pem'] ?? '',
+      issuedAt: json['issued_at'] ?? '',
+    );
+  }
+
+  OpenVPNClientModel copyWith({bool? enabled, bool? revoked}) => OpenVPNClientModel(
+        id: id,
+        name: name,
+        enabled: enabled ?? this.enabled,
+        revoked: revoked ?? this.revoked,
+        certSerial: certSerial,
+        certPem: certPem,
+        issuedAt: issuedAt,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'enabled': enabled,
+        'revoked': revoked,
+        'cert_serial': certSerial,
+        'cert_pem': certPem,
+        'issued_at': issuedAt,
       };
 }
 
