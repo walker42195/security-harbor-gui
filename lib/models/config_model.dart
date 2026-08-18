@@ -835,6 +835,9 @@ class ConntrackModel {
   final int dstPort;
   final String state;
   final String srcMac;
+  // Endast ifyllt om målet är en direktansluten LAN-enhet (slås upp via
+  // brandväggens ARP-tabell, precis som srcMac) — tomt för WAN-mål.
+  final String dstMac;
 
   ConntrackModel({
     required this.protocol,
@@ -844,6 +847,7 @@ class ConntrackModel {
     required this.dstPort,
     required this.state,
     this.srcMac = '',
+    this.dstMac = '',
   });
 
   factory ConntrackModel.fromJson(Map<String, dynamic> json) {
@@ -855,6 +859,7 @@ class ConntrackModel {
       dstPort: json['dst_port'] ?? 0,
       state: json['state'] ?? '',
       srcMac: json['src_mac'] ?? '',
+      dstMac: json['dst_mac'] ?? '',
     );
   }
 }
@@ -867,6 +872,7 @@ class FirewallLogModel {
   final String inIface;
   final String outIface;
   final String srcMac;
+  final String dstMac;
   final String srcIp;
   final String dstIp;
   final String protocol;
@@ -879,6 +885,7 @@ class FirewallLogModel {
     required this.inIface,
     required this.outIface,
     required this.srcMac,
+    this.dstMac = '',
     required this.srcIp,
     required this.dstIp,
     required this.protocol,
@@ -893,6 +900,7 @@ class FirewallLogModel {
       inIface: json['in_iface'] ?? '',
       outIface: json['out_iface'] ?? '',
       srcMac: json['src_mac'] ?? '',
+      dstMac: json['dst_mac'] ?? '',
       srcIp: json['src_ip'] ?? '',
       dstIp: json['dst_ip'] ?? '',
       protocol: json['protocol'] ?? '',

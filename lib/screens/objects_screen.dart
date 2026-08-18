@@ -93,12 +93,24 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
             ListTile(
               leading: Icon(src != null ? Icons.shield : Icons.category, color: src != null ? Colors.tealAccent : Colors.cyanAccent),
               title: Text(obj.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-              subtitle: Text(
-                src != null
-                    ? 'Typ: ${obj.type.toUpperCase()}  |  ${obj.values.length} poster (automatisk källa: ${_kindLabel(src.kind)})'
-                    : 'Typ: ${obj.type.toUpperCase()}  |  Värden: ${obj.values.join(", ")}',
-                style: const TextStyle(fontSize: 11),
-              ),
+              subtitle: src != null
+                  ? Row(
+                      children: [
+                        Text('Typ: ${obj.type.toUpperCase()}  |  ', style: const TextStyle(fontSize: 11)),
+                        InkWell(
+                          onTap: () => _showValuesDialog(context, obj),
+                          child: Text(
+                            '${obj.values.length} poster',
+                            style: const TextStyle(fontSize: 11, color: Colors.cyanAccent, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                          ),
+                        ),
+                        Text('  (automatisk källa: ${_kindLabel(src.kind)})', style: const TextStyle(fontSize: 11)),
+                      ],
+                    )
+                  : Text(
+                      'Typ: ${obj.type.toUpperCase()}  |  Värden: ${obj.values.join(", ")}',
+                      style: const TextStyle(fontSize: 11),
+                    ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -142,6 +154,42 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showValuesDialog(BuildContext context, ObjectModel obj) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        child: Container(
+          width: 480,
+          height: 560,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              dialogTitleRow(context, '${obj.name} (${obj.values.length})', () => Navigator.pop(ctx)),
+              const SizedBox(height: 10),
+              Expanded(
+                child: obj.values.isEmpty
+                    ? const Center(child: Text('Inga värden hämtade ännu.', style: TextStyle(color: Colors.grey, fontSize: 12)))
+                    : Container(
+                        decoration: BoxDecoration(color: const Color(0xFF0F172A), border: Border.all(color: const Color(0xFF334155)), borderRadius: BorderRadius.circular(4)),
+                        child: ListView.builder(
+                          itemCount: obj.values.length,
+                          itemBuilder: (c, i) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            child: Text(obj.values[i], style: const TextStyle(color: Colors.white70, fontSize: 11, fontFamily: 'monospace')),
+                          ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );

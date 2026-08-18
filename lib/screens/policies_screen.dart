@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
+import '../widgets/dialog_helpers.dart';
 
 class PoliciesScreen extends StatefulWidget {
   const PoliciesScreen({super.key});
@@ -1218,26 +1219,45 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       context: context,
       builder: (ctx) => Dialog(
         backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
-          width: 420,
+          width: 460,
           padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Skapa Port Forwarding (DNAT)', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 10),
-              TextField(controller: nameCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Regelnamn', isDense: true)),
-              TextField(controller: extPortCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Extern Port på WAN (t.ex. 443)', isDense: true)),
-              TextField(controller: intIpCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Intern Mål-IP (t.ex. 192.168.10.10)', isDense: true)),
-              TextField(controller: intPortCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Intern Målport (t.ex. 443)', isDense: true)),
-              TextField(controller: protoCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Protokoll (tcp/udp)', isDense: true)),
-              const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  ElevatedButton(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                dialogTitleRow(context, 'Skapa Port Forwarding (DNAT)', () => Navigator.pop(ctx)),
+                const SizedBox(height: 12),
+
+                dialogSection(title: 'REGEL', children: [
+                  dialogField(nameCtrl, 'Regelnamn'),
+                ]),
+                const SizedBox(height: 12),
+
+                dialogSection(title: 'EXTERN (WAN)', children: [
+                  dialogField(extPortCtrl, 'Extern port på WAN', hint: 't.ex. 443'),
+                ]),
+                const SizedBox(height: 12),
+
+                dialogSection(title: 'INTERN (LAN)', children: [
+                  dialogField(intIpCtrl, 'Intern mål-IP', hint: 't.ex. 192.168.10.10'),
+                  const SizedBox(height: 12),
+                  dialogField(intPortCtrl, 'Intern målport', hint: 't.ex. 443'),
+                  const SizedBox(height: 12),
+                  dialogField(protoCtrl, 'Protokoll (tcp/udp)'),
+                ]),
+                const SizedBox(height: 16),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
-                    child: const Text('Spara DNAT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    child: const Text('Spara DNAT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     onPressed: () {
                       if (cfg != null) {
                         final extP = int.tryParse(extPortCtrl.text) ?? 443;
@@ -1277,16 +1297,11 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                       }
                       Navigator.pop(ctx);
                     },
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
-                    child: const Text('Cancel', style: TextStyle(fontSize: 11)),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-            ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

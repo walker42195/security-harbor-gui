@@ -15,6 +15,7 @@ class _TrafficRow {
   final String dstIp;
   final int dstPort;
   final String srcMac;
+  final String dstMac;
   final String stateOrChain;
   final String timestamp;
 
@@ -26,6 +27,7 @@ class _TrafficRow {
     required this.dstIp,
     required this.dstPort,
     required this.srcMac,
+    required this.dstMac,
     required this.stateOrChain,
     required this.timestamp,
   });
@@ -38,6 +40,7 @@ class _TrafficRow {
         dstIp: m.dstIp,
         dstPort: m.dstPort,
         srcMac: m.srcMac,
+        dstMac: m.dstMac,
         stateOrChain: m.state,
         timestamp: '',
       );
@@ -50,6 +53,7 @@ class _TrafficRow {
         dstIp: m.dstIp,
         dstPort: m.dstPort,
         srcMac: m.srcMac,
+        dstMac: m.dstMac,
         stateOrChain: m.chain,
         timestamp: m.timestamp,
       );
@@ -107,8 +111,8 @@ class ConnectionsScreen extends StatefulWidget {
 /// Kolumnordning delad mellan rubrikraden och varje datarad, så att
 /// bredderna alltid är synkade. Källa/Mål var tidigare Expanded(flex: 3) men
 /// måste vara fasta bredder för att kunna dras i storlek.
-const List<double> _defaultColWidths = [62, 130, 60, 220, 220, 130, 90];
-const List<String> _colLabels = ['Åtgärd', 'Tid', 'Protokoll', 'Källa', 'Mål', 'MAC', 'State/Kedja'];
+const List<double> _defaultColWidths = [62, 130, 60, 200, 130, 200, 130, 90];
+const List<String> _colLabels = ['Åtgärd', 'Tid', 'Protokoll', 'Källa', 'Källans MAC', 'Mål', 'Målets MAC', 'State/Kedja'];
 const double _colMinWidth = 40;
 const double _resizeHandleWidth = 14;
 
@@ -444,17 +448,18 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         style: _cellStyle,
         overflow: TextOverflow.ellipsis,
       ),
+      Text(r.srcMac.isEmpty ? '—' : r.srcMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
       Text(
         '${r.dstIp}${r.dstPort > 0 ? ':${r.dstPort}' : ''}${dstName != null ? '\n$dstName' : ''}',
         style: _cellStyle,
         overflow: TextOverflow.ellipsis,
       ),
-      Text(r.srcMac.isEmpty ? '—' : r.srcMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
+      Text(r.dstMac.isEmpty ? '—' : r.dstMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
       Text(r.stateOrChain, style: _cellStyle, overflow: TextOverflow.ellipsis),
     ];
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: const Color(0xFF334155).withValues(alpha: 0.5))),
       ),

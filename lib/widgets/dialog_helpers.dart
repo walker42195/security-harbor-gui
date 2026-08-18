@@ -37,16 +37,13 @@ Widget dialogSection({required String title, required List<Widget> children}) {
 
 Widget dialogField(TextEditingController controller, String label, {String? hint}) {
   return SizedBox(
-    height: 46,
+    height: 56,
     child: TextField(
       controller: controller,
       style: const TextStyle(fontSize: 12, color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        isDense: true,
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       ),
     ),
   );
