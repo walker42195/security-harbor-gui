@@ -118,6 +118,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   List<FirewallLogModel> _denied = [];
   bool _isLoading = false;
   int? _hoveredResizeHandle;
+  int? _activeResizeIndex; // Se identisk kommentar i policies_screen.dart
   final List<double> _colWidths = List<double>.from(_defaultColWidths);
   final ScrollController _hScrollController = ScrollController();
 
@@ -356,21 +357,26 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   // pekarrörelser direkt.
   Widget _resizeHandle(int colIndex) {
     final hovered = _hoveredResizeHandle == colIndex;
+    final active = _activeResizeIndex == colIndex;
     return MouseRegion(
       cursor: SystemMouseCursors.resizeColumn,
       onEnter: (_) => setState(() => _hoveredResizeHandle = colIndex),
       onExit: (_) => setState(() => _hoveredResizeHandle = null),
       child: Listener(
         behavior: HitTestBehavior.opaque,
+        onPointerDown: (_) => setState(() => _activeResizeIndex = colIndex),
         onPointerMove: (event) {
+          if (_activeResizeIndex != colIndex) return;
           setState(() {
             _colWidths[colIndex] = (_colWidths[colIndex] + event.delta.dx).clamp(_colMinWidth, 800.0);
           });
         },
+        onPointerUp: (_) => setState(() => _activeResizeIndex = null),
+        onPointerCancel: (_) => setState(() => _activeResizeIndex = null),
         child: Container(
           width: _resizeHandleWidth,
           alignment: Alignment.center,
-          child: Container(width: hovered ? 3 : 2, color: hovered ? Colors.cyanAccent : Colors.white38),
+          child: Container(width: (hovered || active) ? 3 : 2, color: (hovered || active) ? Colors.cyanAccent : Colors.white38),
         ),
       ),
     );
@@ -452,6 +458,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         controller: _hScrollController,
+        physics: _activeResizeIndex != null ? const NeverScrollableScrollPhysics() : null,
         child: SizedBox(
           width: _totalTableWidth,
           child: Column(

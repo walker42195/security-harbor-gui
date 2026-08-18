@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/config_provider.dart';
 import 'screens/main_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   runApp(const SecurityHarborApp());
@@ -27,7 +28,14 @@ class SecurityHarborApp extends StatelessWidget {
           ),
           fontFamily: 'Roboto',
         ),
-        home: const MainScreen(),
+        // Ingen auto-login längre (se ConfigProvider) — visa LoginScreen
+        // tills en session faktiskt är upprättad, istället för att kräva
+        // att man navigerar till Settings-vyn.
+        home: Consumer<ConfigProvider>(
+          builder: (context, provider, _) {
+            return provider.isAuthenticated ? const MainScreen() : const LoginScreen();
+          },
+        ),
       ),
     );
   }

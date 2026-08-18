@@ -99,7 +99,14 @@ class _MainScreenState extends State<MainScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
+                if (provider.isAuthenticated)
+                  IconButton(
+                    icon: const Icon(Icons.logout, size: 16, color: Colors.white54),
+                    tooltip: 'Logga ut',
+                    onPressed: () => provider.logout(),
+                  ),
+                const SizedBox(width: 4),
                 Row(
                   children: const [
                     Icon(Icons.person_outline, size: 14, color: Colors.grey),

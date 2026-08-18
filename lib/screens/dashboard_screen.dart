@@ -150,11 +150,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final provider = Provider.of<ConfigProvider>(context);
     final status = provider.systemStatus;
 
-    final sysName = status?['hostname'] ?? 'security-harbor-fw';
-    final sysVersion = status?['version'] ?? 'v0.2.2';
-    final uptime = status?['uptime'] ?? '1h 42m';
-    final cpuUsage = status?['cpu'] ?? 14.5;
-    final memUsage = status?['memory'] ?? 38.2;
+    // Ingen fabricerad platshållardata (tidigare "1h 42m"/"14.5%"/"38.2%"/
+    // "Kärnor: 4"/"RAM: 8 GB" hårdkodat och visat oavsett om brandväggen
+    // faktiskt svarat) — visar "—" ärligt när status inte hämtats än.
+    final sysName = status?['hostname'] ?? '—';
+    final sysVersion = status?['version'] ?? '—';
+    final uptime = status?['uptime'] ?? '—';
+    final cpuUsage = (status?['cpu'] as num?)?.toDouble();
+    final cpuCores = status?['cpu_cores'];
+    final memUsage = (status?['memory'] as num?)?.toDouble();
+    final memTotalGB = status?['memory_total_gb'];
+    final memFreePct = status?['memory_free_pct'];
 
     final metricsList = _metrics.values.toList();
 
@@ -174,9 +180,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(width: 10),
                 _buildCompactStatCard('Uptime', uptime, 'Driftstatus: Aktiv', Icons.timer_outlined, Colors.tealAccent),
                 const SizedBox(width: 10),
-                _buildCompactStatCard('CPU', '${cpuUsage.toStringAsFixed(1)}%', 'Kärnor: 4 (Optimal)', Icons.memory, Colors.amber),
+                _buildCompactStatCard(
+                  'CPU',
+                  cpuUsage == null ? '—' : '${cpuUsage.toStringAsFixed(1)}%',
+                  cpuCores == null ? '—' : 'Kärnor: $cpuCores',
+                  Icons.memory,
+                  Colors.amber,
+                ),
                 const SizedBox(width: 10),
-                _buildCompactStatCard('Minne', '${memUsage.toStringAsFixed(1)}%', 'RAM: 8 GB (LEDIGT 62%)', Icons.pie_chart_outline, Colors.lightBlueAccent),
+                _buildCompactStatCard(
+                  'Minne',
+                  memUsage == null ? '—' : '${memUsage.toStringAsFixed(1)}%',
+                  (memTotalGB == null || memFreePct == null) ? '—' : 'RAM: $memTotalGB GB (LEDIGT $memFreePct%)',
+                  Icons.pie_chart_outline,
+                  Colors.lightBlueAccent,
+                ),
               ],
             ),
             const SizedBox(height: 16),

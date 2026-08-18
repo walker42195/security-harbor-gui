@@ -29,6 +29,10 @@ class ApiService {
         if (token != null) 'Authorization': 'Bearer $token',
       };
 
+  // "admin" eller "viewer" (Fas 8 — flera användare/roller). Sätts av
+  // login() från serverns svar.
+  String? role;
+
   Future<bool> login(String username, String password) async {
     try {
       final res = await http.post(
@@ -40,11 +44,84 @@ class ApiService {
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         token = data['token'];
+        role = data['role'];
         return true;
       }
       return false;
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Byter lösenord för DEN INLOGGADE ANVÄNDAREN SJÄLV — kräver nuvarande
+  /// lösenord (Fas 8).
+  Future<String?> changePassword(String currentPassword, String newPassword) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/v1/auth/change-password'),
+        headers: _headers,
+        body: jsonEncode({'current_password': currentPassword, 'new_password': newPassword}),
+      );
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Misslyckades byta lösenord';
+    } catch (e) {
+      return 'Misslyckades byta lösenord: $e';
+    }
+  }
+
+  /// Listar alla administrationsanvändare (admin-only, Fas 8).
+  Future<List<Map<String, dynamic>>> getUsers() async {
+    try {
+      final res = await http.get(Uri.parse('$baseUrl/api/v1/auth/users'), headers: _headers);
+      if (res.statusCode == 200) {
+        return List<Map<String, dynamic>>.from(jsonDecode(res.body));
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// Skapar en ny användare (admin-only). role är "admin" eller "viewer".
+  Future<String?> createUser(String username, String password, String role) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/v1/auth/users/create'),
+        headers: _headers,
+        body: jsonEncode({'username': username, 'password': password, 'role': role}),
+      );
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Misslyckades skapa användare';
+    } catch (e) {
+      return 'Misslyckades skapa användare: $e';
+    }
+  }
+
+  Future<String?> deleteUser(String id) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/v1/auth/users/delete'),
+        headers: _headers,
+        body: jsonEncode({'id': id}),
+      );
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Misslyckades ta bort användare';
+    } catch (e) {
+      return 'Misslyckades ta bort användare: $e';
+    }
+  }
+
+  /// Admin sätter ett nytt lösenord för en ANNAN användare (utan att
+  /// behöva känna till dennes nuvarande lösenord).
+  Future<String?> resetUserPassword(String id, String newPassword) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/v1/auth/users/reset-password'),
+        headers: _headers,
+        body: jsonEncode({'id': id, 'new_password': newPassword}),
+      );
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Misslyckades återställa lösenord';
+    } catch (e) {
+      return 'Misslyckades återställa lösenord: $e';
     }
   }
 

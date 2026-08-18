@@ -18,6 +18,15 @@ const double _policyResizeHandleWidth = 14;
 class _PoliciesScreenState extends State<PoliciesScreen> {
   int? _selectedRowIndex;
   int? _hoveredResizeHandle;
+  // Sätts under en aktiv resize-dragning (mellan onPointerDown och
+  // onPointerUp/Cancel på handtaget). Medan den är satt görs den omgivande
+  // horisontella SingleChildScrollView icke-scrollbar (NeverScrollable-
+  // ScrollPhysics) — detta är ett strukturellt sätt att garantera att
+  // scrollvyn INTE kan konkurrera om pekar-events under dragningen, istället
+  // för att lita på att Listener/gesture-routing prioriterar rätt widget
+  // (vilket visade sig opålitligt i praktiken trots att det borde fungera
+  // enligt Flutters dokumenterade beteende).
+  int? _activeResizeIndex;
   final List<double> _colWidths = List<double>.from(_policyDefaultColWidths);
   final ScrollController _hScrollController = ScrollController();
   Map<String, Map<String, int>> _hitCounts = {};
@@ -50,21 +59,26 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   // scrollvyn ofta vann gesture-arenan.
   Widget _resizeHandle(int colIndex) {
     final hovered = _hoveredResizeHandle == colIndex;
+    final active = _activeResizeIndex == colIndex;
     return MouseRegion(
       cursor: SystemMouseCursors.resizeColumn,
       onEnter: (_) => setState(() => _hoveredResizeHandle = colIndex),
       onExit: (_) => setState(() => _hoveredResizeHandle = null),
       child: Listener(
         behavior: HitTestBehavior.opaque,
+        onPointerDown: (_) => setState(() => _activeResizeIndex = colIndex),
         onPointerMove: (event) {
+          if (_activeResizeIndex != colIndex) return;
           setState(() {
             _colWidths[colIndex] = (_colWidths[colIndex] + event.delta.dx).clamp(_policyColMinWidth, 900.0);
           });
         },
+        onPointerUp: (_) => setState(() => _activeResizeIndex = null),
+        onPointerCancel: (_) => setState(() => _activeResizeIndex = null),
         child: SizedBox(
           width: _policyResizeHandleWidth,
           child: Center(
-            child: Container(width: hovered ? 3 : 2, color: hovered ? Colors.cyanAccent : Colors.white38),
+            child: Container(width: (hovered || active) ? 3 : 2, color: (hovered || active) ? Colors.cyanAccent : Colors.white38),
           ),
         ),
       ),
@@ -159,6 +173,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   : SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       controller: _hScrollController,
+                      physics: _activeResizeIndex != null ? const NeverScrollableScrollPhysics() : null,
                       child: SizedBox(
                         width: _totalTableWidth,
                         child: Column(

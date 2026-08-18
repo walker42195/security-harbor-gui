@@ -16,6 +16,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isLoggingIn = false;
   bool _obscurePassword = true;
 
+  final _currentPwController = TextEditingController();
+  final _newPwController = TextEditingController();
+  bool _isChangingPassword = false;
+
+  List<Map<String, dynamic>> _users = [];
+  bool _loadingUsers = false;
+  final _newUserController = TextEditingController();
+  final _newUserPwController = TextEditingController();
+  String _newUserRole = 'viewer';
+
   @override
   void initState() {
     super.initState();
@@ -24,8 +34,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Inget hop-kodat lösenord här — appen distribueras publikt, och ett
     // förifyllt lösenord i klientkoden hade skickats ut till varje
     // nedladdning. Användarnamnet "admin" är inte känsligt i sig.
-    _usernameController = TextEditingController(text: 'admin');
+    _usernameController = TextEditingController(text: 'master');
     _passwordController = TextEditingController();
+    if (provider.isAuthenticated && provider.isAdmin) {
+      _loadUsers();
+    }
+  }
+
+  Future<void> _loadUsers() async {
+    final provider = Provider.of<ConfigProvider>(context, listen: false);
+    setState(() => _loadingUsers = true);
+    final users = await provider.api.getUsers();
+    if (mounted) setState(() { _users = users; _loadingUsers = false; });
   }
 
   @override
@@ -33,6 +53,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _urlController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
+    _currentPwController.dispose();
+    _newPwController.dispose();
+    _newUserController.dispose();
+    _newUserPwController.dispose();
     super.dispose();
   }
 
@@ -97,7 +121,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: const TextStyle(color: Colors.white, fontSize: 12),
                           decoration: const InputDecoration(
                             labelText: 'Användarnamn',
-                            hintText: 'admin',
+                            hintText: 'master',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.person, color: Colors.cyanAccent, size: 18),
                             isDense: true,
@@ -204,8 +228,256 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
+
+          if (provider.isAuthenticated) ...[
+            const SizedBox(height: 16),
+            _buildChangePasswordCard(provider),
+          ],
+
+          if (provider.isAuthenticated && provider.isAdmin) ...[
+            const SizedBox(height: 16),
+            _buildUserManagementCard(provider),
+          ],
         ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildChangePasswordCard(ConfigProvider provider) {
+    return Card(
+      color: const Color(0xFF1E293B),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.password, color: Colors.cyanAccent, size: 22),
+                SizedBox(width: 10),
+                Text('Byt eget lösenord', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _currentPwController,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    decoration: const InputDecoration(
+                      labelText: 'Nuvarande lösenord',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _newPwController,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    decoration: const InputDecoration(
+                      labelText: 'Nytt lösenord (minst 8 tecken)',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: _isChangingPassword
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                  : const Icon(Icons.save, size: 16),
+              label: const Text('Byt lösenord', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.cyanAccent,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              onPressed: _isChangingPassword
+                  ? null
+                  : () async {
+                      setState(() => _isChangingPassword = true);
+                      final err = await provider.api.changePassword(_currentPwController.text, _newPwController.text);
+                      setState(() => _isChangingPassword = false);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(err == null ? 'Lösenordet är ändrat' : err),
+                          backgroundColor: err == null ? Colors.green : Colors.red,
+                        ),
+                      );
+                      if (err == null) {
+                        _currentPwController.clear();
+                        _newPwController.clear();
+                      }
+                    },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserManagementCard(ConfigProvider provider) {
+    return Card(
+      color: const Color(0xFF1E293B),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.group, color: Colors.cyanAccent, size: 22),
+                const SizedBox(width: 10),
+                const Text('Användare', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                const Spacer(),
+                IconButton(
+                  icon: _loadingUsers
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent))
+                      : const Icon(Icons.refresh, size: 18, color: Colors.cyanAccent),
+                  onPressed: _loadingUsers ? null : _loadUsers,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (_users.isEmpty && !_loadingUsers)
+              const Text('Inga användare inlästa.', style: TextStyle(color: Colors.white38, fontSize: 12))
+            else
+              ..._users.map((u) => ListTile(
+                    dense: true,
+                    leading: Icon(u['role'] == 'admin' ? Icons.admin_panel_settings : Icons.visibility, color: Colors.cyanAccent, size: 18),
+                    title: Text(u['username'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    subtitle: Text(u['role'] ?? '', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.lock_reset, size: 16, color: Colors.amber),
+                          tooltip: 'Återställ lösenord',
+                          onPressed: () => _showResetPasswordDialog(provider, u),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, size: 16, color: Colors.redAccent),
+                          tooltip: 'Ta bort användare',
+                          onPressed: () async {
+                            final err = await provider.api.deleteUser(u['id']);
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(err ?? 'Användaren borttagen'),
+                                backgroundColor: err == null ? Colors.green : Colors.red,
+                              ),
+                            );
+                            if (err == null) _loadUsers();
+                          },
+                        ),
+                      ],
+                    ),
+                  )),
+            const Divider(color: Colors.white10, height: 32),
+            const Text('Skapa ny användare', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _newUserController,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    decoration: const InputDecoration(labelText: 'Användarnamn', border: OutlineInputBorder(), isDense: true),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _newUserPwController,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    decoration: const InputDecoration(labelText: 'Lösenord (minst 8 tecken)', border: OutlineInputBorder(), isDense: true),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                DropdownButton<String>(
+                  value: _newUserRole,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  items: const [
+                    DropdownMenuItem(value: 'viewer', child: Text('viewer')),
+                    DropdownMenuItem(value: 'admin', child: Text('admin')),
+                  ],
+                  onChanged: (v) => setState(() => _newUserRole = v ?? 'viewer'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.person_add, size: 16),
+              label: const Text('Skapa användare', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.cyanAccent,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              onPressed: () async {
+                final err = await provider.api.createUser(_newUserController.text, _newUserPwController.text, _newUserRole);
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(err ?? 'Användaren skapad'),
+                    backgroundColor: err == null ? Colors.green : Colors.red,
+                  ),
+                );
+                if (err == null) {
+                  _newUserController.clear();
+                  _newUserPwController.clear();
+                  _loadUsers();
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showResetPasswordDialog(ConfigProvider provider, Map<String, dynamic> user) {
+    final pwController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Text('Återställ lösenord för ${user['username']}', style: const TextStyle(color: Colors.white, fontSize: 14)),
+        content: TextField(
+          controller: pwController,
+          obscureText: true,
+          style: const TextStyle(color: Colors.white, fontSize: 12),
+          decoration: const InputDecoration(labelText: 'Nytt lösenord (minst 8 tecken)', border: OutlineInputBorder(), isDense: true),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Avbryt')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+            onPressed: () async {
+              final err = await provider.api.resetUserPassword(user['id'], pwController.text);
+              Navigator.pop(dialogContext);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(err ?? 'Lösenordet återställt'),
+                  backgroundColor: err == null ? Colors.green : Colors.red,
+                ),
+              );
+            },
+            child: const Text('Återställ'),
+          ),
+        ],
       ),
     );
   }
