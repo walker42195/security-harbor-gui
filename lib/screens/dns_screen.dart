@@ -108,6 +108,8 @@ class _DnsScreenState extends State<DnsScreen> {
             const SizedBox(height: 14),
             _buildResolverCard(provider, dns),
             const SizedBox(height: 14),
+            _buildLocalZoneCard(provider, dns),
+            const SizedBox(height: 14),
             _buildBlocklistsCard(provider, dns),
           ],
         ),
@@ -146,22 +148,59 @@ class _DnsScreenState extends State<DnsScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          _labeledField('Upstream DNS-servrar (komma-separerade)', upstreamCtrl, hint: '1.1.1.1, 1.0.0.1'),
-          const SizedBox(height: 10),
+          const Text('Upplösningsläge', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
           Row(
             children: [
-              Switch(
-                value: dns.dotEnabled,
-                activeThumbColor: Colors.tealAccent,
-                onChanged: (v) => _save(provider, dns.copyWith(dotEnabled: v)),
+              Expanded(
+                child: RadioListTile<bool>(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: Colors.tealAccent,
+                  title: const Text('Vidarebefordra till upstream-servrar', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  value: false,
+                  groupValue: dns.recursive,
+                  onChanged: (v) => _save(provider, dns.copyWith(recursive: false)),
+                ),
               ),
-              const SizedBox(width: 6),
-              const Text('DNS-over-TLS (DoT) mot upstream', style: TextStyle(color: Colors.white, fontSize: 12)),
+              Expanded(
+                child: RadioListTile<bool>(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  activeColor: Colors.tealAccent,
+                  title: const Text('Slå upp själv mot rot-servrarna (rekursiv)', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  value: true,
+                  groupValue: dns.recursive,
+                  onChanged: (v) => _save(provider, dns.copyWith(recursive: true)),
+                ),
+              ),
             ],
           ),
-          if (dns.dotEnabled) ...[
+          if (!dns.recursive) ...[
+            const SizedBox(height: 10),
+            _labeledField('Upstream DNS-servrar (komma-separerade)', upstreamCtrl, hint: '1.1.1.1, 1.0.0.1'),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Switch(
+                  value: dns.dotEnabled,
+                  activeThumbColor: Colors.tealAccent,
+                  onChanged: (v) => _save(provider, dns.copyWith(dotEnabled: v)),
+                ),
+                const SizedBox(width: 6),
+                const Text('DNS-over-TLS (DoT) mot upstream', style: TextStyle(color: Colors.white, fontSize: 12)),
+              ],
+            ),
+            if (dns.dotEnabled) ...[
+              const SizedBox(height: 6),
+              _labeledField('TLS-hostnamn för verifiering', dotHostCtrl, hint: 'cloudflare-dns.com'),
+            ],
+          ] else ...[
             const SizedBox(height: 6),
-            _labeledField('TLS-hostnamn för verifiering', dotHostCtrl, hint: 'cloudflare-dns.com'),
+            const Text(
+              'I rekursivt läge slår servern upp domäner direkt mot DNS-rotens namnservrar istället för att fråga en upstream-leverantör (t.ex. Cloudflare/Google).',
+              style: TextStyle(color: Colors.grey, fontSize: 10),
+            ),
           ],
           const SizedBox(height: 10),
           ElevatedButton.icon(
@@ -179,6 +218,140 @@ class _DnsScreenState extends State<DnsScreen> {
             style: TextStyle(color: Colors.amberAccent, fontSize: 10),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLocalZoneCard(ConfigProvider provider, DNSConfigModel dns) {
+    final localDomainCtrl = TextEditingController(text: dns.localDomain);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        border: Border.all(color: const Color(0xFF334155)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Lokal DNS-zon', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Switch(
+                value: dns.dhcpHostnameRegistration,
+                activeThumbColor: Colors.tealAccent,
+                onChanged: (v) => _save(provider, dns.copyWith(dhcpHostnameRegistration: v)),
+              ),
+              const SizedBox(width: 6),
+              const Expanded(
+                child: Text('Registrera DHCP-tilldelade enheters värdnamn automatiskt i DNS', style: TextStyle(color: Colors.white, fontSize: 12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _labeledField('Lokal domän (suffix, t.ex. "lan")', localDomainCtrl, hint: 'lan'),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.save, size: 14),
+            label: const Text('Spara', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+            onPressed: () => _save(provider, dns.copyWith(localDomain: localDomainCtrl.text.trim())),
+          ),
+          const Divider(color: Colors.white10, height: 28),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Manuella DNS-poster (${dns.staticRecords.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.add, size: 14),
+                label: const Text('Lägg till post', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                onPressed: () => _showAddStaticRecordDialog(provider, dns),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (dns.staticRecords.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text('Inga manuella poster tillagda ännu.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            )
+          else
+            ...dns.staticRecords.map((rec) => Container(
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                  margin: const EdgeInsets.only(bottom: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0F172A),
+                    border: Border.all(color: const Color(0xFF334155)),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.dns, size: 14, color: Colors.tealAccent),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(rec.hostname, style: const TextStyle(color: Colors.white, fontSize: 12))),
+                      Expanded(child: Text(rec.ip, style: const TextStyle(color: Colors.grey, fontSize: 12, fontFamily: 'monospace'))),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+                        onPressed: () {
+                          final updated = dns.staticRecords.where((r) => r != rec).toList();
+                          _save(provider, dns.copyWith(staticRecords: updated));
+                        },
+                      ),
+                    ],
+                  ),
+                )),
+        ],
+      ),
+    );
+  }
+
+  void _showAddStaticRecordDialog(ConfigProvider provider, DNSConfigModel dns) {
+    final hostnameCtrl = TextEditingController();
+    final ipCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Lägg till DNS-post', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              _labeledField('Värdnamn', hostnameCtrl, hint: 'server1'),
+              const SizedBox(height: 12),
+              _labeledField('IP-adress', ipCtrl, hint: '10.0.0.50'),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                    child: const Text('Lägg till', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      final hostname = hostnameCtrl.text.trim();
+                      final ip = ipCtrl.text.trim();
+                      if (hostname.isEmpty || ip.isEmpty) return;
+                      final newRec = DNSStaticRecordModel(hostname: hostname, ip: ip);
+                      _save(provider, dns.copyWith(staticRecords: [...dns.staticRecords, newRec]));
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

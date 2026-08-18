@@ -296,6 +296,30 @@ class ApiService {
     return 'Ingen kontakt';
   }
 
+  /// Kör nmap mot host med valfri kombination av skanningstyper.
+  Future<String> nmap(String host, {bool synScan = false, bool fullTcp = false, bool udpScan = false, bool osDetect = false}) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$baseUrl/api/v1/diagnostics/nmap'),
+        headers: _headers,
+        body: jsonEncode({
+          'host': host,
+          'syn_scan': synScan,
+          'full_tcp': fullTcp,
+          'udp_scan': udpScan,
+          'os_detect': osDetect,
+        }),
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return data['output'] ?? '';
+      }
+      return res.body.isNotEmpty ? res.body : 'nmap misslyckades';
+    } catch (e) {
+      return 'Fel: $e';
+    }
+  }
+
   Future<String> traceroute(String host) async {
     try {
       final res = await http.post(

@@ -655,18 +655,28 @@ class DNSConfigModel {
   final List<String> upstreamServers;
   final bool dotEnabled;
   final String dotHostname;
+  // recursive: om sant slår servern själv mot rot-servrarna istället för
+  // att vidarebefordra till upstreamServers (som då ignoreras).
+  final bool recursive;
   final List<DNSBlocklistSourceModel> blocklists; // Flera kan vara aktiva samtidigt
   final List<String> customBlockedDomains;
   final List<String> customAllowedDomains;
+  final List<DNSStaticRecordModel> staticRecords;
+  final String localDomain;
+  final bool dhcpHostnameRegistration;
 
   DNSConfigModel({
     required this.enabled,
     this.upstreamServers = const [],
     this.dotEnabled = false,
     this.dotHostname = '',
+    this.recursive = false,
     this.blocklists = const [],
     this.customBlockedDomains = const [],
     this.customAllowedDomains = const [],
+    this.staticRecords = const [],
+    this.localDomain = '',
+    this.dhcpHostnameRegistration = false,
   });
 
   factory DNSConfigModel.fromJson(Map<String, dynamic> json) {
@@ -675,9 +685,13 @@ class DNSConfigModel {
       upstreamServers: List<String>.from(json['upstream_servers'] ?? []),
       dotEnabled: json['dot_enabled'] ?? false,
       dotHostname: json['dot_hostname'] ?? '',
+      recursive: json['recursive'] ?? false,
       blocklists: (json['blocklists'] as List? ?? []).map((e) => DNSBlocklistSourceModel.fromJson(e)).toList(),
       customBlockedDomains: List<String>.from(json['custom_blocked_domains'] ?? []),
       customAllowedDomains: List<String>.from(json['custom_allowed_domains'] ?? []),
+      staticRecords: (json['static_records'] as List? ?? []).map((e) => DNSStaticRecordModel.fromJson(e)).toList(),
+      localDomain: json['local_domain'] ?? '',
+      dhcpHostnameRegistration: json['dhcp_hostname_registration'] ?? false,
     );
   }
 
@@ -686,18 +700,26 @@ class DNSConfigModel {
     List<String>? upstreamServers,
     bool? dotEnabled,
     String? dotHostname,
+    bool? recursive,
     List<DNSBlocklistSourceModel>? blocklists,
     List<String>? customBlockedDomains,
     List<String>? customAllowedDomains,
+    List<DNSStaticRecordModel>? staticRecords,
+    String? localDomain,
+    bool? dhcpHostnameRegistration,
   }) =>
       DNSConfigModel(
         enabled: enabled ?? this.enabled,
         upstreamServers: upstreamServers ?? this.upstreamServers,
         dotEnabled: dotEnabled ?? this.dotEnabled,
         dotHostname: dotHostname ?? this.dotHostname,
+        recursive: recursive ?? this.recursive,
         blocklists: blocklists ?? this.blocklists,
         customBlockedDomains: customBlockedDomains ?? this.customBlockedDomains,
         customAllowedDomains: customAllowedDomains ?? this.customAllowedDomains,
+        staticRecords: staticRecords ?? this.staticRecords,
+        localDomain: localDomain ?? this.localDomain,
+        dhcpHostnameRegistration: dhcpHostnameRegistration ?? this.dhcpHostnameRegistration,
       );
 
   Map<String, dynamic> toJson() => {
@@ -705,10 +727,27 @@ class DNSConfigModel {
         'upstream_servers': upstreamServers,
         'dot_enabled': dotEnabled,
         'dot_hostname': dotHostname,
+        'recursive': recursive,
         'blocklists': blocklists.map((e) => e.toJson()).toList(),
         'custom_blocked_domains': customBlockedDomains,
         'custom_allowed_domains': customAllowedDomains,
+        'static_records': staticRecords.map((e) => e.toJson()).toList(),
+        'local_domain': localDomain,
+        'dhcp_hostname_registration': dhcpHostnameRegistration,
       };
+}
+
+/// EN manuellt inmatad A-post i den lokala DNS-zonen.
+class DNSStaticRecordModel {
+  final String hostname;
+  final String ip;
+
+  DNSStaticRecordModel({required this.hostname, required this.ip});
+
+  factory DNSStaticRecordModel.fromJson(Map<String, dynamic> json) =>
+      DNSStaticRecordModel(hostname: json['hostname'] ?? '', ip: json['ip'] ?? '');
+
+  Map<String, dynamic> toJson() => {'hostname': hostname, 'ip': ip};
 }
 
 /// EN automatiskt uppdaterad domänblocklista (Fas 6). Flera kan vara

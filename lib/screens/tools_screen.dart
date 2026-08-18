@@ -15,6 +15,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
   String _output = '';
   bool _isPingLoading = false;
   bool _isTracerouteLoading = false;
+  bool _isNmapLoading = false;
+
+  bool _nmapSyn = true;
+  bool _nmapFullTcp = false;
+  bool _nmapUdp = false;
+  bool _nmapOsDetect = false;
 
   @override
   void dispose() {
@@ -108,7 +114,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
-                        onPressed: _isPingLoading || _isTracerouteLoading ? null : () => _runPing(provider),
+                        onPressed: _anyLoading ? null : () => _runPing(provider),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton.icon(
@@ -121,7 +127,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
-                        onPressed: _isPingLoading || _isTracerouteLoading ? null : () => _runTraceroute(provider),
+                        onPressed: _anyLoading ? null : () => _runTraceroute(provider),
                       ),
                     ],
                   ),
@@ -138,6 +144,59 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       _buildPresetChip('Gateway (10.0.0.1)', '10.0.0.1'),
                       _buildPresetChip('Harbor Web (security.novabase.se)', 'security.novabase.se'),
                     ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // nmap-portskanning
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                border: Border.all(color: const Color(0xFF334155)),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.radar, color: Colors.tealAccent, size: 16),
+                      SizedBox(width: 8),
+                      Text('nmap-portskanning', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 0,
+                    children: [
+                      _nmapCheck('TCP SYN-scan (-sS)', _nmapSyn, (v) => setState(() => _nmapSyn = v)),
+                      _nmapCheck('Full TCP-scan (-p- -sV)', _nmapFullTcp, (v) => setState(() => _nmapFullTcp = v)),
+                      _nmapCheck('UDP-scan (-sU)', _nmapUdp, (v) => setState(() => _nmapUdp = v)),
+                      _nmapCheck('OS-detektion (-O)', _nmapOsDetect, (v) => setState(() => _nmapOsDetect = v)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ElevatedButton.icon(
+                    icon: _isNmapLoading
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                        : const Icon(Icons.radar, size: 14),
+                    label: const Text('Kör nmap', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.tealAccent,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    onPressed: _anyLoading || (!_nmapSyn && !_nmapFullTcp && !_nmapUdp && !_nmapOsDetect) ? null : () => _runNmap(provider),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Full TCP-scan och UDP-scan kan ta flera minuter. Kör inte mot mål du inte har rätt att skanna.',
+                    style: TextStyle(color: Colors.amberAccent, fontSize: 10),
                   ),
                 ],
               ),
@@ -259,6 +318,44 @@ class _ToolsScreenState extends State<ToolsScreen> {
     setState(() {
       _output += out;
       _isTracerouteLoading = false;
+    });
+  }
+
+  bool get _anyLoading => _isPingLoading || _isTracerouteLoading || _isNmapLoading;
+
+  Widget _nmapCheck(String label, bool value, ValueChanged<bool> onChanged) {
+    return InkWell(
+      onTap: () => onChanged(!value),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Checkbox(value: value, activeColor: Colors.tealAccent, onChanged: (v) => onChanged(v ?? false)),
+          Text(label, style: const TextStyle(color: Colors.white, fontSize: 11)),
+          const SizedBox(width: 10),
+        ],
+      ),
+    );
+  }
+
+  void _runNmap(ConfigProvider provider) async {
+    final target = _targetController.text.trim();
+    if (target.isEmpty) return;
+
+    setState(() {
+      _isNmapLoading = true;
+      _output = 'Kör nmap mot $target från brandväggen...\n--------------------------------------------------\n';
+    });
+    final out = await provider.api.nmap(
+      target,
+      synScan: _nmapSyn,
+      fullTcp: _nmapFullTcp,
+      udpScan: _nmapUdp,
+      osDetect: _nmapOsDetect,
+    );
+    if (!mounted) return;
+    setState(() {
+      _output += out;
+      _isNmapLoading = false;
     });
   }
 }

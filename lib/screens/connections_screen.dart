@@ -347,6 +347,22 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
 
   double get _totalTableWidth => _colWidths.fold(0.0, (sum, w) => sum + w) + _resizeHandleWidth * _colWidths.length;
 
+  // Se identisk kommentar/motivering i policies_screen.dart —
+  // _effectiveColWidths: fyller ut sista kolumnen med oanvänt utrymme när
+  // fönstret är bredare än tabellens naturliga bredd, istället för att
+  // lämna dött utrymme eller tvinga fram onödig horisontell scroll.
+  List<double> _effectiveColWidths(double availableWidth) {
+    if (_totalTableWidth >= availableWidth) return _colWidths;
+    final widths = List<double>.from(_colWidths);
+    final othersTotal = widths.sublist(0, widths.length - 1).fold(0.0, (sum, w) => sum + w);
+    final handlesTotal = _resizeHandleWidth * widths.length;
+    final remaining = availableWidth - othersTotal - handlesTotal;
+    if (remaining > widths.last) {
+      widths[widths.length - 1] = remaining;
+    }
+    return widths;
+  }
+
   // Använder rå pekar-events (Listener) istället för en
   // HorizontalDragGestureRecognizer (GestureDetector.onHorizontalDragUpdate):
   // handtaget sitter inuti en horisontellt scrollande SingleChildScrollView,
@@ -382,18 +398,18 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     );
   }
 
-  Widget _buildHeaderRow() {
+  Widget _buildHeaderRow(List<double> widths) {
     return Row(
       children: [
-        for (int i = 0; i < _colWidths.length; i++) ...[
-          SizedBox(width: _colWidths[i], child: Text(_colLabels[i], style: _headerStyle)),
+        for (int i = 0; i < widths.length; i++) ...[
+          SizedBox(width: widths[i], child: Text(_colLabels[i], style: _headerStyle)),
           _resizeHandle(i),
         ],
       ],
     );
   }
 
-  Widget _buildDataRow(_TrafficRow r, List<ObjectModel> objects) {
+  Widget _buildDataRow(_TrafficRow r, List<ObjectModel> objects, List<double> widths) {
     final srcName = _resolveObjectName(objects, r.srcIp);
     final dstName = _resolveObjectName(objects, r.dstIp);
     final cells = <Widget>[
@@ -431,8 +447,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       ),
       child: Row(
         children: [
-          for (int i = 0; i < _colWidths.length; i++) ...[
-            SizedBox(width: _colWidths[i], child: cells[i]),
+          for (int i = 0; i < widths.length; i++) ...[
+            SizedBox(width: widths[i], child: cells[i]),
             SizedBox(width: _resizeHandleWidth),
           ],
         ],
@@ -455,38 +471,44 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         border: Border.all(color: const Color(0xFF334155)),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        controller: _hScrollController,
-        physics: _activeResizeIndex != null ? const NeverScrollableScrollPhysics() : null,
-        child: SizedBox(
-          width: _totalTableWidth,
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Color(0xFF334155))),
-                ),
-                child: _buildHeaderRow(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final widths = _effectiveColWidths(constraints.maxWidth);
+          final tableWidth = widths.fold(0.0, (sum, w) => sum + w) + _resizeHandleWidth * widths.length;
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            controller: _hScrollController,
+            physics: _activeResizeIndex != null ? const NeverScrollableScrollPhysics() : null,
+            child: SizedBox(
+              width: tableWidth,
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: const BoxDecoration(
+                      border: Border(bottom: BorderSide(color: Color(0xFF334155))),
+                    ),
+                    child: _buildHeaderRow(widths),
+                  ),
+                  Expanded(
+                    child: rows.isEmpty
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(24.0),
+                              child: Text('Ingen trafik matchar filtret.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            itemCount: rows.length,
+                            itemBuilder: (context, i) => _buildDataRow(rows[i], objects, widths),
+                          ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: rows.isEmpty
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(24.0),
-                          child: Text('Ingen trafik matchar filtret.', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        itemCount: rows.length,
-                        itemBuilder: (context, i) => _buildDataRow(rows[i], objects),
-                      ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -51,6 +51,24 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
 
   double get _totalTableWidth => _colWidths.fold(0.0, (sum, w) => sum + w) + _policyResizeHandleWidth * _colWidths.length;
 
+  // Låter tabellen fylla hela GUI-bredden istället för att lämna dött
+  // utrymme (eller kräva onödig horisontell scroll) när fönstret är
+  // bredare än kolumnernas naturliga summa — sista kolumnen ("Åtgärder")
+  // absorberar det extra utrymmet. Manuell breddjustering (dragbara
+  // handtag) fungerar precis som förut; det här påverkar bara HUR breda
+  // kolumnerna visas när det finns oanvänt utrymme kvar.
+  List<double> _effectiveColWidths(double availableWidth) {
+    if (_totalTableWidth >= availableWidth) return _colWidths;
+    final widths = List<double>.from(_colWidths);
+    final othersTotal = widths.sublist(0, widths.length - 1).fold(0.0, (sum, w) => sum + w);
+    final handlesTotal = _policyResizeHandleWidth * widths.length;
+    final remaining = availableWidth - othersTotal - handlesTotal;
+    if (remaining > widths.last) {
+      widths[widths.length - 1] = remaining;
+    }
+    return widths;
+  }
+
   // Rå pekar-events (Listener) istället för GestureDetector.
   // onHorizontalDragUpdate — se identisk kommentar/fix i
   // connections_screen.dart: handtaget sitter inuti en horisontellt
@@ -85,12 +103,12 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     );
   }
 
-  Widget _buildPolicyHeaderRow() {
+  Widget _buildPolicyHeaderRow(List<double> widths) {
     return Row(
       children: [
-        for (int i = 0; i < _colWidths.length; i++) ...[
+        for (int i = 0; i < widths.length; i++) ...[
           SizedBox(
-            width: _colWidths[i],
+            width: widths[i],
             child: Text(_policyColLabels[i], style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
           ),
           _resizeHandle(i),
@@ -170,29 +188,35 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                     )
-                  : SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      controller: _hScrollController,
-                      physics: _activeResizeIndex != null ? const NeverScrollableScrollPhysics() : null,
-                      child: SizedBox(
-                        width: _totalTableWidth,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              color: const Color(0xFF334155),
-                              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-                              child: _buildPolicyHeaderRow(),
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final widths = _effectiveColWidths(constraints.maxWidth);
+                        final tableWidth = widths.fold(0.0, (sum, w) => sum + w) + _policyResizeHandleWidth * widths.length;
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          controller: _hScrollController,
+                          physics: _activeResizeIndex != null ? const NeverScrollableScrollPhysics() : null,
+                          child: SizedBox(
+                            width: tableWidth,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  color: const Color(0xFF334155),
+                                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                                  child: _buildPolicyHeaderRow(widths),
+                                ),
+                                Expanded(
+                                  child: ListView.builder(
+                                    itemCount: cfg.policies.length,
+                                    itemBuilder: (context, idx) => _buildPolicyDataRow(context, provider, cfg, idx, widths),
+                                  ),
+                                ),
+                              ],
                             ),
-                            Expanded(
-                              child: ListView.builder(
-                                itemCount: cfg.policies.length,
-                                itemBuilder: (context, idx) => _buildPolicyDataRow(context, provider, cfg, idx),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
             ),
           ),
@@ -201,7 +225,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     );
   }
 
-  Widget _buildPolicyDataRow(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx) {
+  Widget _buildPolicyDataRow(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx, List<double> widths) {
     final pol = cfg.policies[idx];
     final isDNAT = pol.action == 'dnat';
     final isAllow = pol.action == 'accept';
@@ -299,8 +323,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
         child: Row(
           children: [
-            for (int i = 0; i < _colWidths.length; i++) ...[
-              SizedBox(width: _colWidths[i], child: cells[i]),
+            for (int i = 0; i < widths.length; i++) ...[
+              SizedBox(width: widths[i], child: cells[i]),
               const SizedBox(width: _policyResizeHandleWidth),
             ],
           ],
