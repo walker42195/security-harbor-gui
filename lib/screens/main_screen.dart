@@ -300,7 +300,7 @@ class _MainScreenState extends State<MainScreen> {
                             width: 36,
                             height: 36,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.shield, color: Colors.cyanAccent, size: 32),
+                            errorBuilder: (_, _, _) => const Icon(Icons.shield, color: Colors.cyanAccent, size: 32),
                           ),
                         ),
                         const SizedBox(height: 6),

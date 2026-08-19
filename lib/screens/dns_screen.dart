@@ -150,31 +150,31 @@ class _DnsScreenState extends State<DnsScreen> {
           const SizedBox(height: 10),
           const Text('Upplösningsläge', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Row(
-            children: [
-              Expanded(
-                child: RadioListTile<bool>(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  activeColor: Colors.tealAccent,
-                  title: const Text('Vidarebefordra till upstream-servrar', style: TextStyle(color: Colors.white, fontSize: 12)),
-                  value: false,
-                  groupValue: dns.recursive,
-                  onChanged: (v) => _save(provider, dns.copyWith(recursive: false)),
+          RadioGroup<bool>(
+            groupValue: dns.recursive,
+            onChanged: (v) => _save(provider, dns.copyWith(recursive: v ?? false)),
+            child: Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<bool>(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: Colors.tealAccent,
+                    title: const Text('Vidarebefordra till upstream-servrar', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    value: false,
+                  ),
                 ),
-              ),
-              Expanded(
-                child: RadioListTile<bool>(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  activeColor: Colors.tealAccent,
-                  title: const Text('Slå upp själv mot rot-servrarna (rekursiv)', style: TextStyle(color: Colors.white, fontSize: 12)),
-                  value: true,
-                  groupValue: dns.recursive,
-                  onChanged: (v) => _save(provider, dns.copyWith(recursive: true)),
+                Expanded(
+                  child: RadioListTile<bool>(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    activeColor: Colors.tealAccent,
+                    title: const Text('Slå upp själv mot rot-servrarna (rekursiv)', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    value: true,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           if (!dns.recursive) ...[
             const SizedBox(height: 10),
@@ -540,6 +540,7 @@ class _DnsScreenState extends State<DnsScreen> {
                           refreshHours: int.tryParse(refreshHoursCtrl.text.trim()) ?? 24,
                         );
                         await _save(provider, dns.copyWith(blocklists: [...dns.blocklists, newSrc]));
+                        if (!ctx.mounted) return;
                         Navigator.pop(ctx);
                         await provider.api.refreshDNSBlocklist(newSrc.id);
                         await provider.fetchAll();

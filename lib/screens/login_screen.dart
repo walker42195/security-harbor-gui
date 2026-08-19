@@ -33,6 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login(ConfigProvider provider) async {
     await provider.changeAgentUrl(_urlController.text);
+    if (!mounted) return;
 
     // Trust-on-first-use: kolla brandväggens TLS-certifikat INNAN vi
     // faktiskt loggar in. Hoppas över helt på web (webbläsaren sköter sin
@@ -76,7 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 120,
                           height: 120,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.security, color: Colors.cyanAccent, size: 48),
+                          errorBuilder: (_, _, _) => const Icon(Icons.security, color: Colors.cyanAccent, size: 48),
                         ),
                       ),
                       const SizedBox(height: 12),

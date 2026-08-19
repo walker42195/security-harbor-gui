@@ -197,9 +197,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             : () async {
                                 setState(() => _isLoggingIn = true);
                                 await provider.changeAgentUrl(_urlController.text);
+                                if (!mounted) return;
                                 if (!kIsWeb) {
+                                  if (!context.mounted) return;
                                   final proceed = await runTlsTrustCheck(context, provider.api);
-                                  if (!context.mounted || !proceed) {
+                                  if (!mounted || !proceed) {
                                     setState(() => _isLoggingIn = false);
                                     return;
                                   }
@@ -348,10 +350,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       setState(() => _isChangingPassword = true);
                       final err = await provider.api.changePassword(_currentPwController.text, _newPwController.text);
                       setState(() => _isChangingPassword = false);
-                      if (!context.mounted) return;
+                      if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(err == null ? 'Lösenordet är ändrat' : err),
+                          content: Text(err ?? 'Lösenordet är ändrat'),
                           backgroundColor: err == null ? Colors.green : Colors.red,
                         ),
                       );
@@ -535,7 +537,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : () async {
                           setState(() => _isCreatingBackup = true);
                           final result = await provider.api.createBackup(_backupPassphraseController.text);
-                          if (!context.mounted) return;
+                          if (!mounted) return;
                           setState(() {
                             _isCreatingBackup = false;
                             _backupResultController.text = result.backupB64 ?? '';
@@ -616,7 +618,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       : () async {
                           setState(() => _isRestoring = true);
                           final err = await provider.api.restoreBackup(_restoreB64Controller.text.trim(), _restorePassphraseController.text);
-                          if (!context.mounted) return;
+                          if (!mounted) return;
                           setState(() => _isRestoring = false);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -687,7 +689,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : () async {
                       setState(() => _isFactoryResetting = true);
                       final err = await provider.api.factoryReset(_factoryResetPasswordController.text);
-                      if (!context.mounted) return;
+                      if (!mounted) return;
                       setState(() => _isFactoryResetting = false);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -747,7 +749,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           tooltip: 'Ta bort användare',
                           onPressed: () async {
                             final err = await provider.api.deleteUser(u['id']);
-                            if (!context.mounted) return;
+                            if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(err ?? 'Användaren borttagen'),
@@ -805,7 +807,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               onPressed: () async {
                 final err = await provider.api.createUser(_newUserController.text, _newUserPwController.text, _newUserRole);
-                if (!context.mounted) return;
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(err ?? 'Användaren skapad'),
@@ -844,8 +846,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
             onPressed: () async {
               final err = await provider.api.resetUserPassword(user['id'], pwController.text);
+              if (!dialogContext.mounted) return;
               Navigator.pop(dialogContext);
-              if (!context.mounted) return;
+              if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(err ?? 'Lösenordet återställt'),

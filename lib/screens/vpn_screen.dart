@@ -169,7 +169,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
                 children: [
                   Switch(
                     value: wg.enabled,
-                    activeColor: Colors.tealAccent,
+                    activeThumbColor: Colors.tealAccent,
                     onChanged: (v) => _saveWireGuard(provider, wg.copyWith(enabled: v)),
                   ),
                   Text(wg.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: wg.enabled ? Colors.tealAccent : Colors.grey, fontSize: 11)),
@@ -321,7 +321,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
           ),
           Switch(
             value: peer.enabled,
-            activeColor: Colors.tealAccent,
+            activeThumbColor: Colors.tealAccent,
             onChanged: (v) {
               final updated = wg.peers.map((p) => p.id == peer.id ? WireGuardPeerModel(id: p.id, name: p.name, publicKey: p.publicKey, allowedIps: p.allowedIps, enabled: v) : p).toList();
               _saveWireGuard(provider, wg.copyWith(peers: updated));
@@ -532,7 +532,7 @@ PersistentKeepalive = 25
                 children: [
                   Switch(
                     value: ovpn.enabled,
-                    activeColor: Colors.tealAccent,
+                    activeThumbColor: Colors.tealAccent,
                     onChanged: (v) => _saveOpenVpn(provider, ovpn.copyWith(enabled: v)),
                   ),
                   Text(ovpn.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: ovpn.enabled ? Colors.tealAccent : Colors.grey, fontSize: 11)),
@@ -685,7 +685,7 @@ PersistentKeepalive = 25
           if (!client.revoked)
             Switch(
               value: client.enabled,
-              activeColor: Colors.tealAccent,
+              activeThumbColor: Colors.tealAccent,
               onChanged: (v) {
                 final updated = ovpn.clients.map((c) => c.id == client.id ? c.copyWith(enabled: v) : c).toList();
                 _saveOpenVpn(provider, ovpn.copyWith(clients: updated));

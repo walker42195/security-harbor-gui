@@ -462,6 +462,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                           openvpn: cfg.openvpn,
                           dns: cfg.dns,
                         ));
+                        if (!ctx.mounted) return;
                         Navigator.pop(ctx);
                         await provider.api.refreshObjectSource(savedObj.id);
                         await provider.fetchAll();
