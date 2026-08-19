@@ -901,13 +901,17 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           // (Policy.SourceObj/DestObj, se nftables-adapterns
                           // objectMatchExpr), så ett valt objekt måste hamna där, inte bara
                           // som text i SourceZone/DestZone. Backend-modellen har plats för
-                          // EN källa/mål-objekt per policy — väljs fler än ett används det
-                          // först valda och resten ignoreras.
-                          String resolveObjOrZones(List<String> members, List<String> zonesOut) {
+                          // EN källa/mål-objekt per policy — väljer man fler än ett stoppas
+                          // sparningen nedan explicit (upptäckt 2026-08-19: tidigare
+                          // användes bara det först valda och resten kastades TYST, vilket
+                          // gjorde att ett nyss tillagt objekt "försvann" nästa gång regeln
+                          // öppnades, utan förklaring).
+                          String resolveObjOrZones(List<String> members, List<String> zonesOut, List<String> matchedNamesOut) {
                             String objId = 'ANY';
                             for (final m in members) {
                               final match = cfg.objects.where((o) => o.name == m);
                               if (match.isNotEmpty) {
+                                matchedNamesOut.add(m);
                                 if (objId == 'ANY') objId = match.first.id;
                               } else {
                                 zonesOut.add(m);
@@ -918,8 +922,36 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
 
                           final srcZones = <String>[];
                           final dstZones = <String>[];
-                          final srcObjId = resolveObjOrZones(fromMembers, srcZones);
-                          final dstObjId = resolveObjOrZones(toMembers, dstZones);
+                          final srcMatchedObjs = <String>[];
+                          final dstMatchedObjs = <String>[];
+                          final srcObjId = resolveObjOrZones(fromMembers, srcZones, srcMatchedObjs);
+                          final dstObjId = resolveObjOrZones(toMembers, dstZones, dstMatchedObjs);
+
+                          if (srcMatchedObjs.length > 1 || dstMatchedObjs.length > 1) {
+                            final side = srcMatchedObjs.length > 1 ? 'Källa' : 'Mål';
+                            final names = (srcMatchedObjs.length > 1 ? srcMatchedObjs : dstMatchedObjs).join(', ');
+                            showDialog(
+                              context: context,
+                              builder: (dctx) => AlertDialog(
+                                backgroundColor: const Color(0xFF1E293B),
+                                title: const Text('Flera objekt valda', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                content: Text(
+                                  'Du har valt $side objekt: $names.\n\n'
+                                  'En regel kan bara referera ETT objekt direkt (den här begränsningen '
+                                  'fanns redan, men sparades tidigare tyst fel - det extra objektet '
+                                  'försvann nästa gång regeln öppnades).\n\n'
+                                  'Skapa istället en Grupp under Objekt-vyn som innehåller $names, '
+                                  'och välj den gruppen här - brandväggen matchar mot alla objekt i '
+                                  'gruppen samtidigt.',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                ),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(dctx), child: const Text('OK, jag fixar det')),
+                                ],
+                              ),
+                            );
+                            return;
+                          }
 
                           final updatedPolicies = List<PolicyModel>.from(cfg.policies);
                           final newPol = PolicyModel(

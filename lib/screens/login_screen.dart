@@ -70,14 +70,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.asset(
-                          'assets/logo.png',
-                          width: 120,
-                          height: 120,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => const Icon(Icons.security, color: Colors.cyanAccent, size: 48),
+                      // Bredden matchar kortet nedanför (samma ConstrainedBox/
+                      // Padding-bredd) istället för en liten fast 120x120-ruta,
+                      // så undertexten i loggan ("Linux Firewall") faktiskt
+                      // syns istället för att bli för liten för att läsa.
+                      SizedBox(
+                        width: double.infinity,
+                        child: AspectRatio(
+                          aspectRatio: 1,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.asset(
+                              'assets/logo.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, _, _) => const Icon(Icons.security, color: Colors.cyanAccent, size: 48),
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 12),
