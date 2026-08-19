@@ -895,25 +895,62 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             finalService = selectedServicePreset;
                           }
 
-                          // Ett valt medlemsnamn i From/To-rutan kan antingen vara en zon
-                          // (LAN/WAN/SERVERS/...) eller ett Objekt (t.ex. en Spamhaus-hot-
-                          // lista, Fas 5) — bara objekt matchas faktiskt av brandväggen
-                          // (Policy.SourceObj/DestObj, se nftables-adapterns
-                          // objectMatchExpr), så ett valt objekt måste hamna där, inte bara
-                          // som text i SourceZone/DestZone. Backend-modellen har plats för
-                          // EN källa/mål-objekt per policy — väljer man fler än ett stoppas
-                          // sparningen nedan explicit (upptäckt 2026-08-19: tidigare
-                          // användes bara det först valda och resten kastades TYST, vilket
-                          // gjorde att ett nyss tillagt objekt "försvann" nästa gång regeln
-                          // öppnades, utan förklaring).
+                          // Ett valt medlemsnamn i From/To-rutan kan vara en zon
+                          // (LAN/WAN/SERVERS/...), ett befintligt Objekt (t.ex. en
+                          // Spamhaus-hotlista, Fas 5), eller en egen inskriven IP/subnet
+                          // (pickerns "Add Other"-fält) — bara objekt matchas faktiskt av
+                          // brandväggen (Policy.SourceObj/DestObj, se nftables-adapterns
+                          // objectMatchExpr). Egen IP-text matchade tidigare INGET av
+                          // dessa — den hamnade i SourceZone/DestZone som inert text (post
+                          // zon-fixen 2026-08-19: gav då bara ett valideringsfel om "zonen
+                          // matchar inget gränssnitt", utan att någonsin faktiskt
+                          // begränsa trafiken). Skapar nu istället automatiskt ett riktigt
+                          // Host/Network-objekt av texten, så fältet gör vad namnet lovar.
+                          final knownZoneNames = <String>{
+                            'ANY',
+                            'Any-External (WAN)',
+                            'Any-Trusted (LAN)',
+                            'SERVERS', 'IOT', 'GUEST', 'VPN',
+                            ...cfg.zones.map((z) => z.name),
+                          };
+                          final ipLikePattern = RegExp(r'^[0-9a-fA-F.:]+(/\d{1,3})?$');
+                          final newObjects = <ObjectModel>[];
+
                           String resolveObjOrZones(List<String> members, List<String> zonesOut, List<String> matchedNamesOut) {
                             String objId = 'ANY';
                             for (final m in members) {
                               final match = cfg.objects.where((o) => o.name == m);
-                              if (match.isNotEmpty) {
+                              if (knownZoneNames.contains(m)) {
+                                zonesOut.add(m);
+                              } else if (match.isNotEmpty) {
                                 matchedNamesOut.add(m);
                                 if (objId == 'ANY') objId = match.first.id;
+                              } else if (ipLikePattern.hasMatch(m)) {
+                                // Återanvänd ett tidigare auto-skapat objekt med samma
+                                // värde istället för att skapa dubbletter varje gång
+                                // policyn sparas om.
+                                final existing = [...cfg.objects, ...newObjects]
+                                    .where((o) => o.values.length == 1 && o.values.first == m);
+                                final ObjectModel obj;
+                                if (existing.isNotEmpty) {
+                                  obj = existing.first;
+                                } else {
+                                  obj = ObjectModel(
+                                    id: 'obj_auto_${DateTime.now().microsecondsSinceEpoch}_${newObjects.length}',
+                                    name: m,
+                                    type: m.contains('/') ? 'network' : 'host',
+                                    values: [m],
+                                    description: 'Automatiskt skapad från policy-editorns "Ange egen IP"-fält',
+                                  );
+                                  newObjects.add(obj);
+                                }
+                                matchedNamesOut.add(m);
+                                if (objId == 'ANY') objId = obj.id;
                               } else {
+                                // Okänd text som varken är en känd zon, ett objekt eller
+                                // ser ut som en IP/subnet - troligen en felstavad zon.
+                                // Behåll i zonesOut så zon-valideringen ger ett tydligt
+                                // fel istället för att tyst ignoreras.
                                 zonesOut.add(m);
                               }
                             }
@@ -990,7 +1027,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             updatedAt: cfg.updatedAt,
                             interfaces: cfg.interfaces,
                             zones: cfg.zones,
-                            objects: cfg.objects,
+                            objects: [...cfg.objects, ...newObjects],
                             services: cfg.services,
                             policies: updatedPolicies,
                             settings: cfg.settings,
