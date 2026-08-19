@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
+import '../models/config_model.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -16,15 +17,22 @@ class _ToolsScreenState extends State<ToolsScreen> {
   bool _isPingLoading = false;
   bool _isTracerouteLoading = false;
   bool _isNmapLoading = false;
+  bool _isTcpdumpLoading = false;
 
   bool _nmapSyn = true;
   bool _nmapFullTcp = false;
   bool _nmapUdp = false;
   bool _nmapOsDetect = false;
 
+  final TextEditingController _tcpdumpFilterController = TextEditingController();
+  String? _tcpdumpInterface;
+  int _tcpdumpPacketCount = 200;
+  int _tcpdumpDurationSec = 10;
+
   @override
   void dispose() {
     _targetController.dispose();
+    _tcpdumpFilterController.dispose();
     super.dispose();
   }
 
@@ -204,6 +212,110 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
             const SizedBox(height: 14),
 
+            // Live paketfångst (tcpdump)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                border: Border.all(color: const Color(0xFF334155)),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.podcasts, color: Colors.orangeAccent, size: 16),
+                      SizedBox(width: 8),
+                      Text('Paketfångst (tcpdump)', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: _buildInterfaceDropdown(provider),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        flex: 2,
+                        child: SizedBox(
+                          height: 36,
+                          child: TextField(
+                            controller: _tcpdumpFilterController,
+                            style: const TextStyle(fontSize: 12, color: Colors.white),
+                            decoration: const InputDecoration(
+                              hintText: 'Valfritt BPF-filter, t.ex. "port 443"',
+                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 110,
+                        height: 36,
+                        child: DropdownButtonFormField<int>(
+                          initialValue: _tcpdumpPacketCount,
+                          isDense: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Paket',
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            border: OutlineInputBorder(),
+                          ),
+                          items: const [50, 200, 500, 2000]
+                              .map((n) => DropdownMenuItem(value: n, child: Text('$n', style: const TextStyle(fontSize: 12))))
+                              .toList(),
+                          onChanged: (v) => setState(() => _tcpdumpPacketCount = v ?? 200),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        width: 110,
+                        height: 36,
+                        child: DropdownButtonFormField<int>(
+                          initialValue: _tcpdumpDurationSec,
+                          isDense: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Sekunder',
+                            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            border: OutlineInputBorder(),
+                          ),
+                          items: const [5, 10, 12]
+                              .map((n) => DropdownMenuItem(value: n, child: Text('$n', style: const TextStyle(fontSize: 12))))
+                              .toList(),
+                          onChanged: (v) => setState(() => _tcpdumpDurationSec = v ?? 10),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton.icon(
+                    icon: _isTcpdumpLoading
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                        : const Icon(Icons.podcasts, size: 14),
+                    label: const Text('Starta fångst', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orangeAccent,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    onPressed: _anyLoading || _tcpdumpInterface == null ? null : () => _runTcpdump(provider),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Fångsten avslutas automatiskt efter valt antal paket eller sekunder, det som inträffar först (max 12 sekunder).',
+                    style: TextStyle(color: Colors.grey, fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
             // Diagnostik Terminal Konsol
             Container(
               width: double.infinity,
@@ -321,7 +433,55 @@ class _ToolsScreenState extends State<ToolsScreen> {
     });
   }
 
-  bool get _anyLoading => _isPingLoading || _isTracerouteLoading || _isNmapLoading;
+  bool get _anyLoading => _isPingLoading || _isTracerouteLoading || _isNmapLoading || _isTcpdumpLoading;
+
+  Widget _buildInterfaceDropdown(ConfigProvider provider) {
+    final ConfigModel? cfg = provider.candidateConfig ?? provider.runningConfig;
+    final interfaces = cfg?.interfaces ?? <InterfaceModel>[];
+    if (_tcpdumpInterface == null && interfaces.isNotEmpty) {
+      _tcpdumpInterface = interfaces.first.device;
+    }
+    return SizedBox(
+      height: 36,
+      child: DropdownButtonFormField<String>(
+        initialValue: interfaces.any((i) => i.device == _tcpdumpInterface) ? _tcpdumpInterface : null,
+        isDense: true,
+        decoration: const InputDecoration(
+          labelText: 'Gränssnitt',
+          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          border: OutlineInputBorder(),
+        ),
+        items: interfaces
+            .map((i) => DropdownMenuItem(
+                  value: i.device,
+                  child: Text('${i.device} (${i.zone})', style: const TextStyle(fontSize: 12, color: Colors.white)),
+                ))
+            .toList(),
+        onChanged: (v) => setState(() => _tcpdumpInterface = v),
+      ),
+    );
+  }
+
+  void _runTcpdump(ConfigProvider provider) async {
+    final iface = _tcpdumpInterface;
+    if (iface == null) return;
+
+    setState(() {
+      _isTcpdumpLoading = true;
+      _output = 'Fångar paket på $iface från brandväggen...\n--------------------------------------------------\n';
+    });
+    final out = await provider.api.tcpdumpCapture(
+      iface,
+      filter: _tcpdumpFilterController.text.trim(),
+      packetCount: _tcpdumpPacketCount,
+      durationSec: _tcpdumpDurationSec,
+    );
+    if (!mounted) return;
+    setState(() {
+      _output += out;
+      _isTcpdumpLoading = false;
+    });
+  }
 
   Widget _nmapCheck(String label, bool value, ValueChanged<bool> onChanged) {
     return InkWell(

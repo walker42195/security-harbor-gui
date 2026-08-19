@@ -396,6 +396,28 @@ class ApiService {
     }
   }
 
+  Future<String> tcpdumpCapture(String iface, {String filter = '', int packetCount = 200, int durationSec = 10}) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/diagnostics/tcpdump'),
+        headers: _headers,
+        body: jsonEncode({
+          'interface': iface,
+          'filter': filter,
+          'packet_count': packetCount,
+          'duration_sec': durationSec,
+        }),
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return data['output'] ?? '';
+      }
+      return res.body.isNotEmpty ? res.body : 'Paketfångst misslyckades';
+    } catch (e) {
+      return 'Fel: $e';
+    }
+  }
+
   Future<String> traceroute(String host) async {
     try {
       final res = await _client.post(

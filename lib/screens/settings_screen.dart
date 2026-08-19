@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
+import '../models/config_model.dart';
 import '../widgets/tls_trust_dialogs.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -27,6 +28,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _newUserController = TextEditingController();
   final _newUserPwController = TextEditingController();
   String _newUserRole = 'viewer';
+
+  final _syslogHostController = TextEditingController();
+  final _syslogPortController = TextEditingController();
+  String? _syslogProtocol;
+  bool _isSavingSyslog = false;
 
   @override
   void initState() {
@@ -59,6 +65,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _newPwController.dispose();
     _newUserController.dispose();
     _newUserPwController.dispose();
+    _syslogHostController.dispose();
+    _syslogPortController.dispose();
     super.dispose();
   }
 
@@ -245,6 +253,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           if (provider.isAuthenticated && provider.isAdmin) ...[
             const SizedBox(height: 16),
+            _buildSyslogCard(provider),
+            const SizedBox(height: 16),
             _buildUserManagementCard(provider),
           ],
         ],
@@ -327,6 +337,121 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _newPwController.clear();
                       }
                     },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSyslogCard(ConfigProvider provider) {
+    final ConfigModel? cfg = provider.candidateConfig ?? provider.runningConfig;
+    final syslog = cfg?.syslog ?? SyslogConfigModel(enabled: false);
+    if (_syslogHostController.text.isEmpty && syslog.host.isNotEmpty) {
+      _syslogHostController.text = syslog.host;
+    }
+    if (_syslogPortController.text.isEmpty) {
+      _syslogPortController.text = syslog.port.toString();
+    }
+    _syslogProtocol ??= syslog.protocol;
+    final protocol = _syslogProtocol!;
+
+    Future<void> save(SyslogConfigModel updated) async {
+      if (cfg == null) return;
+      setState(() => _isSavingSyslog = true);
+      await provider.updateCandidate(cfg.copyWith(syslog: updated));
+      if (mounted) setState(() => _isSavingSyslog = false);
+    }
+
+    return Card(
+      color: const Color(0xFF1E293B),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.forward_to_inbox, color: Colors.cyanAccent, size: 22),
+                const SizedBox(width: 10),
+                const Text('Centraliserad syslog', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                const Spacer(),
+                Switch(
+                  value: syslog.enabled,
+                  activeThumbColor: Colors.tealAccent,
+                  onChanged: (v) => save(syslog.copyWith(
+                    enabled: v,
+                    host: _syslogHostController.text.trim(),
+                    port: int.tryParse(_syslogPortController.text.trim()) ?? 514,
+                    protocol: protocol,
+                  )),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Vidarebefordra brandväggens systemloggar (inklusive tillåten/nekad trafik) till en central syslog-mottagare på nätet, utöver den lokala lagringen.',
+              style: TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _syslogHostController,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    decoration: const InputDecoration(
+                      labelText: 'Mottagarens IP eller hostnamn',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _syslogPortController,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    decoration: const InputDecoration(
+                      labelText: 'Port',
+                      hintText: '514',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                DropdownButton<String>(
+                  value: protocol,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  items: const [
+                    DropdownMenuItem(value: 'udp', child: Text('UDP')),
+                    DropdownMenuItem(value: 'tcp', child: Text('TCP')),
+                  ],
+                  onChanged: (v) => setState(() => _syslogProtocol = v ?? 'udp'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: _isSavingSyslog
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                  : const Icon(Icons.save, size: 16),
+              label: const Text('Spara', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.cyanAccent,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              onPressed: () => save(syslog.copyWith(
+                enabled: syslog.enabled,
+                host: _syslogHostController.text.trim(),
+                port: int.tryParse(_syslogPortController.text.trim()) ?? 514,
+                protocol: protocol,
+              )),
             ),
           ],
         ),

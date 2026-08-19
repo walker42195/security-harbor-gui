@@ -11,6 +11,7 @@ class ConfigModel {
   final WireGuardConfigModel? wireguard;
   final OpenVPNConfigModel? openvpn;
   final DNSConfigModel? dns;
+  final SyslogConfigModel? syslog;
 
   ConfigModel({
     required this.version,
@@ -25,6 +26,7 @@ class ConfigModel {
     this.wireguard,
     this.openvpn,
     this.dns,
+    this.syslog,
   });
 
   factory ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -41,10 +43,17 @@ class ConfigModel {
       wireguard: json['wireguard'] != null ? WireGuardConfigModel.fromJson(json['wireguard']) : null,
       openvpn: json['openvpn'] != null ? OpenVPNConfigModel.fromJson(json['openvpn']) : null,
       dns: json['dns'] != null ? DNSConfigModel.fromJson(json['dns']) : null,
+      syslog: json['syslog'] != null ? SyslogConfigModel.fromJson(json['syslog']) : null,
     );
   }
 
-  ConfigModel copyWith({WireGuardConfigModel? wireguard, OpenVPNConfigModel? openvpn, DNSConfigModel? dns}) => ConfigModel(
+  ConfigModel copyWith({
+    WireGuardConfigModel? wireguard,
+    OpenVPNConfigModel? openvpn,
+    DNSConfigModel? dns,
+    SyslogConfigModel? syslog,
+  }) =>
+      ConfigModel(
         version: version,
         revision: revision,
         updatedAt: updatedAt,
@@ -57,6 +66,7 @@ class ConfigModel {
         wireguard: wireguard ?? this.wireguard,
         openvpn: openvpn ?? this.openvpn,
         dns: dns ?? this.dns,
+        syslog: syslog ?? this.syslog,
       );
 
   Map<String, dynamic> toJson() => {
@@ -72,6 +82,46 @@ class ConfigModel {
         if (wireguard != null) 'wireguard': wireguard!.toJson(),
         if (openvpn != null) 'openvpn': openvpn!.toJson(),
         if (dns != null) 'dns': dns!.toJson(),
+        if (syslog != null) 'syslog': syslog!.toJson(),
+      };
+}
+
+/// Centraliserad syslog-vidarebefordran (Fas 8) — se
+/// pkg/adapter/syslog i backend.
+class SyslogConfigModel {
+  final bool enabled;
+  final String host;
+  final int port;
+  final String protocol; // "udp" eller "tcp"
+
+  SyslogConfigModel({
+    required this.enabled,
+    this.host = '',
+    this.port = 514,
+    this.protocol = 'udp',
+  });
+
+  factory SyslogConfigModel.fromJson(Map<String, dynamic> json) {
+    return SyslogConfigModel(
+      enabled: json['enabled'] ?? false,
+      host: json['host'] ?? '',
+      port: json['port'] ?? 514,
+      protocol: json['protocol'] ?? 'udp',
+    );
+  }
+
+  SyslogConfigModel copyWith({bool? enabled, String? host, int? port, String? protocol}) => SyslogConfigModel(
+        enabled: enabled ?? this.enabled,
+        host: host ?? this.host,
+        port: port ?? this.port,
+        protocol: protocol ?? this.protocol,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'enabled': enabled,
+        'host': host,
+        'port': port,
+        'protocol': protocol,
       };
 }
 
