@@ -23,22 +23,44 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    DashboardScreen(),
-    InterfacesScreen(),
-    PoliciesScreen(),
-    ObjectsScreen(),
-    VpnScreen(),
-    DnsScreen(),
-    ConnectionsScreen(),
-    SecurityEventsScreen(),
-    ToolsScreen(),
-    SettingsScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ConfigProvider>(context);
+
+    // Enkelkorts-/värddator-läge (Fas 13): VPN-server, DHCP/DNS-resolver
+    // och IDS är gateway-/router-roller som aldrig är relevanta för en
+    // enskild dator — döljs helt istället för att visa tomma/meningslösa
+    // skärmar. Interfaces/Policies/Objekt/Loggning/Verktyg/Settings gäller
+    // fortfarande (INPUT/OUTPUT-hårdning är precis vad host-läget gör).
+    final isHostMode = provider.runningConfig?.settings.isHostMode ?? false;
+
+    final screens = <Widget>[
+      const DashboardScreen(),
+      const InterfacesScreen(),
+      const PoliciesScreen(),
+      const ObjectsScreen(),
+      if (!isHostMode) const VpnScreen(),
+      if (!isHostMode) const DnsScreen(),
+      const ConnectionsScreen(),
+      if (!isHostMode) const SecurityEventsScreen(),
+      const ToolsScreen(),
+      const SettingsScreen(),
+    ];
+    final destinations = <NavigationRailDestination>[
+      const NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: Text('Dashboard')),
+      const NavigationRailDestination(icon: Icon(Icons.router_outlined), selectedIcon: Icon(Icons.router), label: Text('Interfaces')),
+      const NavigationRailDestination(icon: Icon(Icons.shield_outlined), selectedIcon: Icon(Icons.shield), label: Text('Policies')),
+      const NavigationRailDestination(icon: Icon(Icons.category_outlined), selectedIcon: Icon(Icons.category), label: Text('Objekt')),
+      if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.vpn_lock_outlined), selectedIcon: Icon(Icons.vpn_lock), label: Text('VPN')),
+      if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.dns_outlined), selectedIcon: Icon(Icons.dns), label: Text('DNS')),
+      const NavigationRailDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: Text('Loggning')),
+      if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.gpp_maybe_outlined), selectedIcon: Icon(Icons.gpp_maybe), label: Text('IDS')),
+      const NavigationRailDestination(icon: Icon(Icons.build_circle_outlined), selectedIcon: Icon(Icons.build_circle), label: Text('Verktyg')),
+      const NavigationRailDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: Text('Settings')),
+    ];
+    if (_selectedIndex >= screens.length) {
+      _selectedIndex = 0;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -74,6 +96,21 @@ class _MainScreenState extends State<MainScreen> {
                     style: const TextStyle(color: Colors.cyanAccent, fontSize: 9, fontWeight: FontWeight.bold),
                   ),
                 ),
+                if (isHostMode) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orangeAccent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(3),
+                      border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.4)),
+                    ),
+                    child: const Text(
+                      'LÄGE: VÄRDDATOR',
+                      style: TextStyle(color: Colors.orangeAccent, fontSize: 9, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -271,21 +308,10 @@ class _MainScreenState extends State<MainScreen> {
                       ],
                     ),
                   ),
-                  destinations: const [
-                    NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: Text('Dashboard')),
-                    NavigationRailDestination(icon: Icon(Icons.router_outlined), selectedIcon: Icon(Icons.router), label: Text('Interfaces')),
-                    NavigationRailDestination(icon: Icon(Icons.shield_outlined), selectedIcon: Icon(Icons.shield), label: Text('Policies')),
-                    NavigationRailDestination(icon: Icon(Icons.category_outlined), selectedIcon: Icon(Icons.category), label: Text('Objekt')),
-                    NavigationRailDestination(icon: Icon(Icons.vpn_lock_outlined), selectedIcon: Icon(Icons.vpn_lock), label: Text('VPN')),
-                    NavigationRailDestination(icon: Icon(Icons.dns_outlined), selectedIcon: Icon(Icons.dns), label: Text('DNS')),
-                    NavigationRailDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: Text('Loggning')),
-                    NavigationRailDestination(icon: Icon(Icons.gpp_maybe_outlined), selectedIcon: Icon(Icons.gpp_maybe), label: Text('IDS')),
-                    NavigationRailDestination(icon: Icon(Icons.build_circle_outlined), selectedIcon: Icon(Icons.build_circle), label: Text('Verktyg')),
-                    NavigationRailDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: Text('Settings')),
-                  ],
+                  destinations: destinations,
                 ),
                 const VerticalDivider(thickness: 1, width: 1, color: Colors.white10),
-                Expanded(child: _screens[_selectedIndex]),
+                Expanded(child: screens[_selectedIndex]),
               ],
             ),
           ),

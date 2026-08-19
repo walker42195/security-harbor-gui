@@ -923,17 +923,23 @@ class DNSBlocklistSourceModel {
 class SettingsModel {
   final String hostname;
   final int apiPort;
+  // mode: "" eller "gateway" (router/appliance, standard) eller "host"
+  // (enkelkorts-/värddator-läge, Fas 13). Se pkg/config/model.go.
+  final String mode;
 
-  SettingsModel({required this.hostname, required this.apiPort});
+  SettingsModel({required this.hostname, required this.apiPort, this.mode = ''});
+
+  bool get isHostMode => mode == 'host';
 
   factory SettingsModel.fromJson(Map<String, dynamic> json) {
     return SettingsModel(
       hostname: json['hostname'] ?? 'security-harbor',
       apiPort: json['api_port'] ?? 8443,
+      mode: json['mode'] ?? '',
     );
   }
 
-  Map<String, dynamic> toJson() => {'hostname': hostname, 'api_port': apiPort};
+  Map<String, dynamic> toJson() => {'hostname': hostname, 'api_port': apiPort, 'mode': mode};
 }
 
 class ConntrackModel {

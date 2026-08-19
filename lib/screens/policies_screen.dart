@@ -166,16 +166,22 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   ),
                   onPressed: () => _showEditPolicyDialog(context, provider, cfg, null),
                 ),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.input, size: 16, color: Colors.lightBlueAccent),
-                  label: const Text('+ Port Forwarding (DNAT)', style: TextStyle(fontSize: 12, color: Colors.white)),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    side: const BorderSide(color: Colors.lightBlueAccent),
+                // Port forwarding (DNAT) kräver NAT, som inte finns i
+                // enkelkorts-/värddator-läge (Fas 13, se
+                // pkg/adapter/nftables.RenderJSON) — döljs helt istället
+                // för att erbjuda en åtgärd som ändå aldrig får effekt.
+                if (!(cfg?.settings.isHostMode ?? false)) ...[
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.input, size: 16, color: Colors.lightBlueAccent),
+                    label: const Text('+ Port Forwarding (DNAT)', style: TextStyle(fontSize: 12, color: Colors.white)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      side: const BorderSide(color: Colors.lightBlueAccent),
+                    ),
+                    onPressed: () => _showAddDNATDialog(context, provider),
                   ),
-                  onPressed: () => _showAddDNATDialog(context, provider),
-                ),
+                ],
                 const SizedBox(width: 8),
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
