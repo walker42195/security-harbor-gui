@@ -265,8 +265,15 @@ class _MainScreenState extends State<MainScreen> {
                           SnackBar(
                             content: Text(ok
                                 ? 'Ändringar applicerade på brandväggen! Bekräfta (Commit) inom 30s för att behålla dem.'
-                                : 'Misslyckades applicera konfiguration på brandväggen'),
+                                // Visar servers faktiska felmeddelande (t.ex. ett
+                                // valideringsfel om en policys zon inte matchar
+                                // något gränssnitt) istället för en generisk text
+                                // utan detaljer - upptäckt 2026-08-19 att den
+                                // gamla generiska texten gjorde det omöjligt att
+                                // förstå VARFÖR Apply misslyckades.
+                                : (provider.errorMessage ?? 'Misslyckades applicera konfiguration på brandväggen')),
                             backgroundColor: ok ? Colors.teal : Colors.red,
+                            duration: Duration(seconds: ok ? 4 : 8),
                           ),
                         );
                       }

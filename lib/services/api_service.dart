@@ -534,16 +534,21 @@ class ApiService {
 
   Future<bool> updateCandidate(ConfigModel config) => setCandidateConfig(config);
 
-  Future<bool> applyConfig() async {
+  /// Returnerar null vid lyckad applicering, annars felmeddelandet från
+  /// servern (t.ex. ett valideringsfel om en policys zon inte matchar
+  /// något gränssnitt) - ropas av ConfigProvider.applyChanges så GUI:t kan
+  /// visa VAD som gick fel, inte bara att något gjorde det.
+  Future<String?> applyConfig() async {
     try {
       final res = await _client.post(Uri.parse('$baseUrl/api/v1/config/apply'), headers: _headers);
-      return res.statusCode == 200;
-    } catch (_) {
-      return false;
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Applicering misslyckades på brandväggen (HTTP ${res.statusCode})';
+    } catch (e) {
+      return 'Fel: $e';
     }
   }
 
-  Future<bool> applyCandidate() => applyConfig();
+  Future<String?> applyCandidate() => applyConfig();
 
   Future<bool> confirmConfig() async {
     try {

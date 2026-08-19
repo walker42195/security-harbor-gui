@@ -143,17 +143,18 @@ class ConfigProvider extends ChangeNotifier {
     statusMessage = 'Applicerar nftables-regler på brandväggsservern...';
     notifyListeners();
 
-    final success = await api.applyConfig();
-    if (success) {
+    final err = await api.applyConfig();
+    if (err == null) {
       applyStatus = ApplyStatus.unconfirmed;
       hasUnappliedChanges = false;
       statusMessage = null;
+      errorMessage = null;
       _startRollbackTimer(30);
       isLoading = false;
       notifyListeners();
       return true;
     } else {
-      errorMessage = 'Applicering misslyckades på brandväggen';
+      errorMessage = err;
       statusMessage = null;
       isLoading = false;
       notifyListeners();
