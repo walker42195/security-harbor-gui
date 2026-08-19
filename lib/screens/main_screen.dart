@@ -9,6 +9,7 @@ import 'settings_screen.dart';
 import 'connections_screen.dart';
 import 'vpn_screen.dart';
 import 'dns_screen.dart';
+import 'security_events_screen.dart';
 
 import 'tools_screen.dart';
 
@@ -30,6 +31,7 @@ class _MainScreenState extends State<MainScreen> {
     VpnScreen(),
     DnsScreen(),
     ConnectionsScreen(),
+    SecurityEventsScreen(),
     ToolsScreen(),
     SettingsScreen(),
   ];
@@ -277,6 +279,7 @@ class _MainScreenState extends State<MainScreen> {
                     NavigationRailDestination(icon: Icon(Icons.vpn_lock_outlined), selectedIcon: Icon(Icons.vpn_lock), label: Text('VPN')),
                     NavigationRailDestination(icon: Icon(Icons.dns_outlined), selectedIcon: Icon(Icons.dns), label: Text('DNS')),
                     NavigationRailDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: Text('Loggning')),
+                    NavigationRailDestination(icon: Icon(Icons.gpp_maybe_outlined), selectedIcon: Icon(Icons.gpp_maybe), label: Text('IDS')),
                     NavigationRailDestination(icon: Icon(Icons.build_circle_outlined), selectedIcon: Icon(Icons.build_circle), label: Text('Verktyg')),
                     NavigationRailDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: Text('Settings')),
                   ],

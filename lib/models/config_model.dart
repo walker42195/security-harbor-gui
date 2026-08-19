@@ -12,6 +12,7 @@ class ConfigModel {
   final OpenVPNConfigModel? openvpn;
   final DNSConfigModel? dns;
   final SyslogConfigModel? syslog;
+  final IDSConfigModel? ids;
 
   ConfigModel({
     required this.version,
@@ -27,6 +28,7 @@ class ConfigModel {
     this.openvpn,
     this.dns,
     this.syslog,
+    this.ids,
   });
 
   factory ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class ConfigModel {
       openvpn: json['openvpn'] != null ? OpenVPNConfigModel.fromJson(json['openvpn']) : null,
       dns: json['dns'] != null ? DNSConfigModel.fromJson(json['dns']) : null,
       syslog: json['syslog'] != null ? SyslogConfigModel.fromJson(json['syslog']) : null,
+      ids: json['ids'] != null ? IDSConfigModel.fromJson(json['ids']) : null,
     );
   }
 
@@ -52,6 +55,7 @@ class ConfigModel {
     OpenVPNConfigModel? openvpn,
     DNSConfigModel? dns,
     SyslogConfigModel? syslog,
+    IDSConfigModel? ids,
   }) =>
       ConfigModel(
         version: version,
@@ -67,6 +71,7 @@ class ConfigModel {
         openvpn: openvpn ?? this.openvpn,
         dns: dns ?? this.dns,
         syslog: syslog ?? this.syslog,
+        ids: ids ?? this.ids,
       );
 
   Map<String, dynamic> toJson() => {
@@ -83,6 +88,7 @@ class ConfigModel {
         if (openvpn != null) 'openvpn': openvpn!.toJson(),
         if (dns != null) 'dns': dns!.toJson(),
         if (syslog != null) 'syslog': syslog!.toJson(),
+        if (ids != null) 'ids': ids!.toJson(),
       };
 }
 
@@ -122,6 +128,59 @@ class SyslogConfigModel {
         'host': host,
         'port': port,
         'protocol': protocol,
+      };
+}
+
+/// Suricata IDS i passivt af-packet-läge (Fas 9) — se pkg/adapter/suricata
+/// i backend. AutoBlock kräver att AutoBlockObjectID pekar på ett REDAN
+/// EXISTERANDE objekt (skapas via Objekt-vyn) — ingen policy eller objekt
+/// skapas automatiskt.
+class IDSConfigModel {
+  final bool enabled;
+  final String interfaceDevice;
+  final bool autoBlock;
+  final String autoBlockObjectId;
+  final int autoBlockSeverity;
+
+  IDSConfigModel({
+    required this.enabled,
+    this.interfaceDevice = '',
+    this.autoBlock = false,
+    this.autoBlockObjectId = '',
+    this.autoBlockSeverity = 2,
+  });
+
+  factory IDSConfigModel.fromJson(Map<String, dynamic> json) {
+    return IDSConfigModel(
+      enabled: json['enabled'] ?? false,
+      interfaceDevice: json['interface'] ?? '',
+      autoBlock: json['auto_block'] ?? false,
+      autoBlockObjectId: json['auto_block_object_id'] ?? '',
+      autoBlockSeverity: json['auto_block_severity'] ?? 2,
+    );
+  }
+
+  IDSConfigModel copyWith({
+    bool? enabled,
+    String? interfaceDevice,
+    bool? autoBlock,
+    String? autoBlockObjectId,
+    int? autoBlockSeverity,
+  }) =>
+      IDSConfigModel(
+        enabled: enabled ?? this.enabled,
+        interfaceDevice: interfaceDevice ?? this.interfaceDevice,
+        autoBlock: autoBlock ?? this.autoBlock,
+        autoBlockObjectId: autoBlockObjectId ?? this.autoBlockObjectId,
+        autoBlockSeverity: autoBlockSeverity ?? this.autoBlockSeverity,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'enabled': enabled,
+        'interface': interfaceDevice,
+        'auto_block': autoBlock,
+        'auto_block_object_id': autoBlockObjectId,
+        'auto_block_severity': autoBlockSeverity,
       };
 }
 
@@ -964,6 +1023,46 @@ class FirewallLogModel {
       protocol: json['protocol'] ?? '',
       srcPort: json['src_port'] ?? 0,
       dstPort: json['dst_port'] ?? 0,
+    );
+  }
+}
+
+/// Ett larm från Suricata (Fas 9), utplockat ur eve.json. Se
+/// pkg/config/model.go:SecurityEvent.
+class SecurityEventModel {
+  final String timestamp;
+  final int severity; // 1 (högst) - 3 (lägst)
+  final String signature;
+  final String category;
+  final String srcIp;
+  final int srcPort;
+  final String dstIp;
+  final int dstPort;
+  final String protocol;
+
+  SecurityEventModel({
+    required this.timestamp,
+    required this.severity,
+    required this.signature,
+    this.category = '',
+    required this.srcIp,
+    this.srcPort = 0,
+    required this.dstIp,
+    this.dstPort = 0,
+    this.protocol = '',
+  });
+
+  factory SecurityEventModel.fromJson(Map<String, dynamic> json) {
+    return SecurityEventModel(
+      timestamp: json['timestamp'] ?? '',
+      severity: json['severity'] ?? 3,
+      signature: json['signature'] ?? '',
+      category: json['category'] ?? '',
+      srcIp: json['src_ip'] ?? '',
+      srcPort: json['src_port'] ?? 0,
+      dstIp: json['dst_ip'] ?? '',
+      dstPort: json['dst_port'] ?? 0,
+      protocol: json['protocol'] ?? '',
     );
   }
 }

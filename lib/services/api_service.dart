@@ -243,6 +243,17 @@ class ApiService {
     return [];
   }
 
+  Future<List<SecurityEventModel>> getSecurityEvents() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/diagnostics/security-events'), headers: _headers);
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List;
+        return list.map((e) => SecurityEventModel.fromJson(e)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
   Future<Map<String, dynamic>?> getWireGuardServerInfo() async {
     try {
       final res = await _client.get(Uri.parse('$baseUrl/api/v1/vpn/wireguard/server-info'), headers: _headers);
