@@ -145,6 +145,59 @@ class ApiService {
     }
   }
 
+  /// Skapar en lösenfras-krypterad backup av hela persistenslagret
+  /// (Fas 10). Returnerar base64-strängen vid lyckat anrop, annars null +
+  /// ett felmeddelande.
+  Future<({String? backupB64, String? error})> createBackup(String passphrase) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/system/backup'),
+        headers: _headers,
+        body: jsonEncode({'passphrase': passphrase}),
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return (backupB64: data['backup_b64'] as String?, error: null);
+      }
+      return (backupB64: null, error: res.body.isNotEmpty ? res.body : 'Backup misslyckades');
+    } catch (e) {
+      return (backupB64: null, error: 'Fel: $e');
+    }
+  }
+
+  /// Återställer en backup. Brandväggen startar om automatiskt vid lyckad
+  /// återställning (systemd Restart=always) - anropet kan därför få en
+  /// avbruten/timeout-liknande respons även vid framgång.
+  Future<String?> restoreBackup(String backupB64, String passphrase) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/system/restore'),
+        headers: _headers,
+        body: jsonEncode({'backup_b64': backupB64, 'passphrase': passphrase}),
+      );
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Återställning misslyckades';
+    } catch (e) {
+      return null; // Anslutningen kan brytas när agenten startar om - inte nödvändigtvis ett fel.
+    }
+  }
+
+  /// Fabriksåterställer brandväggen (Fas 10) - tar bort ALL konfiguration.
+  /// Kräver det inloggade admin-kontots nuvarande lösenord som extra spärr.
+  Future<String?> factoryReset(String password) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/system/factory-reset'),
+        headers: _headers,
+        body: jsonEncode({'password': password}),
+      );
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Fabriksåterställning misslyckades';
+    } catch (e) {
+      return null; // Anslutningen kan brytas när agenten startar om - inte nödvändigtvis ett fel.
+    }
+  }
+
   /// Listar alla administrationsanvändare (admin-only, Fas 8).
   Future<List<Map<String, dynamic>>> getUsers() async {
     try {

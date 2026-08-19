@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
 import '../models/config_model.dart';
@@ -34,6 +35,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _syslogProtocol;
   bool _isSavingSyslog = false;
 
+  final _backupPassphraseController = TextEditingController();
+  final _backupResultController = TextEditingController();
+  bool _isCreatingBackup = false;
+  bool _obscureBackupPassphrase = true;
+
+  final _restoreB64Controller = TextEditingController();
+  final _restorePassphraseController = TextEditingController();
+  bool _isRestoring = false;
+
+  final _factoryResetPasswordController = TextEditingController();
+  bool _factoryResetConfirmed = false;
+  bool _isFactoryResetting = false;
+
   @override
   void initState() {
     super.initState();
@@ -67,6 +81,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _newUserPwController.dispose();
     _syslogHostController.dispose();
     _syslogPortController.dispose();
+    _backupPassphraseController.dispose();
+    _backupResultController.dispose();
+    _restoreB64Controller.dispose();
+    _restorePassphraseController.dispose();
+    _factoryResetPasswordController.dispose();
     super.dispose();
   }
 
@@ -255,7 +274,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             _buildSyslogCard(provider),
             const SizedBox(height: 16),
+            _buildBackupRestoreCard(provider),
+            const SizedBox(height: 16),
             _buildUserManagementCard(provider),
+            const SizedBox(height: 16),
+            _buildFactoryResetCard(provider),
           ],
         ],
         ),
@@ -452,6 +475,227 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 port: int.tryParse(_syslogPortController.text.trim()) ?? 514,
                 protocol: protocol,
               )),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackupRestoreCard(ConfigProvider provider) {
+    return Card(
+      color: const Color(0xFF1E293B),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.backup_outlined, color: Colors.cyanAccent, size: 22),
+                SizedBox(width: 10),
+                Text('Backup & Återställning', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Backupen innehåller konfigurationen och alla nycklar/certifikat, krypterad under en lösenfras du väljer själv. Spara lösenfrasen separat - den finns inte kvar hos brandväggen.',
+              style: TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+            const SizedBox(height: 16),
+            const Text('Skapa backup', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _backupPassphraseController,
+                    obscureText: _obscureBackupPassphrase,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    decoration: InputDecoration(
+                      labelText: 'Lösenfras för backupen',
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureBackupPassphrase ? Icons.visibility : Icons.visibility_off, size: 18, color: Colors.grey),
+                        onPressed: () => setState(() => _obscureBackupPassphrase = !_obscureBackupPassphrase),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  icon: _isCreatingBackup
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                      : const Icon(Icons.backup, size: 16),
+                  label: const Text('Skapa backup', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                  onPressed: _isCreatingBackup || _backupPassphraseController.text.isEmpty
+                      ? null
+                      : () async {
+                          setState(() => _isCreatingBackup = true);
+                          final result = await provider.api.createBackup(_backupPassphraseController.text);
+                          if (!context.mounted) return;
+                          setState(() {
+                            _isCreatingBackup = false;
+                            _backupResultController.text = result.backupB64 ?? '';
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(result.backupB64 != null ? 'Backup skapad - kopiera och spara texten nedan' : (result.error ?? 'Backup misslyckades')),
+                              backgroundColor: result.backupB64 != null ? Colors.green : Colors.red,
+                            ),
+                          );
+                        },
+                ),
+              ],
+            ),
+            if (_backupResultController.text.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                height: 120,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  border: Border.all(color: const Color(0xFF334155)),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: SingleChildScrollView(
+                  child: SelectableText(_backupResultController.text, style: const TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.greenAccent)),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.copy, size: 14, color: Colors.cyanAccent),
+                  label: const Text('Kopiera', style: TextStyle(fontSize: 11, color: Colors.cyanAccent)),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: _backupResultController.text));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Backup kopierad till urklipp!'), backgroundColor: Colors.teal),
+                    );
+                  },
+                ),
+              ),
+            ],
+            const Divider(color: Colors.white10, height: 32),
+            const Text('Återställ från backup', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            const Text(
+              'Brandväggen startar om automatiskt vid lyckad återställning.',
+              style: TextStyle(color: Colors.amberAccent, fontSize: 11),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _restoreB64Controller,
+              maxLines: 4,
+              style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'monospace'),
+              decoration: const InputDecoration(labelText: 'Klistra in backup-text', border: OutlineInputBorder(), isDense: true),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _restorePassphraseController,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    decoration: const InputDecoration(labelText: 'Lösenfras', border: OutlineInputBorder(), isDense: true),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  icon: _isRestoring
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                      : const Icon(Icons.restore, size: 16),
+                  label: const Text('Återställ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
+                  onPressed: _isRestoring || _restoreB64Controller.text.isEmpty || _restorePassphraseController.text.isEmpty
+                      ? null
+                      : () async {
+                          setState(() => _isRestoring = true);
+                          final err = await provider.api.restoreBackup(_restoreB64Controller.text.trim(), _restorePassphraseController.text);
+                          if (!context.mounted) return;
+                          setState(() => _isRestoring = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(err ?? 'Återställning skickad - brandväggen startar om, logga in igen om ~10 sekunder'),
+                              backgroundColor: err == null ? Colors.green : Colors.red,
+                            ),
+                          );
+                        },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFactoryResetCard(ConfigProvider provider) {
+    return Card(
+      color: const Color(0xFF1E293B),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4), side: const BorderSide(color: Colors.redAccent, width: 1)),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.warning_amber, color: Colors.redAccent, size: 22),
+                SizedBox(width: 10),
+                Text('Fabriksåterställning', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Tar bort ALL konfiguration, alla nycklar/certifikat och alla användarkonton permanent. Brandväggen startar om med fabriksinställningar (standardinloggning master / SecurityHarbor2026!). Detta går INTE att ångra utan en sparad backup.',
+              style: TextStyle(color: Colors.white70, fontSize: 11),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _factoryResetPasswordController,
+              obscureText: true,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+              decoration: const InputDecoration(labelText: 'Ditt nuvarande lösenord (krävs)', border: OutlineInputBorder(), isDense: true),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Checkbox(
+                  value: _factoryResetConfirmed,
+                  activeColor: Colors.redAccent,
+                  onChanged: (v) => setState(() => _factoryResetConfirmed = v ?? false),
+                ),
+                const Expanded(
+                  child: Text('Jag förstår att detta raderar all konfiguration permanent', style: TextStyle(color: Colors.white, fontSize: 12)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton.icon(
+              icon: _isFactoryResetting
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.delete_forever, size: 16),
+              label: const Text('Fabriksåterställ brandväggen', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+              onPressed: !_factoryResetConfirmed || _factoryResetPasswordController.text.isEmpty || _isFactoryResetting
+                  ? null
+                  : () async {
+                      setState(() => _isFactoryResetting = true);
+                      final err = await provider.api.factoryReset(_factoryResetPasswordController.text);
+                      if (!context.mounted) return;
+                      setState(() => _isFactoryResetting = false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(err ?? 'Fabriksåterställning skickad - brandväggen startar om'),
+                          backgroundColor: err == null ? Colors.green : Colors.red,
+                        ),
+                      );
+                    },
             ),
           ],
         ),
