@@ -26,14 +26,14 @@ class SecurityHarborApp extends StatelessWidget {
             primary: Colors.cyanAccent,
             surface: Color(0xFF1E293B),
           ),
-          // 'sans-serif' (INTE 'Roboto') — Flutter Webs standard-Roboto
-          // finns inte bundlad i bygget och hämtas annars över nätet från
-          // Googles typsnittsserver vid varje sidladdning (upptäckt
-          // 2026-08-19: blockerades tyst av CSP:n, men skulle ändå vara
-          // fel för en brandvägg-adminpanel som ska fungera helt utan
-          // internetuppkoppling). 'sans-serif' är ett CSS-generiskt namn
-          // webbläsaren löser lokalt, ingen nätverksbegäran alls.
-          fontFamily: 'sans-serif',
+          // 'Roboto' pekar nu på det LOKALT BUNTADE typsnittet
+          // (assets/fonts/, deklarerat i pubspec.yaml) — INTE Flutter Webs
+          // implicita "hämta från Google Fonts vid behov"-beteende.
+          // ('sans-serif' visade sig vara fel lösning: CanvasKit-
+          // renderaren ritar all text via glyfdata från en riktig
+          // typsnittsfil, inte via CSS-namn — utan en bundlad fil blev
+          // resultatet en helt textlös sida, inte bara fel typsnitt.)
+          fontFamily: 'Roboto',
           // Utan detta ärver varje TextField Materials DEFAULT
           // labelStyle (betydligt större typsnitt än den 11-12px vi
           // annars använder överallt i appen) och en underline-border

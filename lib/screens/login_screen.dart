@@ -69,10 +69,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.security, color: Colors.cyanAccent, size: 48),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/logo.png',
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.security, color: Colors.cyanAccent, size: 48),
+                        ),
+                      ),
                       const SizedBox(height: 12),
-                      const Text('SECURITY HARBOR', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
-                      const SizedBox(height: 4),
                       const Text('Administrationsgränssnitt', style: TextStyle(color: Colors.grey, fontSize: 12)),
                       const SizedBox(height: 32),
                       Container(
