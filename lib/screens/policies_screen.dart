@@ -250,7 +250,26 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     final pol = cfg.policies[idx];
     final isDNAT = pol.action == 'dnat';
     final isAllow = pol.action == 'accept';
+    final isReject = pol.action == 'reject';
     final isSelected = _selectedRowIndex == idx;
+
+    // Reject visas som en egen etikett/färg i stället för att buntas ihop
+    // med Drop - skillnaden (avsändaren får ett avslag i stället för
+    // tystnad) är precis den administratören valde mellan.
+    final actionLabel = isDNAT
+        ? 'DNAT'
+        : isAllow
+            ? 'Allow'
+            : isReject
+                ? 'Reject'
+                : 'Deny';
+    final actionColor = isDNAT
+        ? Colors.lightBlueAccent
+        : isAllow
+            ? Colors.tealAccent
+            : isReject
+                ? Colors.orangeAccent
+                : Colors.redAccent;
 
     final cells = <Widget>[
       Text('${idx + 1}', style: const TextStyle(color: Colors.grey, fontSize: 11)),
@@ -260,15 +279,15 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           Icon(
             isDNAT ? Icons.input : (isAllow ? Icons.check_circle : Icons.cancel),
             size: 15,
-            color: isDNAT ? Colors.lightBlueAccent : (isAllow ? Colors.tealAccent : Colors.redAccent),
+            color: actionColor,
           ),
           const SizedBox(width: 4),
           Flexible(
             child: Text(
-              isDNAT ? 'DNAT' : (isAllow ? 'Allow' : 'Deny'),
+              actionLabel,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: isDNAT ? Colors.lightBlueAccent : (isAllow ? Colors.tealAccent : Colors.redAccent),
+                color: actionColor,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
               ),
@@ -469,19 +488,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     final updatedPolicies = List<PolicyModel>.from(cfg.policies);
     final moved = updatedPolicies.removeAt(fromIdx);
     updatedPolicies.insert(toIdx, moved);
-    provider.updateCandidate(ConfigModel(
-      version: cfg.version,
-      revision: cfg.revision,
-      updatedAt: cfg.updatedAt,
-      interfaces: cfg.interfaces,
-      zones: cfg.zones,
-      objects: cfg.objects,
-      services: cfg.services,
+    provider.updateCandidate(cfg.copyWith(
       policies: updatedPolicies,
-      settings: cfg.settings,
-      wireguard: cfg.wireguard,
-      openvpn: cfg.openvpn,
-      dns: cfg.dns,
     ));
   }
 
@@ -492,19 +500,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       if (!confirmed) return;
     }
     final updatedPolicies = List<PolicyModel>.from(cfg.policies)..removeAt(idx);
-    provider.updateCandidate(ConfigModel(
-      version: cfg.version,
-      revision: cfg.revision,
-      updatedAt: cfg.updatedAt,
-      interfaces: cfg.interfaces,
-      zones: cfg.zones,
-      objects: cfg.objects,
-      services: cfg.services,
+    provider.updateCandidate(cfg.copyWith(
       policies: updatedPolicies,
-      settings: cfg.settings,
-      wireguard: cfg.wireguard,
-      openvpn: cfg.openvpn,
-      dns: cfg.dns,
     ));
   }
 
@@ -533,19 +530,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       critical: cur.critical,
       schedule: cur.schedule,
     );
-    provider.updateCandidate(ConfigModel(
-      version: cfg.version,
-      revision: cfg.revision,
-      updatedAt: cfg.updatedAt,
-      interfaces: cfg.interfaces,
-      zones: cfg.zones,
-      objects: cfg.objects,
-      services: cfg.services,
+    provider.updateCandidate(cfg.copyWith(
       policies: updatedPolicies,
-      settings: cfg.settings,
-      wireguard: cfg.wireguard,
-      openvpn: cfg.openvpn,
-      dns: cfg.dns,
     ));
   }
 
@@ -695,6 +681,14 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                         items: const [
                           DropdownMenuItem(value: 'accept', child: Text('Allowed', style: TextStyle(color: Colors.tealAccent))),
                           DropdownMenuItem(value: 'drop', child: Text('Denied (Drop)', style: TextStyle(color: Colors.redAccent))),
+                          // Reject fanns redan i backend-datamodellen men
+                          // genererade tidigare ingen regel alls; sedan
+                          // 2026-08-20 renderas den som ett riktigt
+                          // nftables-reject (ICMP "admin-prohibited"), så
+                          // den kan erbjudas här. Skillnad mot Drop:
+                          // avsändaren får ett tydligt avslag direkt i
+                          // stället för att vänta ut en timeout.
+                          DropdownMenuItem(value: 'reject', child: Text('Denied (Reject)', style: TextStyle(color: Colors.orangeAccent))),
                           DropdownMenuItem(value: 'dnat', child: Text('DNAT (Port Forward)', style: TextStyle(color: Colors.lightBlueAccent))),
                         ],
                         onChanged: (v) => setState(() => action = v ?? 'accept'),
@@ -1021,19 +1015,9 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             updatedPolicies.add(newPol);
                           }
 
-                          provider.updateCandidate(ConfigModel(
-                            version: cfg.version,
-                            revision: cfg.revision,
-                            updatedAt: cfg.updatedAt,
-                            interfaces: cfg.interfaces,
-                            zones: cfg.zones,
+                          provider.updateCandidate(cfg.copyWith(
                             objects: [...cfg.objects, ...newObjects],
-                            services: cfg.services,
                             policies: updatedPolicies,
-                            settings: cfg.settings,
-                            wireguard: cfg.wireguard,
-                            openvpn: cfg.openvpn,
-                            dns: cfg.dns,
                           ));
                         }
                         Navigator.pop(ctx);
@@ -1355,19 +1339,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           ),
                         );
                         final updated = List<PolicyModel>.from(cfg.policies)..add(newPol);
-                        provider.updateCandidate(ConfigModel(
-                          version: cfg.version,
-                          revision: cfg.revision,
-                          updatedAt: cfg.updatedAt,
-                          interfaces: cfg.interfaces,
-                          zones: cfg.zones,
-                          objects: cfg.objects,
-                          services: cfg.services,
+                        provider.updateCandidate(cfg.copyWith(
                           policies: updated,
-                          settings: cfg.settings,
-                          wireguard: cfg.wireguard,
-                          openvpn: cfg.openvpn,
-                          dns: cfg.dns,
                         ));
                       }
                       Navigator.pop(ctx);

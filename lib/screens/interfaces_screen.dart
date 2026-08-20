@@ -350,19 +350,9 @@ class InterfacesScreen extends StatelessWidget {
                   mtu: iface.mtu,
                   dhcp: iface.dhcp,
                 );
-                provider.updateCandidate(ConfigModel(
-                  version: cfg.version,
-                  revision: cfg.revision,
-                  updatedAt: cfg.updatedAt,
+                provider.updateCandidate(cfg.copyWith(
                   interfaces: updated,
                   zones: updatedZones,
-                  objects: cfg.objects,
-                  services: cfg.services,
-                  policies: cfg.policies,
-                  settings: cfg.settings,
-                  wireguard: cfg.wireguard,
-                  openvpn: cfg.openvpn,
-                  dns: cfg.dns,
                 ));
                 Navigator.pop(ctx);
                         },
@@ -395,19 +385,8 @@ class InterfacesScreen extends StatelessWidget {
       mtu: cur.mtu,
       dhcp: cur.dhcp,
     );
-    provider.updateCandidate(ConfigModel(
-      version: cfg.version,
-      revision: cfg.revision,
-      updatedAt: cfg.updatedAt,
+    provider.updateCandidate(cfg.copyWith(
       interfaces: updatedIfaces,
-      zones: cfg.zones,
-      objects: cfg.objects,
-      services: cfg.services,
-      policies: cfg.policies,
-      settings: cfg.settings,
-      wireguard: cfg.wireguard,
-      openvpn: cfg.openvpn,
-      dns: cfg.dns,
     ));
   }
 
@@ -524,19 +503,9 @@ class InterfacesScreen extends StatelessWidget {
                     dnsServers: dnsList,
                   );
                   final updated = List<InterfaceModel>.from(cfg.interfaces)..add(newIface);
-                  provider.updateCandidate(ConfigModel(
-                    version: cfg.version,
-                    revision: cfg.revision,
-                    updatedAt: cfg.updatedAt,
+                  provider.updateCandidate(cfg.copyWith(
                     interfaces: updated,
                     zones: updatedZones,
-                    objects: cfg.objects,
-                    services: cfg.services,
-                    policies: cfg.policies,
-                    settings: cfg.settings,
-                    wireguard: cfg.wireguard,
-                    openvpn: cfg.openvpn,
-                    dns: cfg.dns,
                   ));
                 }
                 Navigator.pop(ctx);
@@ -631,19 +600,8 @@ class InterfacesScreen extends StatelessWidget {
                 mtu: iface.mtu,
                 dhcp: newDHCP,
               );
-              provider.updateCandidate(ConfigModel(
-                version: cfg.version,
-                revision: cfg.revision,
-                updatedAt: cfg.updatedAt,
+              provider.updateCandidate(cfg.copyWith(
                 interfaces: updated,
-                zones: cfg.zones,
-                objects: cfg.objects,
-                services: cfg.services,
-                policies: cfg.policies,
-                settings: cfg.settings,
-                wireguard: cfg.wireguard,
-                openvpn: cfg.openvpn,
-                dns: cfg.dns,
               ));
               Navigator.pop(ctx);
                     },

@@ -269,19 +269,8 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
     final cfg = provider.candidateConfig ?? provider.runningConfig;
     if (cfg == null) return;
     final updatedObjs = cfg.objects.where((o) => o.id != obj.id).toList();
-    await provider.updateCandidate(ConfigModel(
-      version: cfg.version,
-      revision: cfg.revision,
-      updatedAt: cfg.updatedAt,
-      interfaces: cfg.interfaces,
-      zones: cfg.zones,
+    await provider.updateCandidate(cfg.copyWith(
       objects: updatedObjs,
-      services: cfg.services,
-      policies: cfg.policies,
-      settings: cfg.settings,
-      wireguard: cfg.wireguard,
-      openvpn: cfg.openvpn,
-      dns: cfg.dns,
     ));
   }
 
@@ -331,19 +320,8 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 final updatedObjs = existing != null
                     ? cfg.objects.map((o) => o.id == existing.id ? savedObj : o).toList()
                     : (List<ObjectModel>.from(cfg.objects)..add(savedObj));
-                provider.updateCandidate(ConfigModel(
-                  version: cfg.version,
-                  revision: cfg.revision,
-                  updatedAt: cfg.updatedAt,
-                  interfaces: cfg.interfaces,
-                  zones: cfg.zones,
+                provider.updateCandidate(cfg.copyWith(
                   objects: updatedObjs,
-                  services: cfg.services,
-                  policies: cfg.policies,
-                  settings: cfg.settings,
-                  wireguard: cfg.wireguard,
-                  openvpn: cfg.openvpn,
-                  dns: cfg.dns,
                 ));
               }
               Navigator.pop(ctx);
@@ -448,19 +426,8 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                         final updatedObjs = existing != null
                             ? cfg.objects.map((o) => o.id == existing.id ? savedObj : o).toList()
                             : (List<ObjectModel>.from(cfg.objects)..add(savedObj));
-                        await provider.updateCandidate(ConfigModel(
-                          version: cfg.version,
-                          revision: cfg.revision,
-                          updatedAt: cfg.updatedAt,
-                          interfaces: cfg.interfaces,
-                          zones: cfg.zones,
+                        await provider.updateCandidate(cfg.copyWith(
                           objects: updatedObjs,
-                          services: cfg.services,
-                          policies: cfg.policies,
-                          settings: cfg.settings,
-                          wireguard: cfg.wireguard,
-                          openvpn: cfg.openvpn,
-                          dns: cfg.dns,
                         ));
                         if (!ctx.mounted) return;
                         Navigator.pop(ctx);

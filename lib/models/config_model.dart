@@ -50,7 +50,28 @@ class ConfigModel {
     );
   }
 
+  /// Returnerar en kopia med bara de angivna fälten utbytta.
+  ///
+  /// ALLA fält finns med här, inte bara de valfria undersektionerna. Skälet
+  /// är en bugg som hittades vid kodgranskning 2026-08-20: skärmarna för
+  /// policyer/objekt/gränssnitt byggde en helt ny ConfigModel för hand och
+  /// räknade upp fält ett och ett — men ingen av dem skickade med `syslog`
+  /// eller `ids` (de tillkom senare, i Fas 8/9, och call-sitesen
+  /// uppdaterades aldrig). Eftersom GUI:t PUT:ar HELA konfigurationen vid
+  /// varje ändring innebar det att så fort någon redigerade en enda
+  /// brandväggsregel raderades IDS- och syslog-inställningarna tyst ur
+  /// konfigurationen. Med copyWith måste ett nytt fält aktivt utelämnas
+  /// för att försvinna, i stället för att glömmas bort som standard.
   ConfigModel copyWith({
+    int? version,
+    int? revision,
+    String? updatedAt,
+    List<InterfaceModel>? interfaces,
+    List<ZoneModel>? zones,
+    List<ObjectModel>? objects,
+    List<ServiceModel>? services,
+    List<PolicyModel>? policies,
+    SettingsModel? settings,
     WireGuardConfigModel? wireguard,
     OpenVPNConfigModel? openvpn,
     DNSConfigModel? dns,
@@ -58,15 +79,15 @@ class ConfigModel {
     IDSConfigModel? ids,
   }) =>
       ConfigModel(
-        version: version,
-        revision: revision,
-        updatedAt: updatedAt,
-        interfaces: interfaces,
-        zones: zones,
-        objects: objects,
-        services: services,
-        policies: policies,
-        settings: settings,
+        version: version ?? this.version,
+        revision: revision ?? this.revision,
+        updatedAt: updatedAt ?? this.updatedAt,
+        interfaces: interfaces ?? this.interfaces,
+        zones: zones ?? this.zones,
+        objects: objects ?? this.objects,
+        services: services ?? this.services,
+        policies: policies ?? this.policies,
+        settings: settings ?? this.settings,
         wireguard: wireguard ?? this.wireguard,
         openvpn: openvpn ?? this.openvpn,
         dns: dns ?? this.dns,
