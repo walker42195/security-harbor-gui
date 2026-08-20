@@ -247,13 +247,28 @@ class InterfacesScreen extends StatelessWidget {
       builder: (context, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
         final configured = cfg.interfaces.map((i) => i.device).toSet();
-        // Bara fysiska kort (inte loopback, inte VLAN) som inte redan är i
-        // konfigurationen.
+        // Virtuella gränssnitt (VPN-tunnlar, docker, bryggor, veth m.m.) är
+        // inte fysiska nätverkskort och ska inte erbjudas som sådana. wg0
+        // (WireGuard) och tun0 (OpenVPN) skapas t.ex. av brandväggen själv.
+        bool isVirtual(String n) => n.startsWith('wg') ||
+            n.startsWith('tun') ||
+            n.startsWith('tap') ||
+            n.startsWith('docker') ||
+            n.startsWith('veth') ||
+            n.startsWith('br-') ||
+            n.startsWith('virbr') ||
+            n.startsWith('bond') ||
+            n.startsWith('kube') ||
+            n.startsWith('cni') ||
+            n.startsWith('flannel') ||
+            n == 'docker0';
+        // Bara fysiska kort (inte loopback, inte VLAN, inte virtuella) som
+        // inte redan är i konfigurationen.
         final newNics = snap.data!.where((d) {
           final name = (d['name'] ?? '').toString();
           final isLoop = d['is_loopback'] == true;
           final isVlan = d['is_vlan'] == true;
-          return name.isNotEmpty && !isLoop && !isVlan && !configured.contains(name);
+          return name.isNotEmpty && !isLoop && !isVlan && !isVirtual(name) && !configured.contains(name);
         }).toList();
         if (newNics.isEmpty) return const SizedBox.shrink();
 
