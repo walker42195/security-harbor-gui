@@ -254,6 +254,50 @@ class _MainScreenState extends State<MainScreen> {
                       style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
                     ),
                   ),
+                  // Ångra: kastar bort de oapplicerade ändringarna och
+                  // återställer kandidaten till körande config. Räddar t.ex.
+                  // en råkad borttagning av en regel innan Applicera tryckts.
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.undo, size: 14),
+                    label: const Text('ÅNGRA ÄNDRINGAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (dctx) => AlertDialog(
+                          backgroundColor: const Color(0xFF1E293B),
+                          title: const Text('Ångra ändringar?', style: TextStyle(color: Colors.white, fontSize: 14)),
+                          content: const Text(
+                            'Alla ändringar du gjort sedan senaste applicering kastas bort och '
+                            'konfigurationen återställs till den som just nu kör på brandväggen. '
+                            'Detta går inte att ångra.',
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(dctx, false), child: const Text('Avbryt')),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                              onPressed: () => Navigator.pop(dctx, true),
+                              child: const Text('Ångra ändringar'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed != true) return;
+                      final ok = await provider.discardChanges();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(ok
+                                ? 'Ändringarna återställdes till körande konfiguration.'
+                                : (provider.errorMessage ?? 'Kunde inte återställa ändringarna.')),
+                            backgroundColor: ok ? Colors.teal : Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.play_arrow, size: 14),
                     label: const Text('APPLICERA (SAFE APPLY)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),

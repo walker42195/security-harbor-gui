@@ -137,6 +137,43 @@ class ConfigProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Kastar bort alla ännu icke-applicerade ändringar i kandidat-
+  /// konfigurationen och återställer den till den nu körande (running)
+  /// konfigurationen. Används t.ex. om man råkat ta bort en regel men
+  /// ännu inte tryckt Applicera — inget har då nått brandväggen, så det
+  /// räcker att skriva tillbaka running som ny kandidat. (Detta är INTE
+  /// samma sak som Rollback, som återställer en REDAN applicerad men
+  /// obekräftad ändring.)
+  Future<bool> discardChanges() async {
+    isLoading = true;
+    statusMessage = 'Återställer ändringar...';
+    notifyListeners();
+
+    final running = await api.getRunningConfig();
+    if (running == null) {
+      errorMessage = 'Kunde inte hämta körande konfiguration';
+      statusMessage = null;
+      isLoading = false;
+      notifyListeners();
+      return false;
+    }
+
+    final ok = await api.setCandidateConfig(running);
+    if (ok) {
+      runningConfig = running;
+      candidateConfig = running;
+      hasUnappliedChanges = false;
+      statusMessage = null;
+      errorMessage = null;
+    } else {
+      errorMessage = 'Kunde inte återställa ändringar';
+      statusMessage = null;
+    }
+    isLoading = false;
+    notifyListeners();
+    return ok;
+  }
+
   Future<bool> applyChanges() async {
     if (candidateConfig == null) return false;
     isLoading = true;

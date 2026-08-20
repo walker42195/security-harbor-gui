@@ -496,8 +496,39 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   Future<void> _deletePolicy(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx) async {
     final pol = cfg.policies[idx];
     if (pol.critical) {
+      // Kritiska regler har sin egen, strängare bekräftelse (utelåsnings-
+      // varning) — den räcker, ingen extra dialog ovanpå.
       final confirmed = await _confirmCriticalChange(context, pol.name, 'tar bort');
       if (!confirmed) return;
+    } else {
+      // Bekräfta ALLA borttagningar, inte bara kritiska — en råkad delete
+      // ska inte tyst ta bort en regel (den syns annars inte förrän man
+      // upptäcker att den är borta, och efter ett Bekräfta går den inte att
+      // rulla tillbaka). "Ångra ändringar"-knappen räddar den som ännu inte
+      // applicerat, men bättre att fråga direkt.
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dctx) => AlertDialog(
+          backgroundColor: const Color(0xFF1E293B),
+          title: const Text('Ta bort regeln?', style: TextStyle(color: Colors.white, fontSize: 14)),
+          content: Text(
+            'Vill du ta bort regeln "${pol.name}"?\n\n'
+            'Ändringen sparas i kandidaten men slår inte igenom på brandväggen '
+            'förrän du trycker Applicera. Innan dess kan du ångra med '
+            '"Ångra ändringar".',
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dctx, false), child: const Text('Avbryt')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+              onPressed: () => Navigator.pop(dctx, true),
+              child: const Text('Ta bort'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
     }
     final updatedPolicies = List<PolicyModel>.from(cfg.policies)..removeAt(idx);
     provider.updateCandidate(cfg.copyWith(
@@ -585,6 +616,13 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     final intIpCtrl = TextEditingController(text: pol?.nat?.internalIp ?? '192.168.10.10');
     final intPortCtrl = TextEditingController(text: pol?.nat?.internalPort.toString() ?? '443');
     final protoCtrl = TextEditingController(text: pol?.nat?.protocol ?? 'tcp');
+
+    // local = regeln gäller trafik TILL brandväggen själv (INPUT-kedjan),
+    // t.ex. ping eller SSH mot brandväggen — inte trafik som ska
+    // vidarebefordras genom den (FORWARD). En vanlig "från LAN till Any"-
+    // regel är en forward-regel och matchar därför ALDRIG paket riktade
+    // till brandväggens egen IP; för det krävs en local-regel.
+    bool local = pol?.local ?? false;
 
     int selectedTab = 0;
 
@@ -728,6 +766,29 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     onRemove: (item) {
                       setState(() => toMembers.remove(item));
                     },
+                  ),
+
+                  // Local-regel: trafik TILL brandväggen själv.
+                  const SizedBox(height: 10),
+                  InkWell(
+                    onTap: () => setState(() => local = !local),
+                    child: Row(
+                      children: [
+                        Checkbox(
+                          value: local,
+                          activeColor: Colors.tealAccent,
+                          checkColor: Colors.black,
+                          onChanged: (v) => setState(() => local = v ?? false),
+                        ),
+                        const Expanded(
+                          child: Text(
+                            'Gäller trafik TILL brandväggen själv (t.ex. ping eller SSH mot brandväggen). '
+                            'Lämna avbockad för trafik som ska passera GENOM brandväggen (mål "To" ovan gäller då).',
+                            style: TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
 
                   if (action == 'dnat') ...[
@@ -995,7 +1056,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             service: finalService,
                             action: action,
                             nat: updatedNAT,
-                            local: pol?.local ?? false,
+                            local: local,
                             critical: pol?.critical ?? false,
                             schedule: scheduleEnabled
                                 ? PolicyScheduleModel(
