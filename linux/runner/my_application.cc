@@ -86,17 +86,20 @@ static void my_application_activate(GApplication* application) {
   // Applicera ren och giltig GTK CSS för mörk Slate-färg (#1E293B)
   GtkCssProvider* css_provider = gtk_css_provider_new();
   gtk_css_provider_load_from_data(css_provider,
-    "headerbar, .titlebar {\n"
-    "  background: #1E293B;\n"
-    "  background-color: #1E293B;\n"
-    "  background-image: none;\n"
+    // :backdrop-varianterna och !important behövs för att garanterat vinna
+    // över temats (Adwaita m.fl.) egna regler — utan dem ritade temat kvar
+    // en ljus 1px-highlight högst upp på titelraden trots overriden.
+    "headerbar, .titlebar, headerbar:backdrop, .titlebar:backdrop {\n"
+    "  background: #1E293B !important;\n"
+    "  background-color: #1E293B !important;\n"
+    "  background-image: none !important;\n"
     "  color: #FFFFFF;\n"
+    "  border-top: none !important;\n"
+    "  border-left: none !important;\n"
+    "  border-right: none !important;\n"
     "  border-bottom: 1px solid #334155;\n"
-    // Adwaita ritar normalt en ljus 1px "inset"-highlight högst upp på
-    // headerbar (för att ge ett upphöjt/glansigt intryck) — det är oftast
-    // DEN, inte den yttre decoration-ramen nedan, som syns som en ljus
-    // linje ovanför den mörka titelraden. Nollställ explicit.
-    "  box-shadow: none;\n"
+    "  box-shadow: none !important;\n"
+    "  text-shadow: none;\n"
     "}\n"
     "headerbar label, .titlebar label {\n"
     "  color: #FFFFFF;\n"
@@ -125,16 +128,25 @@ static void my_application_activate(GApplication* application) {
     // titelraden. Måla den i EXAKT samma färg som toppfältet (#1E293B) i
     // stället för en avvikande gränslinje, så den smälter in helt.
     "decoration, decoration:backdrop {\n"
-    "  box-shadow: none;\n"
-    "  border-top: 1px solid #1E293B;\n"
-    "  background-color: #1E293B;\n"
+    "  box-shadow: none !important;\n"
+    "  border: none !important;\n"
+    "  background-color: #1E293B !important;\n"
+    "}\n"
+    // Själva fönster-/bakgrundsnoden kan också bära en ljus ram/skugga i
+    // vissa teman — nollställ även den.
+    "window, window:backdrop, window.background, window.csd {\n"
+    "  border: none !important;\n"
+    "  box-shadow: none !important;\n"
     "}\n",
     -1, NULL);
 
+  // PRIORITY_USER (800) ligger över både PRIORITY_THEME (200) och
+  // PRIORITY_APPLICATION (600), så våra regler vinner garanterat över
+  // temats egna highlight-linjer.
   gtk_style_context_add_provider_for_screen(
     gdk_screen_get_default(),
     GTK_STYLE_PROVIDER(css_provider),
-    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    GTK_STYLE_PROVIDER_PRIORITY_USER);
 
   GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
   gtk_widget_show(GTK_WIDGET(header_bar));
