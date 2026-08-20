@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 
@@ -25,6 +26,46 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
   int _autoBlockSeverity = 2;
   bool _isSavingIds = false;
 
+  // Filter (samma mönster som Loggning-sidan) — ett fält per kolumn.
+  final _fTid = TextEditingController();
+  final _fSignatur = TextEditingController();
+  final _fKategori = TextEditingController();
+  final _fKalla = TextEditingController();
+  final _fMal = TextEditingController();
+  final _fProtokoll = TextEditingController();
+  String _fSeverity = 'ALL'; // ALL, 1, 2, 3
+
+  List<SecurityEventModel> get _filteredEvents {
+    bool has(TextEditingController c, String v) {
+      final f = c.text.trim().toLowerCase();
+      return f.isEmpty || v.toLowerCase().contains(f);
+    }
+
+    return _events.where((e) {
+      if (_fSeverity != 'ALL' && '${e.severity}' != _fSeverity) return false;
+      return has(_fTid, e.timestamp) &&
+          has(_fSignatur, e.signature) &&
+          has(_fKategori, e.category) &&
+          has(_fKalla, '${e.srcIp}:${e.srcPort}') &&
+          has(_fMal, '${e.dstIp}:${e.dstPort}') &&
+          has(_fProtokoll, e.protocol);
+    }).toList();
+  }
+
+  bool get _hasActiveFilter =>
+      _fSeverity != 'ALL' ||
+      [_fTid, _fSignatur, _fKategori, _fKalla, _fMal, _fProtokoll].any((c) => c.text.trim().isNotEmpty);
+
+  void _clearFilters() => setState(() {
+        _fTid.clear();
+        _fSignatur.clear();
+        _fKategori.clear();
+        _fKalla.clear();
+        _fMal.clear();
+        _fProtokoll.clear();
+        _fSeverity = 'ALL';
+      });
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +78,12 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     _pollTimer?.cancel();
     _ifaceController.dispose();
     _objectIdController.dispose();
+    _fTid.dispose();
+    _fSignatur.dispose();
+    _fKategori.dispose();
+    _fKalla.dispose();
+    _fMal.dispose();
+    _fProtokoll.dispose();
     super.dispose();
   }
 
@@ -109,58 +156,341 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text('${_events.length} larm (senaste 1000 raderna i eve.json)',
-                        style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
-                  ),
-                  const Divider(color: Color(0xFF334155), height: 1),
-                  if (_events.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(20),
-                      child: Text('Inga larm ännu.', style: TextStyle(color: Colors.white38, fontSize: 12)),
-                    )
-                  else
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        headingRowHeight: 34,
-                        dataRowMinHeight: 32,
-                        dataRowMaxHeight: 32,
-                        columns: const [
-                          DataColumn(label: Text('Tid', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                          DataColumn(label: Text('Allvarlighet', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                          DataColumn(label: Text('Signatur', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                          DataColumn(label: Text('Kategori', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                          DataColumn(label: Text('Källa', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                          DataColumn(label: Text('Mål', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                          DataColumn(label: Text('Protokoll', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                        ],
-                        rows: _events
-                            .map((e) => DataRow(cells: [
-                                  DataCell(Text(e.timestamp, style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                  DataCell(Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                    decoration: BoxDecoration(
-                                      color: _severityColor(e.severity).withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(color: _severityColor(e.severity)),
-                                    ),
-                                    child: Text('${e.severity}', style: TextStyle(color: _severityColor(e.severity), fontSize: 11, fontWeight: FontWeight.bold)),
-                                  )),
-                                  DataCell(SizedBox(width: 320, child: Text(e.signature, style: const TextStyle(color: Colors.white, fontSize: 11)))),
-                                  DataCell(Text(e.category, style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                  DataCell(Text('${e.srcIp}:${e.srcPort}', style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                  DataCell(Text('${e.dstIp}:${e.dstPort}', style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                  DataCell(Text(e.protocol, style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                ]))
-                            .toList(),
-                      ),
-                    ),
+                  Builder(builder: (context) {
+                    final filtered = _filteredEvents;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Text(
+                                _hasActiveFilter
+                                    ? '${filtered.length} av ${_events.length} larm (filtrerat)'
+                                    : '${_events.length} larm (senaste 1000 raderna i eve.json)',
+                                style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                              const Spacer(),
+                              // Info-overlay: vad IDS är, hur det fungerar, länk till Suricata.
+                              InkWell(
+                                onTap: () => _showIdsInfo(context),
+                                borderRadius: BorderRadius.circular(12),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(2),
+                                  child: Icon(Icons.help_outline, size: 18, color: Colors.cyanAccent),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Divider(color: Color(0xFF334155), height: 1),
+                        _buildIdsFilterBar(),
+                        const Divider(color: Color(0xFF334155), height: 1),
+                        if (_events.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Text('Inga larm ännu.', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                          )
+                        else if (filtered.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(20),
+                            child: Text('Inga larm matchar filtret.', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                          )
+                        else
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: DataTable(
+                              headingRowHeight: 34,
+                              dataRowMinHeight: 32,
+                              dataRowMaxHeight: 32,
+                              showCheckboxColumn: false,
+                              columns: const [
+                                DataColumn(label: Text('Tid', style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text('Allvarlighet', style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text('Signatur', style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text('Kategori', style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text('Källa', style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text('Mål', style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text('Protokoll', style: TextStyle(color: Colors.grey, fontSize: 11))),
+                              ],
+                              rows: filtered
+                                  .map((e) => DataRow(
+                                        onSelectChanged: (_) => _showEventDetail(e),
+                                        cells: [
+                                          DataCell(Text(e.timestamp, style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                                          DataCell(Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: _severityColor(e.severity).withValues(alpha: 0.15),
+                                              borderRadius: BorderRadius.circular(4),
+                                              border: Border.all(color: _severityColor(e.severity)),
+                                            ),
+                                            child: Text('${e.severity}', style: TextStyle(color: _severityColor(e.severity), fontSize: 11, fontWeight: FontWeight.bold)),
+                                          )),
+                                          DataCell(SizedBox(width: 320, child: Text(e.signature, style: const TextStyle(color: Colors.white, fontSize: 11), overflow: TextOverflow.ellipsis))),
+                                          DataCell(Text(e.category, style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                                          DataCell(Text('${e.srcIp}:${e.srcPort}', style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                                          DataCell(Text('${e.dstIp}:${e.dstPort}', style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                                          DataCell(Text(e.protocol, style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                                        ],
+                                      ))
+                                  .toList(),
+                            ),
+                          ),
+                      ],
+                    );
+                  }),
                 ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIdsFilterBar() {
+    Widget field(String label, TextEditingController c, double width) => SizedBox(
+          width: width,
+          height: 32,
+          child: TextField(
+            controller: c,
+            onChanged: (_) => setState(() {}),
+            style: const TextStyle(fontSize: 11, color: Colors.white),
+            decoration: InputDecoration(
+              isDense: true,
+              labelText: label,
+              labelStyle: const TextStyle(fontSize: 10, color: Colors.grey),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.all(10),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          field('Tid', _fTid, 150),
+          SizedBox(
+            height: 32,
+            child: DropdownButtonHideUnderline(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(border: Border.all(color: const Color(0xFF334155)), borderRadius: BorderRadius.circular(4)),
+                child: DropdownButton<String>(
+                  value: _fSeverity,
+                  dropdownColor: const Color(0xFF1E293B),
+                  style: const TextStyle(fontSize: 11, color: Colors.white),
+                  items: const [
+                    DropdownMenuItem(value: 'ALL', child: Text('Allvarlighet: Alla')),
+                    DropdownMenuItem(value: '1', child: Text('Allvarlighet: 1 (hög)')),
+                    DropdownMenuItem(value: '2', child: Text('Allvarlighet: 2 (medel)')),
+                    DropdownMenuItem(value: '3', child: Text('Allvarlighet: 3 (låg)')),
+                  ],
+                  onChanged: (v) => setState(() => _fSeverity = v ?? 'ALL'),
+                ),
+              ),
+            ),
+          ),
+          field('Signatur', _fSignatur, 220),
+          field('Kategori', _fKategori, 180),
+          field('Källa (IP:port)', _fKalla, 150),
+          field('Mål (IP:port)', _fMal, 150),
+          field('Protokoll', _fProtokoll, 100),
+          TextButton.icon(
+            icon: const Icon(Icons.clear, size: 14, color: Colors.grey),
+            label: const Text('Rensa filter', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            onPressed: _hasActiveFilter ? _clearFilters : null,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEventDetail(SecurityEventModel e) {
+    Widget row(String k, String v, {Color? valueColor}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: 120, child: Text(k, style: const TextStyle(color: Colors.grey, fontSize: 12))),
+              Expanded(child: SelectableText(v.isEmpty ? '—' : v, style: TextStyle(color: valueColor ?? Colors.white, fontSize: 12))),
+            ],
+          ),
+        );
+
+    showDialog(
+      context: context,
+      builder: (dctx) => Dialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.gpp_maybe_outlined, color: _severityColor(e.severity), size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(child: Text('Larmdetaljer', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold))),
+                    IconButton(icon: const Icon(Icons.close, color: Colors.white54, size: 18), onPressed: () => Navigator.pop(dctx)),
+                  ],
+                ),
+                const Divider(color: Color(0xFF334155)),
+                const SizedBox(height: 4),
+                row('Signatur', e.signature),
+                row('Allvarlighet', '${e.severity}  (${e.severity == 1 ? "hög" : e.severity == 2 ? "medel" : "låg"})', valueColor: _severityColor(e.severity)),
+                row('Kategori', e.category),
+                row('Tidpunkt', e.timestamp),
+                row('Protokoll', e.protocol),
+                row('Källa', '${e.srcIp}${e.srcPort != 0 ? ":${e.srcPort}" : ""}'),
+                row('Mål', '${e.dstIp}${e.dstPort != 0 ? ":${e.dstPort}" : ""}'),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(4)),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.info_outline, size: 14, color: Colors.cyanAccent),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          e.category.toLowerCase().contains('generic protocol command decode')
+                              ? 'Detta är ett avkodar-larm från Suricata, inte en attacksignatur — ofta L2-brus '
+                                  '(okända ethertyper, VLAN/STP/LACP). Severity 3 betyder lägsta allvarlighetsgrad.'
+                              : 'Signaturen matchade ett känt mönster i Suricatas regelset. Severity 1 är '
+                                  'allvarligast och bör undersökas; 3 är mest informativt. Klicka på "?" i listans '
+                                  'huvud för mer om hur IDS fungerar.',
+                          style: const TextStyle(color: Colors.white60, fontSize: 11, height: 1.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.open_in_new, size: 14, color: Colors.cyanAccent),
+                    label: const Text('Sök signaturen på suricata.io', style: TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+                    onPressed: _openSuricata,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openSuricata() async {
+    final uri = Uri.parse('https://suricata.io/');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kunde inte öppna länken. Adress: https://suricata.io/')),
+        );
+      }
+    }
+  }
+
+  void _showIdsInfo(BuildContext context) {
+    Widget para(String s) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Text(s, style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.4)),
+        );
+    Widget head(String s) => Padding(
+          padding: const EdgeInsets.only(bottom: 6, top: 2),
+          child: Text(s, style: const TextStyle(color: Colors.cyanAccent, fontSize: 13, fontWeight: FontWeight.bold)),
+        );
+
+    showDialog(
+      context: context,
+      builder: (dctx) => Dialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560, maxHeight: 620),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.shield_outlined, color: Colors.cyanAccent, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text('Vad är IDS och vad betyder larmen?',
+                          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white54, size: 18),
+                      onPressed: () => Navigator.pop(dctx),
+                    ),
+                  ],
+                ),
+                const Divider(color: Color(0xFF334155)),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        head('IDS — intrångsdetektering'),
+                        para('IDS (Intrusion Detection System) lyssnar passivt på nätverkstrafiken och '
+                            'larmar när något matchar en känd signatur för misstänkt eller skadlig '
+                            'aktivitet — t.ex. portskanningar, kända attackmönster eller skadlig kod. '
+                            'Den här brandväggen kör IDS i passivt läge: den LARMAR men BLOCKERAR inte '
+                            'trafik i realtid. (Valfri auto-blockering läggs käll-IP:n till ett objekt '
+                            'i efterhand — se inställningarna längre ner.)'),
+                        head('Motorn: Suricata'),
+                        para('Motorn heter Suricata och sniffar trafiken via af-packet. Den använder ett '
+                            'regelset (t.ex. ET Open) med tiotusentals signaturer. Varje larm skrivs till '
+                            'eve.json, och den här vyn visar de senaste raderna därifrån.'),
+                        head('Allvarlighetsgrad'),
+                        para('Kolumnen "Allvarlighet" är Suricatas egen skala: 1 = högst (allvarligt, bör '
+                            'undersökas), 2 = medel, 3 = lägst (mest informativt/brus). Många larm med '
+                            'severity 3 är normalt och betyder sällan en attack.'),
+                        head('Varför så många "Ethertype unknown"-larm?'),
+                        para('Larm som "SURICATA Ethertype unknown" (severity 3, kategori "Generic Protocol '
+                            'Command Decode") kommer från Suricatas avkodare, inte från en attacksignatur. '
+                            'De betyder bara att den sett ethernet-ramtyper den inte känner igen på det '
+                            'sniffade gränssnittet — t.ex. VLAN-taggar, spanning-tree (STP) eller LACP. '
+                            'Det är normalt brus, särskilt på ett interface som ser mycket L2-trafik, och '
+                            'är inte tecken på ett angrepp. Vill du minska bruset kan du sniffa ett '
+                            'gränssnitt med mindre L2-trafik eller finjustera Suricatas regler.'),
+                        const SizedBox(height: 4),
+                        InkWell(
+                          onTap: _openSuricata,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.open_in_new, size: 14, color: Colors.cyanAccent),
+                              SizedBox(width: 6),
+                              Text('Läs mer på suricata.io',
+                                  style: TextStyle(color: Colors.cyanAccent, fontSize: 12, decoration: TextDecoration.underline)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

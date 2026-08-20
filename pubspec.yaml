@@ -39,6 +39,7 @@ dependencies:
   qr_flutter: ^4.1.0
   shared_preferences: ^2.3.3
   crypto: ^3.0.7
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
