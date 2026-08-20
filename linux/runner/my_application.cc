@@ -122,11 +122,12 @@ static void my_application_activate(GApplication* application) {
     // (client-side-decoration-"decoration"-noden, skild från headerbar) i
     // Adwaita-temat, särskilt när fönstret är i fokus — den ligger UTANFÖR
     // headerbar-stylingen ovan och syns som en ljus rand ovanför den mörka
-    // titelraden. Nollställ den och ersätt med samma diskreta gränslinje
-    // som redan används på headerbar/titlebar.
+    // titelraden. Måla den i EXAKT samma färg som toppfältet (#1E293B) i
+    // stället för en avvikande gränslinje, så den smälter in helt.
     "decoration, decoration:backdrop {\n"
     "  box-shadow: none;\n"
-    "  border-top: 1px solid #334155;\n"
+    "  border-top: 1px solid #1E293B;\n"
+    "  background-color: #1E293B;\n"
     "}\n",
     -1, NULL);
 
@@ -157,7 +158,7 @@ static void my_application_activate(GApplication* application) {
 
   gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
 
-  gtk_window_set_default_size(window, 1280, 720);
+  gtk_window_set_default_size(window, 1280, 940);
   gtk_window_set_icon_name(GTK_WINDOW(window), "security-harbor-gui");
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
