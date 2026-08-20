@@ -173,8 +173,16 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     if (_ifaceController.text.isEmpty && ids.interfaceDevice.isNotEmpty) {
       _ifaceController.text = ids.interfaceDevice;
     }
-    if (_objectIdController.text.isEmpty && ids.autoBlockObjectId.isNotEmpty) {
-      _objectIdController.text = ids.autoBlockObjectId;
+    if (_objectIdController.text.isEmpty) {
+      if (ids.autoBlockObjectId.isNotEmpty) {
+        _objectIdController.text = ids.autoBlockObjectId;
+      } else {
+        // Förifyll standard-objektet "IPS - Auto block" om det finns, så
+        // fältet är redo direkt (Auto-block är fortfarande avstängt tills
+        // användaren själv slår på det).
+        final ips = (cfg?.objects ?? []).where((o) => o.name == 'IPS - Auto block');
+        if (ips.isNotEmpty) _objectIdController.text = ips.first.id;
+      }
     }
     _autoBlockSeverity = ids.autoBlockSeverity == 0 ? 2 : ids.autoBlockSeverity;
     String? selectedIface = interfaces.any((i) => i.device == _ifaceController.text) ? _ifaceController.text : null;
@@ -249,15 +257,27 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
           Row(
             children: [
               Expanded(
-                child: TextField(
-                  controller: _objectIdController,
+                child: DropdownButtonFormField<String>(
+                  initialValue: (cfg?.objects.any((o) => o.id == _objectIdController.text) ?? false)
+                      ? _objectIdController.text
+                      : null,
+                  isDense: true,
+                  isExpanded: true,
+                  dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(color: Colors.white, fontSize: 12),
                   decoration: const InputDecoration(
-                    labelText: 'Objekt-ID (från Objekt-vyn)',
+                    labelText: 'Objekt att blockera IP i',
                     contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     border: OutlineInputBorder(),
                     isDense: true,
                   ),
+                  items: (cfg?.objects ?? <ObjectModel>[])
+                      .map((o) => DropdownMenuItem(
+                            value: o.id,
+                            child: Text(o.name, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+                          ))
+                      .toList(),
+                  onChanged: (v) => setState(() => _objectIdController.text = v ?? ''),
                 ),
               ),
               const SizedBox(width: 10),
