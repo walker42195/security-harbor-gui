@@ -615,6 +615,16 @@ class ObjectSourceModel {
         'url': url,
         'country_code': countryCode,
         'refresh_hours': refreshHours,
+        // Status-fälten MÅSTE skickas tillbaka. Utelämnades tidigare, vilket
+        // gjorde att varje gång GUI:t PUT:ade hela configen (t.ex. vid en
+        // policy-ändring) nollställdes senast-uppdaterad/antal/fel som
+        // agentens hot-lista-uppdaterare hade satt — objektet visade då
+        // "Aldrig uppdaterad" trots att listan var hämtad (upptäckt
+        // 2026-08-20). Backend behandlar dem numera som server-ägda och
+        // återställer dem ändå, men att skicka dem korrekt är rätt.
+        'last_updated': lastUpdated,
+        'last_error': lastError,
+        'entry_count': entryCount,
       };
 }
 
