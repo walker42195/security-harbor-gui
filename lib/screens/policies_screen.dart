@@ -310,7 +310,12 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       ),
       Text(pol.service, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
       _truncatedCell(pol.sourceZone),
-      _truncatedCell(isDNAT && pol.nat != null ? '${pol.nat!.internalIp}:${pol.nat!.internalPort}' : pol.destZone),
+      _truncatedCell(isDNAT && pol.nat != null
+          ? '${pol.nat!.internalIp}:${pol.nat!.internalPort}'
+          // En local-regel gäller alltid brandväggen själv — visa SELF även
+          // om destZone råkar innehålla ett gammalt (ignorerat) värde från
+          // innan regeln gjordes till en local-regel.
+          : (pol.local ? 'SELF' : pol.destZone)),
       Text(isDNAT && pol.nat != null ? 'tcp:${pol.nat!.externalPort}' : _getPortForService(pol.service), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.amber, fontSize: 11)),
       Row(
         mainAxisSize: MainAxisSize.min,
@@ -1028,7 +1033,18 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           final srcMatchedObjs = <String>[];
                           final dstMatchedObjs = <String>[];
                           final srcObjId = resolveObjOrZones(fromMembers, srcZones, srcMatchedObjs);
-                          final dstObjId = resolveObjOrZones(toMembers, dstZones, dstMatchedObjs);
+                          // För en local-regel (trafik TILL brandväggen själv) är
+                          // målet alltid brandväggen — backend läser inte To för
+                          // local-regler. Spara "SELF" som destZone (samma som den
+                          // fördefinierade SSH-regeln) i stället för det ignorerade
+                          // To-fältets innehåll, så listvyn visar SELF korrekt.
+                          final String dstObjId;
+                          if (local) {
+                            dstZones.add('SELF');
+                            dstObjId = 'ANY';
+                          } else {
+                            dstObjId = resolveObjOrZones(toMembers, dstZones, dstMatchedObjs);
+                          }
 
                           if (srcMatchedObjs.length > 1 || dstMatchedObjs.length > 1) {
                             final side = srcMatchedObjs.length > 1 ? 'Källa' : 'Mål';
