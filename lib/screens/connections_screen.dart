@@ -158,11 +158,20 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   // bara styr IP-fältets Från/Till-tolkning.
   String _trafficDirectionFilter = 'ALL'; // ALL, IN, OUT, INTERNAL
 
+  // Paus fryser den automatiska uppdateringen så listan slutar rulla på
+  // (manuell uppdatering via knappen fungerar ändå).
+  bool _paused = false;
+  // Dölj DefaultDeny: gömmer de generiska "logga och neka allt annat"-
+  // raderna (SH-DENY-*-DefaultDeny) så bara träffar på namngivna regler syns.
+  bool _hideDefaultDeny = false;
+
   @override
   void initState() {
     super.initState();
     _poll();
-    _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) => _poll());
+    _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!_paused) _poll();
+    });
   }
 
   @override
@@ -236,6 +245,10 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       }).toList();
     }
 
+    if (_hideDefaultDeny) {
+      rows = rows.where((r) => r.policyName != 'DefaultDeny').toList();
+    }
+
     rows.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     return Container(
@@ -261,13 +274,28 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                 ),
                 Row(
                   children: [
-                    if (_isLoading)
+                    if (_isLoading && !_paused)
                       const Padding(
                         padding: EdgeInsets.only(right: 10),
                         child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent)),
                       ),
                     Text('${rows.length} rader', style: const TextStyle(color: Colors.grey, fontSize: 11)),
                     const SizedBox(width: 10),
+                    // Dölj/visa DefaultDeny-raderna.
+                    TextButton.icon(
+                      icon: Icon(_hideDefaultDeny ? Icons.visibility_off : Icons.visibility, size: 15, color: _hideDefaultDeny ? Colors.orangeAccent : Colors.grey),
+                      label: Text(_hideDefaultDeny ? 'DefaultDeny dold' : 'Dölj DefaultDeny',
+                          style: TextStyle(fontSize: 11, color: _hideDefaultDeny ? Colors.orangeAccent : Colors.grey)),
+                      onPressed: () => setState(() => _hideDefaultDeny = !_hideDefaultDeny),
+                    ),
+                    const SizedBox(width: 4),
+                    // Pausa/återuppta den automatiska uppdateringen.
+                    TextButton.icon(
+                      icon: Icon(_paused ? Icons.play_arrow : Icons.pause, size: 16, color: _paused ? Colors.tealAccent : Colors.amberAccent),
+                      label: Text(_paused ? 'Pausad' : 'Pausa',
+                          style: TextStyle(fontSize: 11, color: _paused ? Colors.tealAccent : Colors.amberAccent)),
+                      onPressed: () => setState(() => _paused = !_paused),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.refresh, size: 18, color: Colors.cyanAccent),
                       tooltip: 'Uppdatera nu',
