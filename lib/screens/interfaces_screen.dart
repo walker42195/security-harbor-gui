@@ -230,9 +230,94 @@ class InterfacesScreen extends StatelessWidget {
                   );
                 },
               ),
+            if (cfg != null) _buildDiscoveredSection(context, provider, cfg),
           ],
         ),
       ),
+    );
+  }
+
+  // Visar fysiska nätverkskort som FINNS på systemet men ännu inte är
+  // konfigurerade (t.ex. ett kort man precis satt i). De dyker upp
+  // automatiskt men aktiveras INTE av sig själva — användaren måste själv
+  // lägga till och aktivera dem.
+  Widget _buildDiscoveredSection(BuildContext context, ConfigProvider provider, ConfigModel cfg) {
+    return FutureBuilder<List<dynamic>>(
+      future: provider.api.discoverInterfaces(),
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox.shrink();
+        final configured = cfg.interfaces.map((i) => i.device).toSet();
+        // Bara fysiska kort (inte loopback, inte VLAN) som inte redan är i
+        // konfigurationen.
+        final newNics = snap.data!.where((d) {
+          final name = (d['name'] ?? '').toString();
+          final isLoop = d['is_loopback'] == true;
+          final isVlan = d['is_vlan'] == true;
+          return name.isNotEmpty && !isLoop && !isVlan && !configured.contains(name);
+        }).toList();
+        if (newNics.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            Row(
+              children: const [
+                Icon(Icons.new_releases_outlined, size: 16, color: Colors.amberAccent),
+                SizedBox(width: 6),
+                Text('Nya nätverkskort (ej konfigurerade)',
+                    style: TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text('Kort som hittats på systemet men ännu inte lagts till. De aktiveras inte automatiskt.',
+                style: TextStyle(color: Colors.white54, fontSize: 10)),
+            const SizedBox(height: 8),
+            ...newNics.map((d) {
+              final name = (d['name'] ?? '').toString();
+              final mac = (d['mac'] ?? '').toString();
+              final isUp = d['is_up'] == true;
+              return Card(
+                color: const Color(0xFF1E293B),
+                margin: const EdgeInsets.only(bottom: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                  side: BorderSide(color: Colors.amberAccent.withValues(alpha: 0.35)),
+                ),
+                child: ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.settings_ethernet, size: 18, color: Colors.amberAccent),
+                  title: Text(name, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                  subtitle: Text('MAC: ${mac.isEmpty ? "—" : mac}  |  Länk: ${isUp ? "uppe" : "nere"}  |  Ej konfigurerad',
+                      style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                  trailing: ElevatedButton.icon(
+                    icon: const Icon(Icons.add, size: 14),
+                    label: const Text('Lägg till', style: TextStyle(fontSize: 11)),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
+                    onPressed: () {
+                      // Läggs till som INAKTIVERAT — användaren aktiverar och
+                      // konfigurerar det själv efteråt.
+                      final newIface = InterfaceModel(
+                        id: 'if_${DateTime.now().millisecondsSinceEpoch}',
+                        device: name,
+                        zone: 'LAN',
+                        enabled: false,
+                        addressType: 'dhcp',
+                        ipv4: '',
+                      );
+                      final updated = List<InterfaceModel>.from(cfg.interfaces)..add(newIface);
+                      provider.updateCandidate(cfg.copyWith(interfaces: updated));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('$name tillagt (inaktiverat) — öppna det för att aktivera och konfigurera.')),
+                      );
+                    },
+                  ),
+                ),
+              );
+            }),
+          ],
+        );
+      },
     );
   }
 
