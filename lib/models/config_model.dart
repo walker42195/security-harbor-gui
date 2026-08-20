@@ -1103,3 +1103,35 @@ class SecurityEventModel {
     );
   }
 }
+
+/// En aktiv DHCP-utlåning (Kea) berikad med gränssnitt/zon — se
+/// /api/v1/dhcp/leases i backend (Engine.GetDHCPLeases). WAN utesluts där.
+class DhcpLeaseModel {
+  final String ip;
+  final String mac;
+  final String hostname;
+  final int startTs; // när leasen gavs, unix-sekunder, 0 = okänt
+  final int expireTs; // när leasen går ut, unix-sekunder, 0 = okänt
+  final String interfaceDevice;
+  final String zone;
+
+  DhcpLeaseModel({
+    required this.ip,
+    required this.mac,
+    required this.hostname,
+    required this.startTs,
+    required this.expireTs,
+    required this.interfaceDevice,
+    required this.zone,
+  });
+
+  factory DhcpLeaseModel.fromJson(Map<String, dynamic> json) => DhcpLeaseModel(
+        ip: json['ip'] ?? '',
+        mac: json['mac'] ?? '',
+        hostname: json['hostname'] ?? '',
+        startTs: json['start_ts'] ?? 0,
+        expireTs: json['expire_ts'] ?? 0,
+        interfaceDevice: json['interface'] ?? '',
+        zone: json['zone'] ?? '',
+      );
+}

@@ -9,6 +9,7 @@ import 'settings_screen.dart';
 import 'connections_screen.dart';
 import 'vpn_screen.dart';
 import 'dns_screen.dart';
+import 'dhcp_screen.dart';
 import 'security_events_screen.dart';
 
 import 'tools_screen.dart';
@@ -41,6 +42,7 @@ class _MainScreenState extends State<MainScreen> {
       const ObjectsScreen(),
       if (!isHostMode) const VpnScreen(),
       if (!isHostMode) const DnsScreen(),
+      if (!isHostMode) const DhcpScreen(),
       const ConnectionsScreen(),
       if (!isHostMode) const SecurityEventsScreen(),
       const ToolsScreen(),
@@ -53,6 +55,7 @@ class _MainScreenState extends State<MainScreen> {
       const NavigationRailDestination(icon: Icon(Icons.category_outlined), selectedIcon: Icon(Icons.category), label: Text('Objekt')),
       if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.vpn_lock_outlined), selectedIcon: Icon(Icons.vpn_lock), label: Text('VPN')),
       if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.dns_outlined), selectedIcon: Icon(Icons.dns), label: Text('DNS')),
+      if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.devices_other_outlined), selectedIcon: Icon(Icons.devices_other), label: Text('DHCP')),
       const NavigationRailDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: Text('Loggning')),
       if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.gpp_maybe_outlined), selectedIcon: Icon(Icons.gpp_maybe), label: Text('IDS')),
       const NavigationRailDestination(icon: Icon(Icons.build_circle_outlined), selectedIcon: Icon(Icons.build_circle), label: Text('Verktyg')),

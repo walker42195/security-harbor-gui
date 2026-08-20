@@ -307,6 +307,17 @@ class ApiService {
     return [];
   }
 
+  Future<List<DhcpLeaseModel>> getDhcpLeases() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/dhcp/leases'), headers: _headers);
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List;
+        return list.map((e) => DhcpLeaseModel.fromJson(e)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
   Future<Map<String, dynamic>?> getWireGuardServerInfo() async {
     try {
       final res = await _client.get(Uri.parse('$baseUrl/api/v1/vpn/wireguard/server-info'), headers: _headers);
