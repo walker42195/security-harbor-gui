@@ -752,20 +752,26 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // To Box
-                  _buildMemberBox(
-                    context: context,
-                    title: 'To (Måladresser / Zoner)',
-                    members: toMembers,
-                    onAdd: () async {
-                      final selected = await _showAddressPicker(context, cfg, toMembers);
-                      if (selected != null) {
-                        setState(() => toMembers = selected);
-                      }
-                    },
-                    onRemove: (item) {
-                      setState(() => toMembers.remove(item));
-                    },
+                  // To Box — nedtonad och märkt när regeln gäller
+                  // brandväggen själv, eftersom "To" då inte används.
+                  Opacity(
+                    opacity: local ? 0.4 : 1.0,
+                    child: _buildMemberBox(
+                      context: context,
+                      title: local
+                          ? 'To (används INTE — regeln gäller brandväggen själv)'
+                          : 'To (Måladresser / Zoner)',
+                      members: local ? ['Brandväggen själv'] : toMembers,
+                      onAdd: local
+                          ? () {}
+                          : () async {
+                              final selected = await _showAddressPicker(context, cfg, toMembers);
+                              if (selected != null) {
+                                setState(() => toMembers = selected);
+                              }
+                            },
+                      onRemove: local ? (_) {} : (item) => setState(() => toMembers.remove(item)),
+                    ),
                   ),
 
                   // Local-regel: trafik TILL brandväggen själv.
@@ -780,11 +786,16 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           checkColor: Colors.black,
                           onChanged: (v) => setState(() => local = v ?? false),
                         ),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Gäller trafik TILL brandväggen själv (t.ex. ping eller SSH mot brandväggen). '
-                            'Lämna avbockad för trafik som ska passera GENOM brandväggen (mål "To" ovan gäller då).',
-                            style: TextStyle(color: Colors.white70, fontSize: 11),
+                            local
+                                ? 'PÅ: regeln gäller trafik TILL brandväggen själv — att nå brandväggens '
+                                    'egen IP, t.ex. pinga eller SSH:a TILL brandväggen. "To"-fältet ovan '
+                                    'används inte. (Detta styr INTE trafik ut genom brandväggen.)'
+                                : 'AV: regeln gäller trafik GENOM brandväggen, från "From" till "To" — '
+                                    't.ex. att en LAN-enhet pingar ut mot internet. (Detta styr INTE om man '
+                                    'kan pinga brandväggen själv — bocka i rutan för det.)',
+                            style: const TextStyle(color: Colors.white70, fontSize: 11),
                           ),
                         ),
                       ],
@@ -1187,24 +1198,23 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   }
 
   Future<List<String>?> _showAddressPicker(BuildContext context, ConfigModel? cfg, List<String> current) async {
-    final List<String> available = [
-      'ANY',
-      'Any-External (WAN)',
-      'Any-Trusted (LAN)',
-      'SERVERS',
-      'IOT',
-      'GUEST',
-      'VPN',
-    ];
-
+    // De tre snabbvalen (ANY + de syntetiska WAN/LAN-valen) hålls kvar
+    // överst eftersom de är de vanligaste valen. Resten — zoner och objekt —
+    // sorteras i bokstavsordning (skiftlägesokänsligt) så listan blir
+    // lätt att skanna, i stället för den tidigare oordnade blandningen.
+    final pinned = ['ANY', 'Any-External (WAN)', 'Any-Trusted (LAN)'];
+    final rest = <String>{'SERVERS', 'IOT', 'GUEST', 'VPN'};
     if (cfg != null) {
       for (final z in cfg.zones) {
-        if (!available.contains(z.name)) available.add(z.name);
+        rest.add(z.name);
       }
       for (final o in cfg.objects) {
-        if (!available.contains(o.name)) available.add(o.name);
+        rest.add(o.name);
       }
     }
+    rest.removeAll(pinned);
+    final sortedRest = rest.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final List<String> available = [...pinned, ...sortedRest];
 
     final selected = List<String>.from(current);
     final customCtrl = TextEditingController();
