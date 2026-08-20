@@ -968,9 +968,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                                 title: const Text('Flera objekt valda', style: TextStyle(color: Colors.white, fontSize: 14)),
                                 content: Text(
                                   'Du har valt $side objekt: $names.\n\n'
-                                  'En regel kan bara referera ETT objekt direkt (den här begränsningen '
-                                  'fanns redan, men sparades tidigare tyst fel - det extra objektet '
-                                  'försvann nästa gång regeln öppnades).\n\n'
+                                  'En regel kan bara referera ETT objekt direkt.\n\n'
                                   'Skapa istället en Grupp under Objekt-vyn som innehåller $names, '
                                   'och välj den gruppen här - brandväggen matchar mot alla objekt i '
                                   'gruppen samtidigt.',
