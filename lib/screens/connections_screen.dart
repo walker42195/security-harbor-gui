@@ -577,8 +577,12 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   // slipper vi det problemet helt eftersom cellerna är rena Text-widgetar
   // igen, och man kan dessutom markera text över FLERA celler i ett drag.
   Widget _buildTable(List<_TrafficRow> rows, List<ObjectModel> objects, Map<String, String> deviceZone) {
-    return SelectionArea(
-      child: Container(
+    // OBS: ingen SelectionArea här. Den gav en trasig, ljusgrå ruta i
+    // stället för tabellen på webb-bygget (CanvasKit) — hela trafiken blev
+    // osynlig. Enskilda celler kan göras markerbara med SelectableText om
+    // det behövs, men SelectionArea runt hela den anpassade tabellen
+    // fungerar inte tillförlitligt på web.
+    return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
@@ -623,7 +627,6 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             ),
           );
         },
-      ),
       ),
     );
   }

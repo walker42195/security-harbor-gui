@@ -85,6 +85,9 @@ class _DhcpScreenState extends State<DhcpScreen> {
           c = a.zone.toLowerCase().compareTo(b.zone.toLowerCase());
           break;
         case 5:
+          c = a.startTs.compareTo(b.startTs);
+          break;
+        case 6:
           c = a.expireTs.compareTo(b.expireTs);
           break;
         default:
@@ -120,6 +123,13 @@ class _DhcpScreenState extends State<DhcpScreen> {
   }
 
   String _pad2(int n) => n.toString().padLeft(2, '0');
+
+  // Absolut tidpunkt utan relativt tillägg — används för "Fick lease".
+  String _fmtTime(int ts) {
+    if (ts <= 0) return '—';
+    final dt = DateTime.fromMillisecondsSinceEpoch(ts * 1000).toLocal();
+    return '${dt.year}-${_pad2(dt.month)}-${_pad2(dt.day)} ${_pad2(dt.hour)}:${_pad2(dt.minute)}';
+  }
 
   void _onSort(int col) => setState(() {
         if (_sortCol == col) {
@@ -239,41 +249,59 @@ class _DhcpScreenState extends State<DhcpScreen> {
                   border: Border.all(color: const Color(0xFF334155)),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: _leases.isEmpty
-                    ? const Center(child: Text('Inga aktiva DHCP-utlåningar.', style: TextStyle(color: Colors.white38, fontSize: 12)))
-                    : visible.isEmpty
-                        ? const Center(child: Text('Inga klienter matchar filtret.', style: TextStyle(color: Colors.white38, fontSize: 12)))
-                        : SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: SingleChildScrollView(
-                              child: DataTable(
-                                sortColumnIndex: _sortCol,
-                                sortAscending: _sortAsc,
-                                headingRowHeight: 36,
-                                dataRowMinHeight: 32,
-                                dataRowMaxHeight: 32,
-                                columns: [
-                                  DataColumn(label: const Text('Namn', style: _hStyle), onSort: (i, _) => _onSort(0)),
-                                  DataColumn(label: const Text('IP-adress', style: _hStyle), onSort: (i, _) => _onSort(1)),
-                                  DataColumn(label: const Text('MAC-adress', style: _hStyle), onSort: (i, _) => _onSort(2)),
-                                  DataColumn(label: const Text('Gränssnitt', style: _hStyle), onSort: (i, _) => _onSort(3)),
-                                  DataColumn(label: const Text('Zon', style: _hStyle), onSort: (i, _) => _onSort(4)),
-                                  DataColumn(label: const Text('Utgår', style: _hStyle), onSort: (i, _) => _onSort(5)),
-                                ],
-                                rows: visible
-                                    .map((l) => DataRow(cells: [
-                                          DataCell(Text(l.hostname.isEmpty ? '(okänt)' : l.hostname,
-                                              style: TextStyle(color: l.hostname.isEmpty ? Colors.white38 : Colors.white, fontSize: 11))),
-                                          DataCell(SelectableText(l.ip, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11))),
-                                          DataCell(SelectableText(l.mac, style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                          DataCell(Text(l.interfaceDevice, style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                          DataCell(Text(l.zone, style: const TextStyle(color: Colors.amberAccent, fontSize: 11))),
-                                          DataCell(Text(_expiry(l.expireTs), style: const TextStyle(color: Colors.white54, fontSize: 11))),
-                                        ]))
-                                    .toList(),
-                              ),
-                            ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Tabellhuvudet visas ALLTID (även utan klienter), så
+                    // kolumnerna syns direkt — bara rad-innehållet är tomt.
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            sortColumnIndex: _sortCol,
+                            sortAscending: _sortAsc,
+                            headingRowHeight: 36,
+                            dataRowMinHeight: 32,
+                            dataRowMaxHeight: 32,
+                            columns: [
+                              DataColumn(label: const Text('Namn', style: _hStyle), onSort: (i, _) => _onSort(0)),
+                              DataColumn(label: const Text('IP-adress', style: _hStyle), onSort: (i, _) => _onSort(1)),
+                              DataColumn(label: const Text('MAC-adress', style: _hStyle), onSort: (i, _) => _onSort(2)),
+                              DataColumn(label: const Text('Gränssnitt', style: _hStyle), onSort: (i, _) => _onSort(3)),
+                              DataColumn(label: const Text('Zon', style: _hStyle), onSort: (i, _) => _onSort(4)),
+                              DataColumn(label: const Text('Fick lease', style: _hStyle), onSort: (i, _) => _onSort(5)),
+                              DataColumn(label: const Text('Utgår', style: _hStyle), onSort: (i, _) => _onSort(6)),
+                            ],
+                            rows: visible
+                                .map((l) => DataRow(cells: [
+                                      DataCell(Text(l.hostname.isEmpty ? '(okänt)' : l.hostname,
+                                          style: TextStyle(color: l.hostname.isEmpty ? Colors.white38 : Colors.white, fontSize: 11))),
+                                      DataCell(SelectableText(l.ip, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11))),
+                                      DataCell(SelectableText(l.mac, style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                                      DataCell(Text(l.interfaceDevice, style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                                      DataCell(Text(l.zone, style: const TextStyle(color: Colors.amberAccent, fontSize: 11))),
+                                      DataCell(Text(_fmtTime(l.startTs), style: const TextStyle(color: Colors.white54, fontSize: 11))),
+                                      DataCell(Text(_expiry(l.expireTs), style: const TextStyle(color: Colors.white54, fontSize: 11))),
+                                    ]))
+                                .toList(),
                           ),
+                        ),
+                      ),
+                    ),
+                    if (_leases.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text('Inga aktiva DHCP-utlåningar. Enheter dyker upp här när de fått en adress av DHCP-servern.',
+                            style: TextStyle(color: Colors.white38, fontSize: 12)),
+                      )
+                    else if (visible.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text('Inga klienter matchar filtret.', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                      ),
+                  ],
+                ),
               ),
             ),
           ],
