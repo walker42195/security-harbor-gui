@@ -411,6 +411,7 @@ class WireGuardPeerModel {
 
 class InterfaceModel {
   final String id;
+  final String name;
   final String device;
   final String parent;
   final int vlanId;
@@ -425,6 +426,7 @@ class InterfaceModel {
 
   InterfaceModel({
     required this.id,
+    this.name = '',
     required this.device,
     this.parent = '',
     this.vlanId = 0,
@@ -441,6 +443,7 @@ class InterfaceModel {
   factory InterfaceModel.fromJson(Map<String, dynamic> json) {
     return InterfaceModel(
       id: json['id'] ?? '',
+      name: json['name'] ?? '',
       device: json['device'] ?? '',
       parent: json['parent'] ?? '',
       vlanId: json['vlan_id'] ?? 0,
@@ -457,6 +460,7 @@ class InterfaceModel {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'name': name,
         'device': device,
         'parent': parent,
         'vlan_id': vlanId,
@@ -469,6 +473,22 @@ class InterfaceModel {
         'mtu': mtu,
         if (dhcp != null) 'dhcp': dhcp!.toJson(),
       };
+
+  InterfaceModel copyWith({String? name, String? zone}) => InterfaceModel(
+        id: id,
+        name: name ?? this.name,
+        device: device,
+        parent: parent,
+        vlanId: vlanId,
+        zone: zone ?? this.zone,
+        enabled: enabled,
+        addressType: addressType,
+        ipv4: ipv4,
+        gateway: gateway,
+        dnsServers: dnsServers,
+        mtu: mtu,
+        dhcp: dhcp,
+      );
 }
 
 class DHCPConfigModel {
@@ -735,6 +755,25 @@ class PolicyModel {
         'critical': critical,
         if (schedule != null) 'schedule': schedule!.toJson(),
       };
+
+  PolicyModel copyWith({String? sourceZone, String? destZone}) => PolicyModel(
+        id: id,
+        name: name,
+        enabled: enabled,
+        priority: priority,
+        sourceZone: sourceZone ?? this.sourceZone,
+        destZone: destZone ?? this.destZone,
+        sourceObj: sourceObj,
+        destObj: destObj,
+        service: service,
+        action: action,
+        nat: nat,
+        logging: logging,
+        description: description,
+        local: local,
+        critical: critical,
+        schedule: schedule,
+      );
 }
 
 /// Begränsar när en Policy är aktiv (Fas 7 — Schema/tidsbaserade regler).

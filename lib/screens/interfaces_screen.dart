@@ -76,15 +76,31 @@ class InterfacesScreen extends StatelessWidget {
                   'Nätverksgränssnitt & VLAN',
                   style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                 ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.alt_route, size: 14),
-                  label: const Text('+ Skapa VLAN', style: TextStyle(fontSize: 11)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.cyanAccent,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  onPressed: () => _showAddVLANDialog(context, provider),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.category_outlined, size: 14),
+                      label: const Text('Hantera zoner', style: TextStyle(fontSize: 11)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.cyanAccent,
+                        side: const BorderSide(color: Colors.cyanAccent),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      onPressed: cfg == null ? null : () => _showManageZonesDialog(context, provider, cfg),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.alt_route, size: 14),
+                      label: const Text('+ Skapa VLAN', style: TextStyle(fontSize: 11)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.cyanAccent,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      onPressed: () => _showAddVLANDialog(context, provider),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -120,11 +136,11 @@ class InterfacesScreen extends StatelessWidget {
                         color: isWAN ? Colors.redAccent : Colors.tealAccent,
                       ),
                       title: Text(
-                        '${iface.id} (${iface.device})${isVLAN ? " [VLAN ${iface.vlanId}]" : ""}',
+                        '${iface.name.isNotEmpty ? iface.name : iface.device}${isVLAN ? " [VLAN ${iface.vlanId}]" : ""}',
                         style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(
-                        'Zon: ${iface.zone}  |  Typ: ${isStatic ? "Statisk IP (${iface.ipv4})" : "DHCP-Klient${iface.ipv4.isNotEmpty ? " (${iface.ipv4})" : ""}"}',
+                        'Kort: ${iface.device}  |  Zon: ${iface.zone}  |  Typ: ${isStatic ? "Statisk IP (${iface.ipv4})" : "DHCP-Klient${iface.ipv4.isNotEmpty ? " (${iface.ipv4})" : ""}"}',
                         style: const TextStyle(fontSize: 11),
                       ),
                       trailing: Row(
@@ -338,7 +354,20 @@ class InterfacesScreen extends StatelessWidget {
 
   void _showEditInterfaceDialog(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx) {
     final iface = cfg.interfaces[idx];
+    final isVLAN = iface.vlanId > 0;
     String selectedType = iface.addressType;
+    String selectedParent = iface.parent;
+    // Fysiska kort (icke-VLAN) som en VLAN kan höra till.
+    final physicalDevices = cfg.interfaces
+        .where((i) => i.vlanId == 0 && i.device.isNotEmpty)
+        .map((i) => i.device)
+        .toSet()
+        .toList()
+      ..sort();
+    if (selectedParent.isNotEmpty && !physicalDevices.contains(selectedParent)) {
+      physicalDevices.add(selectedParent);
+    }
+    final nameCtrl = TextEditingController(text: iface.name);
     final ipCtrl = TextEditingController(text: iface.ipv4);
     final gwCtrl = TextEditingController(text: iface.gateway);
     final dnsCtrl = TextEditingController(text: iface.dnsServers.join(', '));
@@ -360,8 +389,37 @@ class InterfacesScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  dialogTitleRow(context, 'Redigera ${iface.id} (${iface.device})', () => Navigator.pop(ctx)),
+                  dialogTitleRow(context, 'Redigera ${iface.name.isNotEmpty ? iface.name : iface.device}', () => Navigator.pop(ctx)),
                   const SizedBox(height: 12),
+
+                  dialogSection(title: 'VISNINGSNAMN', children: [
+                    dialogField(nameCtrl, 'Namn (valfritt)', hint: 't.ex. LAN Kontor, Servernät — kort: ${iface.device}'),
+                  ]),
+                  const SizedBox(height: 12),
+
+                  if (isVLAN) ...[
+                    dialogSection(title: 'FYSISKT KORT (VLAN ${iface.vlanId})', children: [
+                      DropdownButtonFormField<String>(
+                        initialValue: physicalDevices.contains(selectedParent) ? selectedParent : (physicalDevices.isNotEmpty ? physicalDevices.first : null),
+                        dropdownColor: const Color(0xFF1E293B),
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        decoration: const InputDecoration(
+                          labelText: 'Föräldrakort',
+                          isDense: true,
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                        ),
+                        items: physicalDevices.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => selectedParent = val);
+                        },
+                      ),
+                      const SizedBox(height: 6),
+                      Text('Byter du kort flyttas VLAN ${iface.vlanId} till "$selectedParent.${iface.vlanId}" vid Applicera. Det gamla subinterfacet tas bort automatiskt.',
+                          style: const TextStyle(color: Colors.amber, fontSize: 10)),
+                    ]),
+                    const SizedBox(height: 12),
+                  ],
 
                   dialogSection(title: 'ADRESSERINGSTYP', children: [
                     SegmentedButton<String>(
@@ -436,10 +494,15 @@ class InterfacesScreen extends StatelessWidget {
                 }
 
                 final updated = List<InterfaceModel>.from(cfg.interfaces);
+                // För en VLAN härleds device ur föräldrakort + VLAN-ID, så
+                // att ett byte av föräldrakort verkligen slår igenom (t.ex.
+                // ens19.9 → ens20.9). Fysiska kort behåller sitt device.
+                final newDevice = isVLAN ? '$selectedParent.${iface.vlanId}' : iface.device;
                 updated[idx] = InterfaceModel(
                   id: iface.id,
-                  device: iface.device,
-                  parent: iface.parent,
+                  name: nameCtrl.text.trim(),
+                  device: newDevice,
+                  parent: isVLAN ? selectedParent : iface.parent,
                   vlanId: iface.vlanId,
                   zone: finalZone,
                   enabled: iface.enabled,
@@ -473,6 +536,7 @@ class InterfacesScreen extends StatelessWidget {
     final cur = updatedIfaces[idx];
     updatedIfaces[idx] = InterfaceModel(
       id: cur.id,
+      name: cur.name,
       device: cur.device,
       parent: cur.parent,
       vlanId: cur.vlanId,
@@ -688,6 +752,7 @@ class InterfacesScreen extends StatelessWidget {
               final updated = List<InterfaceModel>.from(cfg.interfaces);
               updated[idx] = InterfaceModel(
                 id: iface.id,
+                name: iface.name,
                 device: iface.device,
                 parent: iface.parent,
                 vlanId: iface.vlanId,
@@ -713,6 +778,215 @@ class InterfacesScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // ---- Zon-hantering (döp om / ta bort) ----
+
+  /// Alla zonnamn (versaler), unionen av cfg.zones och de zoner som
+  /// gränssnitten faktiskt använder — sorterade.
+  List<String> _allZoneNames(ConfigModel cfg) {
+    final set = <String>{};
+    for (final z in cfg.zones) {
+      if (z.name.trim().isNotEmpty) set.add(z.name.trim().toUpperCase());
+    }
+    for (final i in cfg.interfaces) {
+      if (i.zone.trim().isNotEmpty) set.add(i.zone.trim().toUpperCase());
+    }
+    final list = set.toList()..sort();
+    return list;
+  }
+
+  int _zoneUsageCount(ConfigModel cfg, String zone) =>
+      cfg.interfaces.where((i) => i.zone.toUpperCase() == zone.toUpperCase()).length;
+
+  void _showManageZonesDialog(BuildContext context, ConfigProvider provider, ConfigModel cfg) {
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          final current = provider.candidateConfig ?? provider.runningConfig ?? cfg;
+          final zones = _allZoneNames(current);
+          return Dialog(
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+            child: Container(
+              width: 480,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  dialogTitleRow(context, 'Hantera zoner', () => Navigator.pop(ctx)),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'WAN kan inte döpas om eller tas bort — brandväggen använder namnet "WAN" internt för utsida, NAT och drop-regler.',
+                    style: TextStyle(color: Colors.amber, fontSize: 10),
+                  ),
+                  const SizedBox(height: 12),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 360),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: zones.map((zone) {
+                          final usage = _zoneUsageCount(current, zone);
+                          final isWAN = zone == 'WAN';
+                          return Card(
+                            color: const Color(0xFF0F172A),
+                            margin: const EdgeInsets.only(bottom: 6),
+                            child: ListTile(
+                              dense: true,
+                              title: Text(zone, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                              subtitle: Text('$usage gränssnitt använder zonen', style: const TextStyle(fontSize: 10)),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.edit, size: 16, color: isWAN ? Colors.grey : Colors.cyanAccent),
+                                    tooltip: isWAN ? 'WAN kan inte döpas om' : 'Döp om zon',
+                                    onPressed: isWAN ? null : () => _promptRenameZone(context, provider, zone, () => setState(() {})),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete, size: 16, color: (isWAN || usage > 0) ? Colors.grey : Colors.redAccent),
+                                    tooltip: isWAN
+                                        ? 'WAN kan inte tas bort'
+                                        : (usage > 0 ? 'Zonen används av $usage gränssnitt — flytta dem först' : 'Ta bort zon'),
+                                    onPressed: (isWAN || usage > 0) ? null : () => _deleteZone(context, provider, zone, () => setState(() {})),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _promptRenameZone(BuildContext context, ConfigProvider provider, String oldZone, VoidCallback onDone) {
+    final ctrl = TextEditingController(text: oldZone);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Text('Döp om zon "$oldZone"', style: const TextStyle(color: Colors.white, fontSize: 14)),
+        content: dialogField(ctrl, 'Nytt zonnamn', hint: 't.ex. DMZ, KAMEROR'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          ElevatedButton(
+            child: const Text('Spara', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            onPressed: () {
+              final newZone = ctrl.text.trim().toUpperCase();
+              Navigator.pop(ctx);
+              if (newZone.isEmpty || newZone == oldZone) return;
+              if (newZone == 'WAN') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Namnet WAN är reserverat.')),
+                );
+                return;
+              }
+              _renameZone(provider, oldZone, newZone);
+              onDone();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _renameZone(ConfigProvider provider, String oldZone, String newZone) {
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    if (cfg == null) return;
+    final oldU = oldZone.toUpperCase();
+
+    // Zoner
+    final zones = cfg.zones.map((z) => z.name.toUpperCase() == oldU ? ZoneModel(name: newZone, description: z.description) : z).toList();
+    // Se till att den nya zonen finns i listan (om gamla bara var en implicit interface-zon).
+    if (!zones.any((z) => z.name.toUpperCase() == newZone)) {
+      zones.add(ZoneModel(name: newZone, description: 'Egen zon'));
+    }
+
+    // Gränssnitt
+    final ifaces = cfg.interfaces.map((i) => i.zone.toUpperCase() == oldU ? i.copyWith(zone: newZone) : i).toList();
+
+    // Policyer: byt ut den kommaseparerade delen som matchar gamla zonen.
+    final policies = cfg.policies.map((p) {
+      final sz = _replaceZonePart(p.sourceZone, oldU, newZone);
+      final dz = _replaceZonePart(p.destZone, oldU, newZone);
+      if (sz == p.sourceZone && dz == p.destZone) return p;
+      return p.copyWith(sourceZone: sz, destZone: dz);
+    }).toList();
+
+    provider.updateCandidate(cfg.copyWith(zones: zones, interfaces: ifaces, policies: policies));
+  }
+
+  /// Byter ut en enskild kommaseparerad zon-del (skiftlägesokänsligt) mot
+  /// newZone, behåller övriga delar. Tomt/ANY lämnas orört.
+  String _replaceZonePart(String spec, String oldU, String newZone) {
+    if (spec.trim().isEmpty) return spec;
+    final parts = spec.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    var changed = false;
+    final out = parts.map((part) {
+      if (part.toUpperCase() == oldU) {
+        changed = true;
+        return newZone;
+      }
+      return part;
+    }).toList();
+    return changed ? out.join(', ') : spec;
+  }
+
+  void _deleteZone(BuildContext context, ConfigProvider provider, String zone, VoidCallback onDone) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Text('Ta bort zon "$zone"?', style: const TextStyle(color: Colors.white, fontSize: 14)),
+        content: const Text(
+          'Zonen tas bort ur listan och plockas ut ur alla regler som refererar den. Regler som då saknar käll-/målzon återgår till ANY.',
+          style: TextStyle(color: Colors.white70, fontSize: 12),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Ta bort', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            onPressed: () {
+              Navigator.pop(ctx);
+              final cfg = provider.candidateConfig ?? provider.runningConfig;
+              if (cfg == null) return;
+              final zU = zone.toUpperCase();
+              final zones = cfg.zones.where((z) => z.name.toUpperCase() != zU).toList();
+              final policies = cfg.policies.map((p) {
+                final sz = _removeZonePart(p.sourceZone, zU);
+                final dz = _removeZonePart(p.destZone, zU);
+                if (sz == p.sourceZone && dz == p.destZone) return p;
+                return p.copyWith(sourceZone: sz, destZone: dz);
+              }).toList();
+              provider.updateCandidate(cfg.copyWith(zones: zones, policies: policies));
+              onDone();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Tar bort en kommaseparerad zon-del; blir resultatet tomt återgår det
+  /// till "ANY" (annars skulle en tom zonsträng tolkas som "matcha inget"
+  /// och regeln tyst hoppas över i backend).
+  String _removeZonePart(String spec, String zU) {
+    if (spec.trim().isEmpty) return spec;
+    final parts = spec.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    final kept = parts.where((p) => p.toUpperCase() != zU).toList();
+    if (kept.length == parts.length) return spec; // ingen ändring
+    return kept.isEmpty ? 'ANY' : kept.join(', ');
   }
 
   /// Adressen ur ett "x.x.x.x/yy"-CIDR-uttryck, utan prefixlängden.
