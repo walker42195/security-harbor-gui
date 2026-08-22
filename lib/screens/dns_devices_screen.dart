@@ -88,8 +88,6 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
               ],
             ),
             const SizedBox(height: 14),
-            _buildLocalZoneCard(provider, dns),
-            const SizedBox(height: 14),
             _buildStaticRecordsCard(provider, dns),
             const SizedBox(height: 14),
             _buildAutoRegisteredCard(dns),
@@ -108,41 +106,6 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
         ),
         child: child,
       );
-
-  Widget _buildLocalZoneCard(ConfigProvider provider, DNSConfigModel dns) {
-    final localDomainCtrl = TextEditingController(text: dns.localDomain);
-    return _cardShell(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Lokal DNS-zon', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Switch(
-                value: dns.dhcpHostnameRegistration,
-                activeThumbColor: Colors.tealAccent,
-                onChanged: (v) => _save(provider, dns.copyWith(dhcpHostnameRegistration: v)),
-              ),
-              const SizedBox(width: 6),
-              const Expanded(
-                child: Text('Registrera DHCP-tilldelade enheters värdnamn automatiskt i DNS', style: TextStyle(color: Colors.white, fontSize: 12)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _labeledField('Lokal domän (suffix, t.ex. "lan")', localDomainCtrl, hint: 'lan'),
-          const SizedBox(height: 8),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.save, size: 14),
-            label: const Text('Spara', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
-            onPressed: () => _save(provider, dns.copyWith(localDomain: localDomainCtrl.text.trim())),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildStaticRecordsCard(ConfigProvider provider, DNSConfigModel dns) {
     return _cardShell(

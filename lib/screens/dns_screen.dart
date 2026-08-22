@@ -108,7 +108,7 @@ class _DnsScreenState extends State<DnsScreen> {
             const SizedBox(height: 14),
             _buildResolverCard(provider, dns),
             const SizedBox(height: 14),
-            _buildDevicesHint(),
+            _buildLocalZoneCard(provider, dns),
             const SizedBox(height: 14),
             _buildBlocklistsCard(provider, dns),
           ],
@@ -222,7 +222,8 @@ class _DnsScreenState extends State<DnsScreen> {
     );
   }
 
-  Widget _buildDevicesHint() {
+  Widget _buildLocalZoneCard(ConfigProvider provider, DNSConfigModel dns) {
+    final localDomainCtrl = TextEditingController(text: dns.localDomain);
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -230,15 +231,45 @@ class _DnsScreenState extends State<DnsScreen> {
         border: Border.all(color: const Color(0xFF334155)),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Row(
-        children: const [
-          Icon(Icons.devices, color: Colors.cyanAccent, size: 18),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Manuella DNS-poster och automatiskt registrerade DHCP-enheter finns nu på den egna sidan "DNS-enheter" i vänstermenyn.',
-              style: TextStyle(color: Colors.white70, fontSize: 11),
-            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Lokal DNS-zon', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Switch(
+                value: dns.dhcpHostnameRegistration,
+                activeThumbColor: Colors.tealAccent,
+                onChanged: (v) => _save(provider, dns.copyWith(dhcpHostnameRegistration: v)),
+              ),
+              const SizedBox(width: 6),
+              const Expanded(
+                child: Text('Registrera DHCP-tilldelade enheters värdnamn automatiskt i DNS', style: TextStyle(color: Colors.white, fontSize: 12)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _labeledField('Lokal domän (suffix, t.ex. "lan")', localDomainCtrl, hint: 'lan'),
+          const SizedBox(height: 8),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.save, size: 14),
+            label: const Text('Spara', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+            onPressed: () => _save(provider, dns.copyWith(localDomain: localDomainCtrl.text.trim())),
+          ),
+          const SizedBox(height: 8),
+          const Row(
+            children: [
+              Icon(Icons.devices, color: Colors.cyanAccent, size: 16),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Manuella DNS-poster och de registrerade enheterna listas på sidan "DNS-enheter" i vänstermenyn.',
+                  style: TextStyle(color: Colors.white70, fontSize: 10),
+                ),
+              ),
+            ],
           ),
         ],
       ),
