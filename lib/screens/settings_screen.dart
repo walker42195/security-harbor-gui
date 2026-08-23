@@ -148,7 +148,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: const TextStyle(color: Colors.white, fontSize: 12),
                     decoration: const InputDecoration(
                       labelText: 'Brandväggens Agent URL (IP och Port)',
-                      hintText: 'https://10.0.0.163:8443',
+                      hintText: 'https://192.168.1.1:8443',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.link, color: Colors.cyanAccent, size: 18),
                       isDense: true,

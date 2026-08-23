@@ -484,7 +484,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   }
 
   // Bygger den text som visas i From/To-kolumnen. En policy anger sin källa/
-  // mål som EN zon (t.ex. "LAN"), ETT objekt (t.ex. en host "10.0.0.139" eller
+  // mål som EN zon (t.ex. "LAN"), ETT objekt (t.ex. en host "192.0.2.10" eller
   // en hot-lista), eller båda — översikten visade tidigare bara zonen, så en
   // rent objektbaserad regel (sourceZone tom) fick en TOM cell fast regeln har
   // en källa. Kombinerar därför zon(er) och objektnamn, med "ANY" som fallback.

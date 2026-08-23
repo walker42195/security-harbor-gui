@@ -440,7 +440,7 @@ class InterfacesScreen extends StatelessWidget {
 
                   dialogSection(title: 'NÄTVERK', children: [
                     if (selectedType == 'static') ...[
-                      dialogField(ipCtrl, 'IPv4 / CIDR', hint: 't.ex. 10.0.0.163/24'),
+                      dialogField(ipCtrl, 'IPv4 / CIDR', hint: 't.ex. 192.168.1.1/24'),
                       const SizedBox(height: 12),
                     ],
                     dialogField(gwCtrl, 'Default Gateway IP (Valfri)'),

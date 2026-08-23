@@ -173,7 +173,7 @@ class SniRoutesScreen extends StatelessWidget {
                   dialogTitleRow(context, existing == null ? 'Ny SNI-regel' : 'Redigera SNI-regel', () => Navigator.pop(ctx)),
                   const SizedBox(height: 12),
                   dialogSection(title: 'REGEL', children: [
-                    dialogField(nameCtrl, 'Namn', hint: 't.ex. Proxmox-noder'),
+                    dialogField(nameCtrl, 'Namn', hint: 't.ex. Interna webbservrar'),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -299,7 +299,7 @@ class SniRoutesScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(flex: 3, child: dialogField(b.ip, 'Intern IP', hint: '10.0.0.24')),
+                Expanded(flex: 3, child: dialogField(b.ip, 'Intern IP', hint: '192.168.1.10')),
                 const SizedBox(width: 8),
                 Expanded(flex: 2, child: dialogField(b.port, 'Port', hint: '8006')),
               ],

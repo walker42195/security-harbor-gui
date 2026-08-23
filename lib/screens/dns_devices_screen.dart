@@ -263,9 +263,9 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
             children: [
               const Text('Lägg till DNS-post', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
-              _labeledField('Namn (exakt, valfri domän)', hostnameCtrl, hint: 't.ex. nx4.novabase.se eller server1'),
+              _labeledField('Namn (exakt, valfri domän)', hostnameCtrl, hint: 't.ex. server1.example.com eller server1'),
               const SizedBox(height: 12),
-              _labeledField('IP-adress', ipCtrl, hint: '10.0.0.50'),
+              _labeledField('IP-adress', ipCtrl, hint: '192.168.1.50'),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
