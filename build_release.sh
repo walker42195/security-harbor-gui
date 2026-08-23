@@ -17,7 +17,7 @@ VERSION="$(grep -E '^version:' pubspec.yaml | head -1 | sed -E 's/version:[[:spa
 SIGN_KEY="${SIGN_KEY:-$HOME/.config/security-harbor/release-signing.key}"
 # Signeringsverktyget (Go) bor i agent-repot.
 AGENT_DIR="${AGENT_DIR:-../security-harbor-agent}"
-RELEASE_BASE="${RELEASE_BASE:-https://github.com/walker42195/security-harbor-gui/releases/latest/download}"
+RELEASE_BASE="${RELEASE_BASE:-https://github.com/walker42195/security-harbor-gui/releases/download/v$VERSION}"
 
 echo "=== 1. Bygger desktop-appen (flutter build linux --release), v$VERSION ==="
 flutter build linux --release
