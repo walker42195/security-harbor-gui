@@ -577,7 +577,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
               const SizedBox(width: 6),
               const Expanded(
                 child: Text(
-                  'Auto-block: lägg käll-IP från larm till ett objekt (kräver en egen Deny-policy som refererar objektet för att faktiskt blockera)',
+                  'Auto-block: käll-IP:n från larm (upp till vald allvarlighetsgrad) läggs automatiskt till i objektet nedan. Objektet blockerar inget i sig — du måste skapa en Deny-policy som refererar det för att trafiken faktiskt ska stoppas.',
                   style: TextStyle(color: Colors.white, fontSize: 11),
                 ),
               ),
