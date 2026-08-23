@@ -177,6 +177,20 @@ class ConfigProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Uppdaterar ALLT i GUI:t (systemstatus + running/candidate-config) på
+  /// begäran — anropas av refresh-knappen i topbaren. Visar en kort
+  /// laddningsbanner medan det pågår.
+  Future<void> refreshAll() async {
+    if (!isAuthenticated || isLoading) return;
+    isLoading = true;
+    statusMessage = 'Uppdaterar…';
+    notifyListeners();
+    await fetchAll();
+    isLoading = false;
+    statusMessage = null;
+    notifyListeners();
+  }
+
   Future<void> updateCandidate(ConfigModel newConfig) async {
     isLoading = true;
     statusMessage = 'Sparar ändringar i kandidatkonfiguration...';

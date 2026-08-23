@@ -546,13 +546,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
           'konfiguration bevaras.',
     );
     if (!ok) return;
-    setState(() { _fwApplying = true; _updateMessage = 'Installerar… agenten startar om strax.'; });
+    final target = (_fwUpdate?['agent'] as Map?)?['available']?.toString();
+    setState(() {
+      _fwApplying = true;
+      _updateMessage = 'Startar installationen…';
+    });
     await provider.api.updateApply();
+    if (!mounted) return;
+    // Följ uppgraderingen: agenten installerar och startar om (API:t är nere en
+    // stund). Polla tills den svarar igen på den nya versionen, med en tydlig
+    // "Uppgraderar…"-indikator hela tiden. Token/sessionen överlever omstarten,
+    // så användaren behöver inte logga in igen.
+    await _pollForUpgrade(provider, target);
+  }
+
+  Future<void> _pollForUpgrade(ConfigProvider provider, String? target) async {
+    const stepSeconds = 3;
+    const maxSeconds = 240; // ~4 min tak (install.sh kör bl.a. suricata-update)
+    for (var elapsed = stepSeconds; elapsed <= maxSeconds; elapsed += stepSeconds) {
+      await Future.delayed(const Duration(seconds: stepSeconds));
+      if (!mounted) return;
+      // getSystemStatus returnerar null medan agenten är nere (omstart) — kort
+      // timeout så vi inte hänger på en TCP-anslutning som ändå kommer att dö.
+      final status = await provider.api
+          .getSystemStatus()
+          .timeout(const Duration(seconds: 4), onTimeout: () => null);
+      if (!mounted) return;
+      if (status != null) {
+        final v = status['version']?.toString();
+        // Klar när agenten svarar igen OCH (om vi vet målversionen) kör den.
+        if (target == null || v == target) {
+          provider.systemStatus = status;
+          setState(() {
+            _fwApplying = false;
+            _fwVerified = false;
+            _fwUpdate = null; // tvinga en ny "Kontrollera" för uppdaterad status
+            _updateMessage = '✅ Uppgraderingen klar — agenten kör nu ${v ?? 'den nya versionen'}.';
+          });
+          return;
+        }
+        // Svarar men fortfarande gamla versionen (hann inte starta om än) —
+        // fortsätt polla.
+      }
+      setState(() {
+        _updateMessage = status == null
+            ? 'Uppgraderar… agenten installerar och startar om (${elapsed}s)'
+            : 'Uppgraderar… väntar på att den nya versionen startar (${elapsed}s)';
+      });
+    }
     if (!mounted) return;
     setState(() {
       _fwApplying = false;
-      _fwVerified = false;
-      _updateMessage = 'Installationen startad. Agenten startar om — logga in igen om en stund och kontrollera versionen.';
+      _updateMessage = 'Uppgraderingen tar längre tid än väntat. Tryck Kontrollera '
+          'om en stund för att se om den nya versionen är igång.';
     });
   }
 

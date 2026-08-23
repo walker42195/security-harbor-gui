@@ -153,6 +153,12 @@ class _MainScreenState extends State<MainScreen> {
                 const SizedBox(width: 8),
                 if (provider.isAuthenticated)
                   IconButton(
+                    icon: const Icon(Icons.refresh, size: 16, color: Colors.white54),
+                    tooltip: 'Uppdatera allt (hämta om status och konfiguration)',
+                    onPressed: provider.isLoading ? null : () => provider.refreshAll(),
+                  ),
+                if (provider.isAuthenticated)
+                  IconButton(
                     icon: const Icon(Icons.logout, size: 16, color: Colors.white54),
                     tooltip: 'Logga ut',
                     onPressed: () => provider.logout(),
