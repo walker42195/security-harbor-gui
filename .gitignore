@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+security-harbor-gui-linux.tar.gz
+security-harbor-gui-linux.tar.gz.sig
+manifest.json

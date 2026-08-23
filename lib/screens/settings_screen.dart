@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
 import '../models/config_model.dart';
 import '../widgets/tls_trust_dialogs.dart';
+import '../app_version.dart';
+import '../services/update_service.dart';
+import '../services/update_types.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -47,6 +50,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _factoryResetPasswordController = TextEditingController();
   bool _factoryResetConfirmed = false;
   bool _isFactoryResetting = false;
+
+  // --- Uppdateringar ---
+  bool _checkingUpdate = false;
+  bool _updateChecked = false;
+  Map<String, dynamic>? _fwUpdate; // agent + webui från agentens update/check
+  bool _fwDownloading = false;
+  bool _fwVerified = false; // låser upp Uppgradera för firewall-bunten
+  bool _fwApplying = false;
+  DesktopUpdate? _desktopUpdate;
+  bool _desktopDownloading = false;
+  bool _desktopVerified = false;
+  String? _updateMessage;
 
   @override
   void initState() {
@@ -274,6 +289,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           if (provider.isAuthenticated && provider.isAdmin) ...[
             const SizedBox(height: 16),
+            _buildUpdatesCard(provider),
+            const SizedBox(height: 16),
             _buildSyslogCard(provider),
             const SizedBox(height: 16),
             _buildBackupRestoreCard(provider),
@@ -478,6 +495,246 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 protocol: protocol,
               )),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---- Uppdateringar ----
+
+  Future<void> _checkForUpdates(ConfigProvider provider) async {
+    setState(() {
+      _checkingUpdate = true;
+      _updateMessage = null;
+      _fwVerified = false;
+      _desktopVerified = false;
+    });
+    final fw = await provider.api.updateCheck();
+    DesktopUpdate? desktop;
+    if (!kIsWeb && desktopUpdateSupported) {
+      desktop = await checkDesktopUpdate();
+    }
+    if (!mounted) return;
+    setState(() {
+      _fwUpdate = fw;
+      _desktopUpdate = desktop;
+      _updateChecked = true;
+      _checkingUpdate = false;
+      if (fw == null) {
+        _updateMessage = 'Kunde inte kontakta uppdateringstjänsten (kräver att brandväggen når internet).';
+      }
+    });
+  }
+
+  Future<void> _downloadFirewallUpdate(ConfigProvider provider) async {
+    setState(() { _fwDownloading = true; _updateMessage = null; });
+    final err = await provider.api.updateDownload();
+    if (!mounted) return;
+    setState(() {
+      _fwDownloading = false;
+      _fwVerified = err == null;
+      _updateMessage = err ?? 'Firewall-bunten nedladdad och verifierad (hash + signatur).';
+    });
+  }
+
+  Future<void> _applyFirewallUpdate(ConfigProvider provider) async {
+    final ok = await _confirmDialog(
+      'Uppgradera brandväggen?',
+      'Ta en Proxmox-snapshot först. Brandväggen installerar den verifierade bunten och '
+          'agenten startar om på den nya versionen. Din konfiguration bevaras.',
+    );
+    if (!ok) return;
+    setState(() { _fwApplying = true; _updateMessage = 'Installerar… agenten startar om strax.'; });
+    await provider.api.updateApply();
+    if (!mounted) return;
+    setState(() {
+      _fwApplying = false;
+      _fwVerified = false;
+      _updateMessage = 'Installationen startad. Agenten startar om — logga in igen om en stund och kontrollera versionen.';
+    });
+  }
+
+  Future<void> _downloadDesktopUpdate() async {
+    if (_desktopUpdate == null) return;
+    setState(() { _desktopDownloading = true; _updateMessage = null; });
+    final err = await downloadDesktopUpdate(_desktopUpdate!);
+    if (!mounted) return;
+    setState(() {
+      _desktopDownloading = false;
+      _desktopVerified = err == null;
+      _updateMessage = err ?? 'Desktop-bunten nedladdad och verifierad (hash + signatur).';
+    });
+  }
+
+  Future<void> _applyDesktopUpdate() async {
+    final ok = await _confirmDialog(
+      'Uppgradera desktop-appen?',
+      'Appen ersätts med den nya versionen och startar om automatiskt. Osparade ändringar i vyn går förlorade.',
+    );
+    if (!ok) return;
+    setState(() => _updateMessage = 'Uppgraderar… appen startar om.');
+    await applyDesktopUpdate(); // återvänder normalt aldrig (appen avslutas)
+  }
+
+  Future<bool> _confirmDialog(String title, String body) async {
+    final res = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+        content: Text(body, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Fortsätt', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    return res ?? false;
+  }
+
+  Widget _versionRow({
+    required String label,
+    required String current,
+    required String? available,
+    required bool updateAvailable,
+    Widget? action,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          SizedBox(width: 110, child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600))),
+          Expanded(
+            child: Text(
+              'Nu: $current${available != null ? '   •   Senaste: $available' : ''}',
+              style: TextStyle(color: updateAvailable ? Colors.orangeAccent : Colors.white70, fontSize: 12),
+            ),
+          ),
+          ?action,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpdatesCard(ConfigProvider provider) {
+    final fwAgent = (_fwUpdate?['agent'] as Map?)?.cast<String, dynamic>();
+    final fwWeb = (_fwUpdate?['webui'] as Map?)?.cast<String, dynamic>();
+    final agentNew = fwAgent != null && fwAgent['available'] != null && fwAgent['available'] != fwAgent['current'];
+    final webNew = fwWeb != null && fwWeb['available'] != null && fwWeb['available'] != fwWeb['current'];
+    final fwUpdateAvailable = _fwUpdate?['update_available'] == true || agentNew || webNew;
+
+    return Card(
+      color: const Color(0xFF1E293B),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.system_update_alt, color: Colors.cyanAccent, size: 20),
+                const SizedBox(width: 8),
+                const Text('Uppdateringar', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                const Spacer(),
+                ElevatedButton.icon(
+                  onPressed: _checkingUpdate ? null : () => _checkForUpdates(provider),
+                  icon: _checkingUpdate
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.refresh, size: 16),
+                  label: const Text('Kontrollera', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (!_updateChecked)
+              const Text('Klicka på Kontrollera för att se om agenten, webb-GUI:t och desktop-appen har nya versioner.',
+                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+            if (_updateChecked && _fwUpdate != null) ...[
+              _versionRow(
+                label: 'Agent',
+                current: fwAgent?['current']?.toString() ?? '—',
+                available: fwAgent?['available']?.toString(),
+                updateAvailable: agentNew,
+              ),
+              _versionRow(
+                label: 'Webb-GUI',
+                current: fwWeb?['current']?.toString() ?? '—',
+                available: fwWeb?['available']?.toString(),
+                updateAvailable: webNew,
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: (!fwUpdateAvailable || _fwDownloading || _fwApplying) ? null : () => _downloadFirewallUpdate(provider),
+                    icon: _fwDownloading
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.download, size: 16),
+                    label: const Text('Ladda ner', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey, foregroundColor: Colors.white),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton.icon(
+                    // Låst tills bunten laddats ner OCH verifierats (hash + signatur).
+                    onPressed: (!_fwVerified || _fwApplying) ? null : () => _applyFirewallUpdate(provider),
+                    icon: _fwApplying
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.upgrade, size: 16),
+                    label: const Text('Uppgradera', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
+                  ),
+                  if (_fwVerified) ...[
+                    const SizedBox(width: 8),
+                    const Icon(Icons.verified, color: Colors.tealAccent, size: 18),
+                  ],
+                ],
+              ),
+            ],
+            if (_updateChecked && !kIsWeb && desktopUpdateSupported) ...[
+              const Divider(color: Colors.white24, height: 24),
+              _versionRow(
+                label: 'Desktop-app',
+                current: _desktopUpdate?.current ?? kGuiVersion,
+                available: _desktopUpdate?.available,
+                updateAvailable: _desktopUpdate?.updateAvailable ?? false,
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: ((_desktopUpdate?.updateAvailable ?? false) && !_desktopDownloading)
+                        ? () => _downloadDesktopUpdate()
+                        : null,
+                    icon: _desktopDownloading
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.download, size: 16),
+                    label: const Text('Ladda ner', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey, foregroundColor: Colors.white),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton.icon(
+                    onPressed: _desktopVerified ? () => _applyDesktopUpdate() : null,
+                    icon: const Icon(Icons.upgrade, size: 16),
+                    label: const Text('Uppgradera', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
+                  ),
+                  if (_desktopVerified) ...[
+                    const SizedBox(width: 8),
+                    const Icon(Icons.verified, color: Colors.tealAccent, size: 18),
+                  ],
+                ],
+              ),
+            ],
+            if (_updateMessage != null) ...[
+              const SizedBox(height: 10),
+              Text(_updateMessage!, style: const TextStyle(color: Colors.amberAccent, fontSize: 11)),
+            ],
           ],
         ),
       ),

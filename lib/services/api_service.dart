@@ -198,6 +198,45 @@ class ApiService {
     }
   }
 
+  /// Frågar agenten om det finns en ny firewall-version (agent + webb-GUI) att
+  /// uppgradera till. Agenten hämtar release-manifestet och jämför. Returnerar
+  /// hela svaret (current/available per komponent + update_available + staged).
+  Future<Map<String, dynamic>?> updateCheck() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/system/update/check'), headers: _headers);
+      if (res.statusCode == 200) return jsonDecode(res.body) as Map<String, dynamic>;
+    } catch (_) {}
+    return null;
+  }
+
+  /// Ber agenten ladda ner och VERIFIERA (SHA256 + Ed25519-signatur) den nya
+  /// firewall-bunten och stagea den. Returnerar null vid framgång (verifierad),
+  /// annars ett felmeddelande. Uppgradera-knappen ska låsas upp först vid null.
+  Future<String?> updateDownload() async {
+    try {
+      final res = await _client.post(Uri.parse('$baseUrl/api/v1/system/update/download'), headers: _headers);
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body) as Map<String, dynamic>;
+        return body['verified'] == true ? null : 'Nedladdningen kunde inte verifieras';
+      }
+      return res.body.isNotEmpty ? res.body : 'Nedladdning misslyckades';
+    } catch (e) {
+      return 'Nedladdning misslyckades: $e';
+    }
+  }
+
+  /// Triggar den privilegierade installern på brandväggen. Agenten startar om
+  /// på den nya versionen. Returnerar null vid framgång.
+  Future<String?> updateApply() async {
+    try {
+      final res = await _client.post(Uri.parse('$baseUrl/api/v1/system/update/apply'), headers: _headers);
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Uppgradering misslyckades';
+    } catch (e) {
+      return null; // Anslutningen bryts när agenten startar om - inte nödvändigtvis ett fel.
+    }
+  }
+
   /// Listar alla administrationsanvändare (admin-only, Fas 8).
   Future<List<Map<String, dynamic>>> getUsers() async {
     try {
