@@ -541,8 +541,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _applyFirewallUpdate(ConfigProvider provider) async {
     final ok = await _confirmDialog(
       'Uppgradera brandväggen?',
-      'Ta en Proxmox-snapshot först. Brandväggen installerar den verifierade bunten och '
-          'agenten startar om på den nya versionen. Din konfiguration bevaras.',
+      'Har du möjlighet, ta en snapshot av maskinen först. Brandväggen installerar '
+          'den verifierade bunten och agenten startar om på den nya versionen. Din '
+          'konfiguration bevaras.',
     );
     if (!ok) return;
     setState(() { _fwApplying = true; _updateMessage = 'Installerar… agenten startar om strax.'; });
