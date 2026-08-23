@@ -566,32 +566,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
     for (var elapsed = stepSeconds; elapsed <= maxSeconds; elapsed += stepSeconds) {
       await Future.delayed(const Duration(seconds: stepSeconds));
       if (!mounted) return;
-      // getSystemStatus returnerar null medan agenten är nere (omstart) — kort
-      // timeout så vi inte hänger på en TCP-anslutning som ändå kommer att dö.
-      final status = await provider.api
-          .getSystemStatus()
+      // Den ÖPPNA version-endpointen svarar även om token blivit ogiltig av
+      // omstarten — så vi kan upptäcka att agenten kommit tillbaka på nya
+      // versionen oavsett sessionsläge. null medan agenten är nere.
+      final ver = await provider.api
+          .getAgentVersion()
           .timeout(const Duration(seconds: 4), onTimeout: () => null);
       if (!mounted) return;
-      if (status != null) {
-        final v = status['version']?.toString();
-        // Klar när agenten svarar igen OCH (om vi vet målversionen) kör den.
-        if (target == null || v == target) {
+      if (ver != null && (target == null || ver == target)) {
+        // Agenten är uppe på (den nya) versionen. Är sessionen fortfarande
+        // giltig? (Nyare agenter persisterar token över omstarten.)
+        final status = await provider.api
+            .getSystemStatus()
+            .timeout(const Duration(seconds: 4), onTimeout: () => null);
+        if (!mounted) return;
+        _fwApplying = false;
+        _fwVerified = false;
+        _fwUpdate = null; // tvinga en ny "Kontrollera" för uppdaterad status
+        if (status != null) {
           provider.systemStatus = status;
-          setState(() {
-            _fwApplying = false;
-            _fwVerified = false;
-            _fwUpdate = null; // tvinga en ny "Kontrollera" för uppdaterad status
-            _updateMessage = '✅ Uppgraderingen klar — agenten kör nu ${v ?? 'den nya versionen'}.';
-          });
-          return;
+          setState(() => _updateMessage = '✅ Uppgraderingen klar — agenten kör nu $ver.');
+        } else {
+          // Token blev ogiltig av omstarten — visa inloggningsvyn.
+          setState(() => _updateMessage = '✅ Uppgraderingen klar — agenten kör nu $ver. Logga in igen.');
+          await provider.logout();
         }
-        // Svarar men fortfarande gamla versionen (hann inte starta om än) —
-        // fortsätt polla.
+        return;
       }
       setState(() {
-        _updateMessage = status == null
+        _updateMessage = ver == null
             ? 'Uppgraderar… agenten installerar och startar om (${elapsed}s)'
-            : 'Uppgraderar… väntar på att den nya versionen startar (${elapsed}s)';
+            : 'Uppgraderar… väntar på att den nya versionen startar (nu $ver, ${elapsed}s)';
       });
     }
     if (!mounted) return;

@@ -198,6 +198,19 @@ class ApiService {
     }
   }
 
+  /// Hämtar agentens version via den ÖPPNA (oautentiserade) version-endpointen.
+  /// Används av uppgraderings-återkopplingen för att upptäcka att agenten kommit
+  /// tillbaka på den nya versionen även om token blivit ogiltig av omstarten.
+  Future<String?> getAgentVersion() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/version'));
+      if (res.statusCode == 200) {
+        return (jsonDecode(res.body) as Map<String, dynamic>)['version']?.toString();
+      }
+    } catch (_) {}
+    return null;
+  }
+
   /// Frågar agenten om det finns en ny firewall-version (agent + webb-GUI) att
   /// uppgradera till. Agenten hämtar release-manifestet och jämför. Returnerar
   /// hela svaret (current/available per komponent + update_available + staged).
