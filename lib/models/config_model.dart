@@ -13,6 +13,7 @@ class ConfigModel {
   final DNSConfigModel? dns;
   final SyslogConfigModel? syslog;
   final IDSConfigModel? ids;
+  final List<SNIRouteModel> sniRoutes;
 
   ConfigModel({
     required this.version,
@@ -29,6 +30,7 @@ class ConfigModel {
     this.dns,
     this.syslog,
     this.ids,
+    this.sniRoutes = const [],
   });
 
   factory ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +49,7 @@ class ConfigModel {
       dns: json['dns'] != null ? DNSConfigModel.fromJson(json['dns']) : null,
       syslog: json['syslog'] != null ? SyslogConfigModel.fromJson(json['syslog']) : null,
       ids: json['ids'] != null ? IDSConfigModel.fromJson(json['ids']) : null,
+      sniRoutes: (json['sni_routes'] as List? ?? []).map((e) => SNIRouteModel.fromJson(e)).toList(),
     );
   }
 
@@ -77,6 +80,7 @@ class ConfigModel {
     DNSConfigModel? dns,
     SyslogConfigModel? syslog,
     IDSConfigModel? ids,
+    List<SNIRouteModel>? sniRoutes,
   }) =>
       ConfigModel(
         version: version ?? this.version,
@@ -93,6 +97,7 @@ class ConfigModel {
         dns: dns ?? this.dns,
         syslog: syslog ?? this.syslog,
         ids: ids ?? this.ids,
+        sniRoutes: sniRoutes ?? this.sniRoutes,
       );
 
   Map<String, dynamic> toJson() => {
@@ -110,6 +115,101 @@ class ConfigModel {
         if (dns != null) 'dns': dns!.toJson(),
         if (syslog != null) 'syslog': syslog!.toJson(),
         if (ids != null) 'ids': ids!.toJson(),
+        'sni_routes': sniRoutes.map((e) => e.toJson()).toList(),
+      };
+}
+
+/// Namnbaserad routning (SNI passthrough via HAProxy) — se pkg/config SNIRoute
+/// i backend. En rutt = en lyssnarport med flera värdnamn → olika interna
+/// servrar. TLS termineras aldrig.
+class SNIRouteModel {
+  final String id;
+  final String name;
+  final bool enabled;
+  final int listenPort;
+  final String externalIp;
+  final List<SNIBackendModel> backends;
+  final SNIBackendModel? defaultBackend;
+
+  SNIRouteModel({
+    required this.id,
+    this.name = '',
+    this.enabled = true,
+    this.listenPort = 443,
+    this.externalIp = '',
+    this.backends = const [],
+    this.defaultBackend,
+  });
+
+  factory SNIRouteModel.fromJson(Map<String, dynamic> json) => SNIRouteModel(
+        id: json['id'] ?? '',
+        name: json['name'] ?? '',
+        enabled: json['enabled'] ?? true,
+        listenPort: json['listen_port'] ?? 443,
+        externalIp: json['external_ip'] ?? '',
+        backends: (json['backends'] as List? ?? []).map((e) => SNIBackendModel.fromJson(e)).toList(),
+        defaultBackend: json['default_backend'] != null ? SNIBackendModel.fromJson(json['default_backend']) : null,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'enabled': enabled,
+        'listen_port': listenPort,
+        if (externalIp.isNotEmpty) 'external_ip': externalIp,
+        'backends': backends.map((e) => e.toJson()).toList(),
+        if (defaultBackend != null) 'default_backend': defaultBackend!.toJson(),
+      };
+
+  SNIRouteModel copyWith({
+    String? name,
+    bool? enabled,
+    int? listenPort,
+    String? externalIp,
+    List<SNIBackendModel>? backends,
+    SNIBackendModel? defaultBackend,
+    bool clearDefault = false,
+  }) =>
+      SNIRouteModel(
+        id: id,
+        name: name ?? this.name,
+        enabled: enabled ?? this.enabled,
+        listenPort: listenPort ?? this.listenPort,
+        externalIp: externalIp ?? this.externalIp,
+        backends: backends ?? this.backends,
+        defaultBackend: clearDefault ? null : (defaultBackend ?? this.defaultBackend),
+      );
+}
+
+/// Ett vidarebefordringsmål i en SNI-rutt: antingen en intern server
+/// (targetIp:targetPort) eller en lokal tjänst (localService, t.ex. "openvpn").
+class SNIBackendModel {
+  final List<String> hostnames;
+  final String targetIp;
+  final int targetPort;
+  final String localService; // "" | "openvpn"
+
+  SNIBackendModel({
+    this.hostnames = const [],
+    this.targetIp = '',
+    this.targetPort = 0,
+    this.localService = '',
+  });
+
+  bool get isLocalOpenVPN => localService == 'openvpn';
+
+  factory SNIBackendModel.fromJson(Map<String, dynamic> json) => SNIBackendModel(
+        hostnames: List<String>.from(json['hostnames'] ?? []),
+        targetIp: json['target_ip'] ?? '',
+        targetPort: json['target_port'] ?? 0,
+        localService: json['local_service'] ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        if (hostnames.isNotEmpty) 'hostnames': hostnames,
+        if (targetIp.isNotEmpty) 'target_ip': targetIp,
+        if (targetPort != 0) 'target_port': targetPort,
+        if (localService.isNotEmpty) 'local_service': localService,
       };
 }
 

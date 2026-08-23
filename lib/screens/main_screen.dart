@@ -5,6 +5,7 @@ import 'dashboard_screen.dart';
 import 'interfaces_screen.dart';
 import 'policies_screen.dart';
 import 'objects_screen.dart';
+import 'sni_routes_screen.dart';
 import 'settings_screen.dart';
 import 'connections_screen.dart';
 import 'vpn_screen.dart';
@@ -41,6 +42,7 @@ class _MainScreenState extends State<MainScreen> {
       const InterfacesScreen(),
       const PoliciesScreen(),
       const ObjectsScreen(),
+      if (!isHostMode) const SniRoutesScreen(),
       if (!isHostMode) const VpnScreen(),
       if (!isHostMode) const DnsScreen(),
       if (!isHostMode) const DnsDevicesScreen(),
@@ -55,6 +57,7 @@ class _MainScreenState extends State<MainScreen> {
       const NavigationRailDestination(icon: Icon(Icons.router_outlined), selectedIcon: Icon(Icons.router), label: Text('Interfaces')),
       const NavigationRailDestination(icon: Icon(Icons.shield_outlined), selectedIcon: Icon(Icons.shield), label: Text('Policies')),
       const NavigationRailDestination(icon: Icon(Icons.category_outlined), selectedIcon: Icon(Icons.category), label: Text('Objekt')),
+      if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.alt_route_outlined), selectedIcon: Icon(Icons.alt_route), label: Text('SNI')),
       if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.vpn_lock_outlined), selectedIcon: Icon(Icons.vpn_lock), label: Text('VPN')),
       if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.dns_outlined), selectedIcon: Icon(Icons.dns), label: Text('DNS')),
       if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.devices_outlined), selectedIcon: Icon(Icons.devices), label: Text('DNS-enheter')),
