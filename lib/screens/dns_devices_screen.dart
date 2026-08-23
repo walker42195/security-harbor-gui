@@ -143,7 +143,10 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
                     children: [
                       const Icon(Icons.dns, size: 14, color: Colors.tealAccent),
                       const SizedBox(width: 10),
-                      Expanded(child: Text(_fqdn(rec.hostname, dns.localDomain), style: const TextStyle(color: Colors.white, fontSize: 12))),
+                      // Manuella poster visas EXAKT som angivna (inget lokalt
+                      // suffix hängs på — vill man ha det skriver man hela
+                      // namnet själv). Bara DHCP-auto-poster får LocalDomain.
+                      Expanded(child: Text(rec.hostname, style: const TextStyle(color: Colors.white, fontSize: 12))),
                       Expanded(child: Text(rec.ip, style: const TextStyle(color: Colors.grey, fontSize: 12, fontFamily: 'monospace'))),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
@@ -260,7 +263,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
             children: [
               const Text('Lägg till DNS-post', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
-              _labeledField('Värdnamn', hostnameCtrl, hint: 'server1'),
+              _labeledField('Namn (exakt, valfri domän)', hostnameCtrl, hint: 't.ex. nx4.novabase.se eller server1'),
               const SizedBox(height: 12),
               _labeledField('IP-adress', ipCtrl, hint: '10.0.0.50'),
               const SizedBox(height: 16),
