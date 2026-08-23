@@ -151,6 +151,11 @@ class InterfacesScreen extends StatelessWidget {
                             tooltip: 'Redigera gränssnitt',
                             onPressed: () => _showEditInterfaceDialog(context, provider, cfg, idx),
                           ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.redAccent, size: 16),
+                            tooltip: 'Ta bort gränssnitt',
+                            onPressed: () => _deleteInterface(context, provider, cfg, idx),
+                          ),
                           Switch(
                             value: iface.enabled,
                             activeThumbColor: Colors.tealAccent,
@@ -527,6 +532,51 @@ class InterfacesScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // Tar bort ett gränssnitt HELT ur konfigurationen (till skillnad från
+  // av/på-brytaren som bara inaktiverar det). Backend av-konfigurerar det
+  // borttagna kortet vid apply: ett VLAN-subinterface rivs, ett fysiskt kort
+  // får sin IP och ev. default-rutt bortflushad (se engine.applyInterfaces).
+  // Zonen lämnas kvar — den städas separat via "Hantera zoner" om den blir
+  // oanvänd. Ändringen sparas i candidate och slår igenom först när
+  // användaren applicerar (Safe Apply).
+  void _deleteInterface(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx) {
+    final iface = cfg.interfaces[idx];
+    final label = iface.name.isNotEmpty ? iface.name : iface.device;
+    final isVLAN = iface.vlanId > 0;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: Text('Ta bort gränssnitt "$label"?', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold))),
+          ],
+        ),
+        content: Text(
+          isVLAN
+              ? 'VLAN-gränssnittet ${iface.device} tas bort ur konfigurationen och rivs från systemet vid nästa applicering. Enheter på det VLAN:et förlorar sin gateway.'
+              : 'Gränssnittet ${iface.device} tas bort ur konfigurationen. Vid applicering flushas dess IP-adress och ev. default-rutt.\n\n'
+                  'VARNING: Om detta är kortet du administrerar brandväggen genom (t.ex. LAN med management-IP) blir du UTELÅST via nätverket. Ta bort själva det virtuella kortet i hypervisorn separat om du vill städa helt.',
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Ta bort', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            onPressed: () {
+              Navigator.pop(ctx);
+              final updatedIfaces = List<InterfaceModel>.from(cfg.interfaces)..removeAt(idx);
+              provider.updateCandidate(cfg.copyWith(interfaces: updatedIfaces));
+            },
+          ),
+        ],
       ),
     );
   }
