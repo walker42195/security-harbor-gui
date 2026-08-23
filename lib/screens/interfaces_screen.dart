@@ -8,30 +8,31 @@ class InterfacesScreen extends StatelessWidget {
   const InterfacesScreen({super.key});
 
   List<DropdownMenuItem<String>> _getZoneDropdownItems(ConfigModel? cfg) {
-    final Map<String, String> itemsMap = {
-      'LAN': 'LAN (Internt nätverk)',
-      'WAN': 'WAN (Utsida / Internet)',
-      'SERVERS': 'SERVERS (Serverzon)',
-      'IOT': 'IOT (IoT-enheter)',
-      'GUEST': 'Gästnätverk (GUEST)',
-      'VPN': 'VPN (VPN-klienter)',
-    };
+    // Byggs från configens FAKTISKA zoner (cfg.zones) — inte en hårdkodad
+    // lista. Tidigare visades SERVERS/IOT/GUEST/VPN alltid, även efter att man
+    // tagit bort dem via "Hantera zoner". Beskrivningen tas från zonen själv.
+    final Map<String, String> itemsMap = {};
 
     if (cfg != null) {
       for (final z in cfg.zones) {
         final name = z.name.toUpperCase();
-        if (!itemsMap.containsKey(name)) {
-          itemsMap[name] = '$name (Egen zon)';
-        }
+        final desc = z.description.trim();
+        itemsMap[name] = desc.isNotEmpty ? '$name ($desc)' : name;
       }
+      // Defensivt: en zon som ett gränssnitt redan använder men som (av någon
+      // anledning) saknas i zonlistan ska ändå gå att välja/behålla.
       for (final i in cfg.interfaces) {
         if (i.zone.isNotEmpty) {
-          final name = i.zone.toUpperCase();
-          if (!itemsMap.containsKey(name)) {
-            itemsMap[name] = '$name (Aktiv zon)';
-          }
+          itemsMap.putIfAbsent(i.zone.toUpperCase(), () => '${i.zone.toUpperCase()} (Aktiv zon)');
         }
       }
+    }
+
+    // Om inga zoner alls är definierade (t.ex. innan configen hämtats) — visa
+    // åtminstone de två grundläggande så dropdownen aldrig är tom.
+    if (itemsMap.isEmpty) {
+      itemsMap['LAN'] = 'LAN (Internt nätverk)';
+      itemsMap['WAN'] = 'WAN (Utsida / Internet)';
     }
 
     final list = itemsMap.entries
@@ -47,10 +48,10 @@ class InterfacesScreen extends StatelessWidget {
   }
 
   bool _zoneExistsInMenu(String zone, ConfigModel? cfg) {
-    if (['LAN', 'WAN', 'SERVERS', 'IOT', 'GUEST', 'VPN'].contains(zone)) return true;
+    final z = zone.toUpperCase();
     if (cfg != null) {
-      if (cfg.zones.any((z) => z.name.toUpperCase() == zone)) return true;
-      if (cfg.interfaces.any((i) => i.zone.toUpperCase() == zone)) return true;
+      if (cfg.zones.any((x) => x.name.toUpperCase() == z)) return true;
+      if (cfg.interfaces.any((i) => i.zone.toUpperCase() == z)) return true;
     }
     return false;
   }

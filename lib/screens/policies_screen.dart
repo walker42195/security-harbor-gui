@@ -739,7 +739,9 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
             ...pol.destZone.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty),
             if (objNameById(pol.destObj) != null) objNameById(pol.destObj)!,
           ]
-        : ['SERVERS'];
+        // "ANY" som default (alltid giltigt) i stället för en zon som kan ha
+        // tagits bort via "Hantera zoner".
+        : ['ANY'];
 
     // DNAT
     final extPortCtrl = TextEditingController(text: pol?.nat?.externalPort.toString() ?? '443');
@@ -1106,7 +1108,6 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             'ANY',
                             'Any-External (WAN)',
                             'Any-Trusted (LAN)',
-                            'SERVERS', 'IOT', 'GUEST', 'VPN',
                             ...cfg.zones.map((z) => z.name),
                           };
                           final ipLikePattern = RegExp(r'^[0-9a-fA-F.:]+(/\d{1,3})?$');
@@ -1344,7 +1345,10 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     // sorteras i bokstavsordning (skiftlägesokänsligt) så listan blir
     // lätt att skanna, i stället för den tidigare oordnade blandningen.
     final pinned = ['ANY', 'Any-External (WAN)', 'Any-Trusted (LAN)'];
-    final rest = <String>{'SERVERS', 'IOT', 'GUEST', 'VPN'};
+    // Byggs från configens FAKTISKA zoner + objekt — inte en hårdkodad
+    // zon-lista (som visade SERVERS/IOT/GUEST/VPN även efter att de tagits bort
+    // via "Hantera zoner").
+    final rest = <String>{};
     if (cfg != null) {
       for (final z in cfg.zones) {
         rest.add(z.name);
