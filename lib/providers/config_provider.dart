@@ -7,6 +7,14 @@ import '../services/api_service.dart';
 enum ApplyStatus { idle, unconfirmed, confirming, error }
 
 const String _prefsUrlKey = 'firewall_url';
+// Sessionens token (kortlivad, serversignerad med utgång) sparas så att en
+// sid-refresh i webb-GUI:t inte loggar ut användaren — webbläsaren laddar om
+// hela Flutter-appen vid refresh, och en token som bara låg i minnet gick då
+// förlorad. Token valideras alltid mot agenten vid start innan den litas på,
+// och rensas om den avvisats/gått ut. Lösenordet sparas ALDRIG (se nedan).
+const String _prefsTokenKey = 'firewall_token';
+const String _prefsRoleKey = 'firewall_role';
+const String _prefsUserKey = 'firewall_user';
 
 class ConfigProvider extends ChangeNotifier {
   final ApiService api = ApiService();
@@ -56,6 +64,31 @@ class ConfigProvider extends ChangeNotifier {
         await prefs.setString(_prefsUrlKey, savedUrl);
       }
       api.setBaseUrl(savedUrl);
+
+      // Försök återuppta en tidigare session (t.ex. efter en sid-refresh i
+      // webb-GUI:t). Token valideras mot agenten (/api/v1/system) innan vi
+      // litar på den — en utgången/avvisad token ger då inloggningsvyn i
+      // stället, aldrig ett falskt "inloggad"-läge.
+      final savedToken = prefs.getString(_prefsTokenKey);
+      if (savedToken != null && savedToken.isNotEmpty) {
+        api.token = savedToken;
+        api.role = prefs.getString(_prefsRoleKey);
+        api.username = prefs.getString(_prefsUserKey);
+        final status = await api
+            .getSystemStatus()
+            .timeout(const Duration(seconds: 6), onTimeout: () => null);
+        if (status != null) {
+          isAuthenticated = true;
+          statusMessage = 'Inloggad';
+          systemStatus = status;
+          unawaited(fetchAll());
+        } else {
+          api.token = null;
+          api.role = null;
+          api.username = null;
+          await _clearSession();
+        }
+      }
     }
     isInitializing = false;
     notifyListeners();
@@ -64,6 +97,29 @@ class ConfigProvider extends ChangeNotifier {
   Future<void> _saveUrl(String url) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefsUrlKey, url);
+  }
+
+  // Sparar sessionens token/roll/användarnamn (INTE lösenordet) så att en
+  // refresh i webb-GUI:t behåller inloggningen. Token är serversignerad med
+  // utgång och valideras vid nästa start.
+  Future<void> _saveSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (api.token != null) {
+      await prefs.setString(_prefsTokenKey, api.token!);
+    }
+    if (api.role != null) {
+      await prefs.setString(_prefsRoleKey, api.role!);
+    }
+    if (api.username != null) {
+      await prefs.setString(_prefsUserKey, api.username!);
+    }
+  }
+
+  Future<void> _clearSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_prefsTokenKey);
+    await prefs.remove(_prefsRoleKey);
+    await prefs.remove(_prefsUserKey);
   }
 
   Future<void> changeAgentUrl(String newUrl) async {
@@ -81,6 +137,7 @@ class ConfigProvider extends ChangeNotifier {
       isAuthenticated = true;
       statusMessage = 'Inloggad';
       await _saveUrl(api.baseUrl);
+      await _saveSession();
       await fetchAll();
     } else {
       isAuthenticated = false;
@@ -100,6 +157,7 @@ class ConfigProvider extends ChangeNotifier {
     runningConfig = null;
     candidateConfig = null;
     systemStatus = null;
+    await _clearSession();
     notifyListeners();
   }
 

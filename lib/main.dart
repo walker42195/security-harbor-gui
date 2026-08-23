@@ -59,6 +59,16 @@ class SecurityHarborApp extends StatelessWidget {
         // att man navigerar till Settings-vyn.
         home: Consumer<ConfigProvider>(
           builder: (context, provider, _) {
+            // Vänta tills en ev. sparad session hunnit återställas och
+            // valideras (se ConfigProvider._loadSavedUrl) — annars blinkar
+            // inloggningsvyn till vid en sid-refresh i webb-GUI:t innan
+            // sessionen återupptas.
+            if (provider.isInitializing) {
+              return const Scaffold(
+                backgroundColor: Color(0xFF0F172A),
+                body: Center(child: CircularProgressIndicator(color: Colors.cyanAccent)),
+              );
+            }
             return provider.isAuthenticated ? const MainScreen() : const LoginScreen();
           },
         ),
