@@ -229,8 +229,38 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                                 ),
                                 Expanded(
                                   child: ListView.builder(
-                                    itemCount: cfg.policies.length,
-                                    itemBuilder: (context, idx) => _buildPolicyDataRow(context, provider, cfg, idx, widths),
+                                    // +2 för de inbyggda, låsta default-deny-raderna
+                                    // som alltid ligger sist (se _buildDefaultDenyRow):
+                                    // först WAN→brandvägg/LAN (inkommande från internet),
+                                    // sedan all övrig trafik mellan zoner (t.ex. LAN→WAN).
+                                    itemCount: cfg.policies.length + 2,
+                                    itemBuilder: (context, idx) {
+                                      if (idx == cfg.policies.length) {
+                                        return _buildDefaultDenyRow(
+                                          widths,
+                                          name: 'Neka all inkommande från internet (standard)',
+                                          from: 'WAN',
+                                          to: 'SELF / LAN',
+                                          hitKey: null,
+                                          tooltip: 'Inbyggd standardregel – kan inte flyttas, ändras eller tas bort.\n'
+                                              'Släpper tyst all oombedd inkommande trafik från internet (WAN) mot brandväggen och interna nät. '
+                                              'Svar på anslutningar som startats inifrån släpps ändå igenom (established/related). '
+                                              'Loggas inte, för att internetbrus/portscan inte ska fylla loggen.',
+                                        );
+                                      }
+                                      if (idx == cfg.policies.length + 1) {
+                                        return _buildDefaultDenyRow(
+                                          widths,
+                                          name: 'Neka all övrig trafik (standard)',
+                                          from: 'ANY',
+                                          to: 'ANY',
+                                          hitKey: 'DefaultDeny',
+                                          tooltip: 'Inbyggd standardregel – kan inte flyttas, ändras eller tas bort.\n'
+                                              'Allt som ingen Allow-policy ovanför släppt igenom nekas här (t.ex. LAN→WAN, trafik mellan zoner).',
+                                        );
+                                      }
+                                      return _buildPolicyDataRow(context, provider, cfg, idx, widths);
+                                    },
                                   ),
                                 ),
                               ],
@@ -374,6 +404,81 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  // Inbyggd, icke-redigerbar default-deny-rad som alltid renderas SIST i
+  // listan. Motsvarar nftables implicita slutregler (policy drop): forward-
+  // kedjans "SH-DENY-FWD-DefaultDeny" och INPUT-kedjans hårda WAN-drop. All
+  // trafik som ingen ovanstående Allow-policy släppt igenom nekas här. Raderna
+  // lagras INTE i konfigurationen (ingen PolicyModel), utan är syntetiska så
+  // att administratören kan SE att brandväggen är "default deny" utan att kunna
+  // flytta, redigera, inaktivera eller ta bort själva slutreglerna.
+  //
+  // hitKey: nftables-nyckeln för träffräknare (t.ex. "DefaultDeny"); null när
+  // regeln inte loggas (den hårda WAN-dropen är tyst med flit, se
+  // pkg/adapter/nftables Input 3) och därför saknar räknare.
+  Widget _buildDefaultDenyRow(
+    List<double> widths, {
+    required String name,
+    required String from,
+    required String to,
+    required String? hitKey,
+    required String tooltip,
+  }) {
+    const denyColor = Colors.redAccent;
+    final nameTooltip = hitKey == null
+        ? 'Loggas inte (tyst drop)'
+        : 'Träffar: ${_hitCountFor(hitKey).$1} paket, ${_hitCountFor(hitKey).$2} bytes';
+    final cells = <Widget>[
+      const Icon(Icons.lock, size: 13, color: Colors.grey),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(Icons.block, size: 15, color: denyColor),
+          SizedBox(width: 4),
+          Flexible(
+            child: Text('Deny', overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: denyColor, fontSize: 11, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+      Tooltip(
+        message: nameTooltip,
+        child: Text(name,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+      ),
+      const Text('ANY', overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+      _truncatedCell(from),
+      _truncatedCell(to),
+      const Text('any', overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.amber, fontSize: 11)),
+      Tooltip(
+        message: tooltip,
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.lock_outline, size: 14, color: Colors.grey),
+            SizedBox(width: 6),
+            Text('Låst', style: TextStyle(color: Colors.grey, fontSize: 11, fontStyle: FontStyle.italic)),
+          ],
+        ),
+      ),
+    ];
+
+    return Container(
+      // Diskret avvikande bakgrund så det syns att raden inte är en vanlig,
+      // redigerbar policy.
+      color: const Color(0xFF2A1518),
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+      child: Row(
+        children: [
+          for (int i = 0; i < widths.length; i++) ...[
+            SizedBox(width: widths[i], child: cells[i]),
+            const SizedBox(width: _policyResizeHandleWidth),
+          ],
+        ],
       ),
     );
   }
