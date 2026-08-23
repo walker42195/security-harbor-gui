@@ -339,13 +339,13 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         ),
       ),
       Text(pol.service, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
-      _truncatedCell(pol.sourceZone),
+      _truncatedCell(_zoneOrObjLabel(cfg, pol.sourceZone, pol.sourceObj)),
       _truncatedCell(isDNAT && pol.nat != null
           ? '${pol.nat!.internalIp}:${pol.nat!.internalPort}'
           // En local-regel gäller alltid brandväggen själv — visa SELF även
           // om destZone råkar innehålla ett gammalt (ignorerat) värde från
           // innan regeln gjordes till en local-regel.
-          : (pol.local ? 'SELF' : pol.destZone)),
+          : (pol.local ? 'SELF' : _zoneOrObjLabel(cfg, pol.destZone, pol.destObj))),
       Text(isDNAT && pol.nat != null ? 'tcp:${pol.nat!.externalPort}' : _getPortForService(pol.service), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.amber, fontSize: 11)),
       Row(
         mainAxisSize: MainAxisSize.min,
@@ -481,6 +481,26 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         ],
       ),
     );
+  }
+
+  // Bygger den text som visas i From/To-kolumnen. En policy anger sin källa/
+  // mål som EN zon (t.ex. "LAN"), ETT objekt (t.ex. en host "10.0.0.139" eller
+  // en hot-lista), eller båda — översikten visade tidigare bara zonen, så en
+  // rent objektbaserad regel (sourceZone tom) fick en TOM cell fast regeln har
+  // en källa. Kombinerar därför zon(er) och objektnamn, med "ANY" som fallback.
+  String _zoneOrObjLabel(ConfigModel? cfg, String zone, String? objId) {
+    final parts = <String>[
+      ...zone.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty && e.toUpperCase() != 'ANY'),
+    ];
+    if (objId != null && objId.isNotEmpty && objId.toUpperCase() != 'ANY' && cfg != null) {
+      for (final o in cfg.objects) {
+        if (o.id == objId) {
+          parts.add(o.name.isNotEmpty ? o.name : objId);
+          break;
+        }
+      }
+    }
+    return parts.isEmpty ? 'ANY' : parts.join(', ');
   }
 
   // Begränsar From/To-cellens bredd oavsett innehåll — en policy vars
