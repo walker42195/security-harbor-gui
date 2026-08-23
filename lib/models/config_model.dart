@@ -574,7 +574,7 @@ class InterfaceModel {
         if (dhcp != null) 'dhcp': dhcp!.toJson(),
       };
 
-  InterfaceModel copyWith({String? name, String? zone}) => InterfaceModel(
+  InterfaceModel copyWith({String? name, String? zone, DHCPConfigModel? dhcp}) => InterfaceModel(
         id: id,
         name: name ?? this.name,
         device: device,
@@ -587,7 +587,7 @@ class InterfaceModel {
         gateway: gateway,
         dnsServers: dnsServers,
         mtu: mtu,
-        dhcp: dhcp,
+        dhcp: dhcp ?? this.dhcp,
       );
 }
 

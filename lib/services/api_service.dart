@@ -562,6 +562,43 @@ class ApiService {
     return 'Ingen kontakt';
   }
 
+  /// Slår upp ett DNS-namn med dig. type = A/AAAA/MX/TXT/... (tom = A),
+  /// server = valfri DNS-server att fråga (tom = systemets resolver).
+  Future<String> dig(String host, {String type = '', String server = ''}) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/diagnostics/dig'),
+        headers: _headers,
+        body: jsonEncode({'host': host, 'type': type, 'server': server}),
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return data['output'] ?? '';
+      }
+      return res.body.isNotEmpty ? res.body : 'dig misslyckades';
+    } catch (e) {
+      return 'Fel: $e';
+    }
+  }
+
+  /// Hämtar ARP-/grannbordstabellen (ip neigh show).
+  Future<String> arpTable() async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/diagnostics/arp'),
+        headers: _headers,
+        body: jsonEncode({}),
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return data['output'] ?? '';
+      }
+      return res.body.isNotEmpty ? res.body : 'arp misslyckades';
+    } catch (e) {
+      return 'Fel: $e';
+    }
+  }
+
   Future<ConfigModel?> getRunningConfig() async {
     try {
       final res = await _client.get(Uri.parse('$baseUrl/api/v1/config/running'), headers: _headers);

@@ -140,6 +140,269 @@ class _DhcpScreenState extends State<DhcpScreen> {
         }
       });
 
+  // --- Statiska reservationer (bor i varje interfaces DHCP-scope) ---
+
+  // Alla reservationer i configen tillsammans med vilket gränssnitt de hör till.
+  List<({String device, DHCPReservationModel res})> _allReservations() {
+    final provider = Provider.of<ConfigProvider>(context, listen: false);
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    if (cfg == null) return [];
+    final out = <({String device, DHCPReservationModel res})>[];
+    for (final iface in cfg.interfaces) {
+      final dhcp = iface.dhcp;
+      if (dhcp == null) continue;
+      for (final r in dhcp.reservations) {
+        out.add((device: iface.device, res: r));
+      }
+    }
+    return out;
+  }
+
+  bool _isReserved(String mac) {
+    final m = mac.trim().toLowerCase();
+    if (m.isEmpty) return false;
+    return _allReservations().any((e) => e.res.mac.trim().toLowerCase() == m);
+  }
+
+  // Gränssnitt som har DHCP aktiverat (dit en reservation kan knytas).
+  List<InterfaceModel> _dhcpInterfaces() {
+    final provider = Provider.of<ConfigProvider>(context, listen: false);
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    if (cfg == null) return [];
+    return cfg.interfaces.where((i) => i.dhcp != null).toList();
+  }
+
+  // Skriver om reservationslistan för ETT gränssnitt och uppdaterar kandidaten.
+  void _writeReservations(String device, List<DHCPReservationModel> reservations) {
+    final provider = Provider.of<ConfigProvider>(context, listen: false);
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    if (cfg == null) return;
+    final updatedIfaces = cfg.interfaces.map((iface) {
+      if (iface.device != device || iface.dhcp == null) return iface;
+      final d = iface.dhcp!;
+      final newDhcp = DHCPConfigModel(
+        enabled: d.enabled,
+        rangeStart: d.rangeStart,
+        rangeEnd: d.rangeEnd,
+        gateway: d.gateway,
+        dnsServers: d.dnsServers,
+        leaseTimeSec: d.leaseTimeSec,
+        reservations: reservations,
+      );
+      return iface.copyWith(dhcp: newDhcp);
+    }).toList();
+    provider.updateCandidate(cfg.copyWith(interfaces: updatedIfaces));
+  }
+
+  void _deleteReservation(String device, DHCPReservationModel res) {
+    final iface = _dhcpInterfaces().where((i) => i.device == device);
+    if (iface.isEmpty) return;
+    final remaining = iface.first.dhcp!.reservations
+        .where((r) => !(r.mac == res.mac && r.ip == res.ip))
+        .toList();
+    _writeReservations(device, remaining);
+    setState(() {});
+  }
+
+  void _showReservationDialog(BuildContext context, {String hostname = '', String mac = '', String ip = '', String device = ''}) {
+    final hostCtrl = TextEditingController(text: hostname);
+    final macCtrl = TextEditingController(text: mac);
+    final ipCtrl = TextEditingController(text: ip);
+    final ifaces = _dhcpInterfaces();
+    if (ifaces.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Inget gränssnitt har DHCP aktiverat. Aktivera DHCP på ett gränssnitt först.'),
+      ));
+      return;
+    }
+    String selectedDevice = ifaces.any((i) => i.device == device) ? device : ifaces.first.device;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          backgroundColor: const Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          child: Container(
+            width: 420,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.push_pin, size: 18, color: Colors.amberAccent),
+                    const SizedBox(width: 8),
+                    Text(mac.isEmpty ? 'Ny DHCP-reservation' : 'Reservera IP till MAC',
+                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    IconButton(icon: const Icon(Icons.close, size: 18, color: Colors.white54), onPressed: () => Navigator.pop(ctx)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _resField(hostCtrl, 'Namn / hostnamn', 't.ex. Kamera-Entre'),
+                const SizedBox(height: 10),
+                _resField(macCtrl, 'MAC-adress', 'aa:bb:cc:dd:ee:ff'),
+                const SizedBox(height: 10),
+                _resField(ipCtrl, 'Reserverad IP', 't.ex. 192.168.1.50'),
+                const SizedBox(height: 10),
+                const Text('Gränssnitt (DHCP-scope)', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(border: Border.all(color: const Color(0xFF334155)), borderRadius: BorderRadius.circular(4)),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: selectedDevice,
+                      dropdownColor: const Color(0xFF1E293B),
+                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                      items: ifaces
+                          .map((i) => DropdownMenuItem(value: i.device, child: Text('${i.device}${i.zone.isNotEmpty ? ' (${i.zone})' : ''}')))
+                          .toList(),
+                      onChanged: (v) => setDialogState(() => selectedDevice = v ?? selectedDevice),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
+                      child: const Text('Spara reservation', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        final newMac = macCtrl.text.trim();
+                        final newIp = ipCtrl.text.trim();
+                        if (newMac.isEmpty || newIp.isEmpty) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('MAC och IP måste anges.')));
+                          return;
+                        }
+                        final ifaceMatch = _dhcpInterfaces().where((i) => i.device == selectedDevice);
+                        final current = ifaceMatch.isNotEmpty ? List<DHCPReservationModel>.from(ifaceMatch.first.dhcp!.reservations) : <DHCPReservationModel>[];
+                        // Ersätt ev. befintlig reservation för samma MAC.
+                        current.removeWhere((r) => r.mac.trim().toLowerCase() == newMac.toLowerCase());
+                        current.add(DHCPReservationModel(hostname: hostCtrl.text.trim(), mac: newMac, ip: newIp));
+                        _writeReservations(selectedDevice, current);
+                        Navigator.pop(ctx);
+                        setState(() {});
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Reservation tillagd. Kom ihåg att applicera konfigurationen.'),
+                        ));
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _resField(TextEditingController ctrl, String label, String hint) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 36,
+          child: TextField(
+            controller: ctrl,
+            style: const TextStyle(fontSize: 12, color: Colors.white),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              border: const OutlineInputBorder(),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReservationsCard(BuildContext context) {
+    final reservations = _allReservations();
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        border: Border.all(color: const Color(0xFF334155)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.push_pin, size: 16, color: Colors.amberAccent),
+              const SizedBox(width: 8),
+              const Text('Statiska reservationer', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
+              Text('(${reservations.length})', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+              const Spacer(),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.add, size: 14),
+                label: const Text('Lägg till reservation', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
+                onPressed: () => _showReservationDialog(context),
+              ),
+            ],
+          ),
+          if (reservations.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text('Inga reservationer. Lägg till manuellt, eller tryck på nålen i en rad nedan för att reservera en aktiv lease.',
+                  style: TextStyle(color: Colors.white38, fontSize: 11)),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: reservations.map((e) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      border: Border.all(color: const Color(0xFF334155)),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(e.res.hostname.isEmpty ? '(namnlös)' : e.res.hostname,
+                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                            Text('${e.res.ip}  ·  ${e.res.mac}  ·  ${e.device}',
+                                style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                          ],
+                        ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () => _deleteReservation(e.device, e.res),
+                          child: const Icon(Icons.close, size: 14, color: Colors.redAccent),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final visible = _visible;
@@ -170,6 +433,10 @@ class _DhcpScreenState extends State<DhcpScreen> {
               'Enheter som fått en adress av brandväggens DHCP-server (alla gränssnitt utom WAN).',
               style: TextStyle(color: Colors.white54, fontSize: 11),
             ),
+            const SizedBox(height: 12),
+
+            // Statiska reservationer (MAC -> IP)
+            _buildReservationsCard(context),
             const SizedBox(height: 12),
 
             // Filterrad
@@ -272,6 +539,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                               DataColumn(label: const Text('Zon', style: _hStyle), onSort: (i, _) => _onSort(4)),
                               DataColumn(label: const Text('Fick lease', style: _hStyle), onSort: (i, _) => _onSort(5)),
                               DataColumn(label: const Text('Utgår', style: _hStyle), onSort: (i, _) => _onSort(6)),
+                              const DataColumn(label: Text('Reservera', style: _hStyle)),
                             ],
                             rows: visible
                                 .map((l) => DataRow(cells: [
@@ -283,6 +551,13 @@ class _DhcpScreenState extends State<DhcpScreen> {
                                       DataCell(Text(l.zone, style: const TextStyle(color: Colors.amberAccent, fontSize: 11))),
                                       DataCell(Text(_fmtTime(l.startTs), style: const TextStyle(color: Colors.white54, fontSize: 11))),
                                       DataCell(Text(_expiry(l.expireTs), style: const TextStyle(color: Colors.white54, fontSize: 11))),
+                                      DataCell(_isReserved(l.mac)
+                                          ? const Tooltip(message: 'Redan reserverad', child: Icon(Icons.check_circle, size: 16, color: Colors.greenAccent))
+                                          : IconButton(
+                                              icon: const Icon(Icons.push_pin_outlined, size: 16, color: Colors.amberAccent),
+                                              tooltip: 'Reservera denna IP till MAC-adressen',
+                                              onPressed: () => _showReservationDialog(context, hostname: l.hostname, mac: l.mac, ip: l.ip, device: l.interfaceDevice),
+                                            )),
                                     ]))
                                 .toList(),
                           ),

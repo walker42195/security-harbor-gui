@@ -18,6 +18,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
   bool _isTracerouteLoading = false;
   bool _isNmapLoading = false;
   bool _isTcpdumpLoading = false;
+  bool _isDigLoading = false;
+  bool _isArpLoading = false;
+
+  final TextEditingController _digServerController = TextEditingController();
+  String _digType = 'A';
 
   bool _nmapSyn = true;
   bool _nmapFullTcp = false;
@@ -33,6 +38,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
   void dispose() {
     _targetController.dispose();
     _tcpdumpFilterController.dispose();
+    _digServerController.dispose();
     super.dispose();
   }
 
@@ -152,6 +158,120 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       _buildPresetChip('Quad9 (9.9.9.9)', '9.9.9.9'),
                       _buildPresetChip('example.com', 'example.com'),
                     ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // DNS-uppslag (dig)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                border: Border.all(color: const Color(0xFF334155)),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.travel_explore, size: 15, color: Colors.cyanAccent),
+                      SizedBox(width: 6),
+                      Text('DNS-uppslag (dig)', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('Namn att slå upp anges i Mål-fältet ovan.', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text('Typ:', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0F172A),
+                          border: Border.all(color: const Color(0xFF334155)),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: DropdownButton<String>(
+                          value: _digType,
+                          dropdownColor: const Color(0xFF1E293B),
+                          underline: const SizedBox.shrink(),
+                          style: const TextStyle(color: Colors.white, fontSize: 12),
+                          items: const ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SOA', 'PTR', 'SRV']
+                              .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                              .toList(),
+                          onChanged: (v) => setState(() => _digType = v ?? 'A'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 36,
+                          child: TextField(
+                            controller: _digServerController,
+                            style: const TextStyle(fontSize: 12, color: Colors.white),
+                            decoration: const InputDecoration(
+                              hintText: 'DNS-server (valfritt, t.ex. 1.1.1.1)',
+                              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton.icon(
+                        icon: _isDigLoading
+                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                            : const Icon(Icons.travel_explore, size: 14),
+                        label: const Text('Kör dig', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.cyanAccent,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        ),
+                        onPressed: _anyLoading ? null : () => _runDig(provider),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // ARP-/grannbordstabell
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                border: Border.all(color: const Color(0xFF334155)),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.table_rows_outlined, size: 15, color: Colors.cyanAccent),
+                  const SizedBox(width: 6),
+                  const Expanded(
+                    child: Text('ARP-tabell (IP ↔ MAC för enheter brandväggen nyligen sett — bra för DHCP-reservation)',
+                        style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton.icon(
+                    icon: _isArpLoading
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                        : const Icon(Icons.table_chart, size: 14),
+                    label: const Text('Visa ARP-tabell', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.cyanAccent,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    onPressed: _anyLoading ? null : () => _runArp(provider),
                   ),
                 ],
               ),
@@ -433,7 +553,36 @@ class _ToolsScreenState extends State<ToolsScreen> {
     });
   }
 
-  bool get _anyLoading => _isPingLoading || _isTracerouteLoading || _isNmapLoading || _isTcpdumpLoading;
+  bool get _anyLoading => _isPingLoading || _isTracerouteLoading || _isNmapLoading || _isTcpdumpLoading || _isDigLoading || _isArpLoading;
+
+  void _runDig(ConfigProvider provider) async {
+    final target = _targetController.text.trim();
+    if (target.isEmpty) return;
+    final server = _digServerController.text.trim();
+    setState(() {
+      _isDigLoading = true;
+      _output = 'Kör dig $_digType $target${server.isEmpty ? '' : ' @$server'} från brandväggen...\n--------------------------------------------------\n';
+    });
+    final out = await provider.api.dig(target, type: _digType, server: server);
+    if (!mounted) return;
+    setState(() {
+      _output += out;
+      _isDigLoading = false;
+    });
+  }
+
+  void _runArp(ConfigProvider provider) async {
+    setState(() {
+      _isArpLoading = true;
+      _output = 'Hämtar ARP-/grannbordstabellen från brandväggen (ip neigh show)...\n--------------------------------------------------\n';
+    });
+    final out = await provider.api.arpTable();
+    if (!mounted) return;
+    setState(() {
+      _output += out;
+      _isArpLoading = false;
+    });
+  }
 
   Widget _buildInterfaceDropdown(ConfigProvider provider) {
     final ConfigModel? cfg = provider.candidateConfig ?? provider.runningConfig;

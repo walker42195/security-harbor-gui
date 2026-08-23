@@ -47,6 +47,13 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                     ),
                     const SizedBox(width: 10),
                     ElevatedButton.icon(
+                      icon: const Icon(Icons.workspaces_outline, size: 14),
+                      label: const Text('+ Skapa Grupp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
+                      onPressed: () => _showAddGroupDialog(context, provider),
+                    ),
+                    const SizedBox(width: 10),
+                    ElevatedButton.icon(
                       icon: const Icon(Icons.shield, size: 14),
                       label: const Text('+ Hot-lista / GeoIP', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
@@ -108,7 +115,9 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                       ],
                     )
                   : Text(
-                      'Typ: ${obj.type.toUpperCase()}  |  Värden: ${obj.values.join(", ")}',
+                      obj.type == 'group'
+                          ? 'Typ: GRUPP  |  Medlemmar: ${_groupMemberNames(context, obj)}'
+                          : 'Typ: ${obj.type.toUpperCase()}  |  Värden: ${obj.values.join(", ")}',
                       style: const TextStyle(fontSize: 11),
                     ),
               trailing: Row(
@@ -130,7 +139,9 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                     tooltip: 'Redigera',
                     onPressed: () => src != null
                         ? _showAddThreatFeedDialog(context, provider, existing: obj)
-                        : _showAddObjectDialog(context, provider, existing: obj),
+                        : obj.type == 'group'
+                            ? _showAddGroupDialog(context, provider, existing: obj)
+                            : _showAddObjectDialog(context, provider, existing: obj),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
@@ -330,6 +341,129 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 ],
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Namnen på en grupps medlemsobjekt (obj.values = medlems-ID:n) för visning.
+  String _groupMemberNames(BuildContext context, ObjectModel group) {
+    final cfg = context.read<ConfigProvider>().candidateConfig ?? context.read<ConfigProvider>().runningConfig;
+    if (cfg == null) return group.values.join(', ');
+    final names = group.values.map((id) {
+      final m = cfg.objects.where((o) => o.id == id);
+      return m.isNotEmpty ? m.first.name : id;
+    }).toList();
+    return names.isEmpty ? '(inga)' : names.join(', ');
+  }
+
+  // En grupp är ett objekt av typ 'group' vars values är ANDRA objekts ID:n.
+  // Backend (pkg/adapter/nftables/resolveObjectCIDRs) löser upp gruppen
+  // rekursivt till alla medlemmars IP/CIDR, så en policy kan referera EN grupp
+  // och matcha mot flera objekt samtidigt.
+  void _showAddGroupDialog(BuildContext context, ConfigProvider provider, {ObjectModel? existing}) {
+    final nameCtrl = TextEditingController(text: existing?.name ?? 'WEB-SERVERS-GRUPP');
+    final selected = <String>{...(existing?.values ?? const <String>[])};
+
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    // Valbara medlemmar: alla objekt utom hot-listor/geoip (automatiska källor)
+    // och utom gruppen själv (en grupp får inte innehålla sig själv).
+    final candidates = (cfg?.objects ?? const <ObjectModel>[])
+        .where((o) => o.source == null && o.id != existing?.id)
+        .toList();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => Dialog(
+          backgroundColor: const Color(0xFF1E293B),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          child: Container(
+            width: 460,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                dialogTitleRow(context, existing != null ? 'Redigera Grupp' : 'Skapa ny Grupp', () => Navigator.pop(ctx)),
+                const SizedBox(height: 12),
+                dialogSection(title: 'GRUPP', children: [
+                  dialogField(nameCtrl, 'Gruppnamn'),
+                ]),
+                const SizedBox(height: 12),
+                const Text('MEDLEMMAR', style: TextStyle(color: Colors.cyanAccent, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                const SizedBox(height: 4),
+                if (candidates.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Text('Skapa först några objekt (host/nätverk) att gruppera.', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 260),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: candidates.map((o) {
+                          final isGroup = o.type == 'group';
+                          return CheckboxListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            controlAffinity: ListTileControlAffinity.leading,
+                            activeColor: Colors.amberAccent,
+                            checkColor: Colors.black,
+                            value: selected.contains(o.id),
+                            title: Text(o.name, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                            subtitle: Text(
+                              isGroup ? 'grupp: ${_groupMemberNames(context, o)}' : '${o.type} · ${o.values.join(", ")}',
+                              style: const TextStyle(color: Colors.white38, fontSize: 10),
+                            ),
+                            onChanged: (v) => setDialogState(() {
+                              if (v == true) {
+                                selected.add(o.id);
+                              } else {
+                                selected.remove(o.id);
+                              }
+                            }),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
+                      onPressed: selected.isEmpty
+                          ? null
+                          : () {
+                              final c = provider.candidateConfig ?? provider.runningConfig;
+                              if (c != null) {
+                                final savedObj = ObjectModel(
+                                  id: existing?.id ?? 'obj_${DateTime.now().millisecondsSinceEpoch}',
+                                  name: nameCtrl.text.trim().isEmpty ? 'Ny grupp' : nameCtrl.text.trim(),
+                                  type: 'group',
+                                  values: selected.toList(),
+                                  description: existing?.description ?? 'Grupp skapad i GUI',
+                                );
+                                final updatedObjs = existing != null
+                                    ? c.objects.map((o) => o.id == existing.id ? savedObj : o).toList()
+                                    : (List<ObjectModel>.from(c.objects)..add(savedObj));
+                                provider.updateCandidate(c.copyWith(objects: updatedObjs));
+                              }
+                              Navigator.pop(ctx);
+                            },
+                      child: const Text('Spara', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
