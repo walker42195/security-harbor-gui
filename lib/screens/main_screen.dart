@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
 import 'dashboard_screen.dart';
 import 'interfaces_screen.dart';
+import 'routes_screen.dart';
 import 'policies_screen.dart';
 import 'objects_screen.dart';
 import 'sni_routes_screen.dart';
@@ -40,6 +41,7 @@ class _MainScreenState extends State<MainScreen> {
     final screens = <Widget>[
       const DashboardScreen(),
       const InterfacesScreen(),
+      const RoutesScreen(),
       const PoliciesScreen(),
       const ObjectsScreen(),
       if (!isHostMode) const SniRoutesScreen(),
@@ -55,6 +57,7 @@ class _MainScreenState extends State<MainScreen> {
     final destinations = <NavigationRailDestination>[
       const NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: Text('Dashboard')),
       const NavigationRailDestination(icon: Icon(Icons.router_outlined), selectedIcon: Icon(Icons.router), label: Text('Interfaces')),
+      const NavigationRailDestination(icon: Icon(Icons.route_outlined), selectedIcon: Icon(Icons.route), label: Text('Routing')),
       const NavigationRailDestination(icon: Icon(Icons.shield_outlined), selectedIcon: Icon(Icons.shield), label: Text('Policies')),
       const NavigationRailDestination(icon: Icon(Icons.category_outlined), selectedIcon: Icon(Icons.category), label: Text('Objekt')),
       if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.alt_route_outlined), selectedIcon: Icon(Icons.alt_route), label: Text('SNI')),
@@ -345,37 +348,53 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
             child: Row(
               children: [
-                // Navigation Sidebar
-                NavigationRail(
-                  backgroundColor: const Color(0xFF1E293B),
-                  selectedIndex: _selectedIndex,
-                  onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
-                  labelType: NavigationRailLabelType.all,
-                  selectedIconTheme: const IconThemeData(color: Colors.cyanAccent),
-                  selectedLabelTextStyle: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 11),
-                  unselectedIconTheme: const IconThemeData(color: Colors.grey),
-                  unselectedLabelTextStyle: const TextStyle(color: Colors.grey, fontSize: 11),
-                  leading: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    child: Column(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.asset(
-                            'assets/logo.png',
-                            width: 36,
-                            height: 36,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => const Icon(Icons.shield, color: Colors.cyanAccent, size: 32),
+                // Navigation Sidebar. VisualDensity.compact + mindre
+                // ikoner/etiketter/leading-logga krymper var post radikalt
+                // (upptäckt 2026-08-24: med standardstorlek och 13
+                // menyposter + leading-logga tog listan över 1000px höjd,
+                // vilket inte fick plats under 1080px hög skärm minus
+                // topplist/webbläsarchrome — de sista posterna klipptes
+                // bort utan att NavigationRail scrollar). SingleChildScrollView
+                // är dessutom ett strukturellt skyddsnät: om listan ändå
+                // skulle bli för hög (fler menyposter i framtiden, eller en
+                // ännu lägre skärm) går den att scrolla i stället för att
+                // klippas/overflowa tyst.
+                Theme(
+                  data: Theme.of(context).copyWith(visualDensity: VisualDensity.compact),
+                  child: SingleChildScrollView(
+                    child: IntrinsicHeight(
+                      child: NavigationRail(
+                          backgroundColor: const Color(0xFF1E293B),
+                          selectedIndex: _selectedIndex,
+                          onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
+                          labelType: NavigationRailLabelType.all,
+                          minWidth: 56,
+                          selectedIconTheme: const IconThemeData(color: Colors.cyanAccent, size: 18),
+                          selectedLabelTextStyle: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 9),
+                          unselectedIconTheme: const IconThemeData(color: Colors.grey, size: 18),
+                          unselectedLabelTextStyle: const TextStyle(color: Colors.grey, fontSize: 9),
+                          leading: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Column(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(5),
+                                  child: Image.asset(
+                                    'assets/logo.png',
+                                    width: 24,
+                                    height: 24,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => const Icon(Icons.shield, color: Colors.cyanAccent, size: 22),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          destinations: destinations,
                         ),
-                        const SizedBox(height: 6),
-                        const Text('HARBOR', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                      ],
+                      ),
                     ),
                   ),
-                  destinations: destinations,
-                ),
                 const VerticalDivider(thickness: 1, width: 1, color: Colors.white10),
                 Expanded(child: screens[_selectedIndex]),
               ],

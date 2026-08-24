@@ -326,16 +326,29 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         ],
       ),
       Tooltip(
-        message: 'Träffar: ${_hitCountFor(pol.name).$1} paket, ${_hitCountFor(pol.name).$2} bytes',
-        child: Text(
-          pol.name,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: pol.enabled ? Colors.white : Colors.grey,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            decoration: pol.enabled ? null : TextDecoration.lineThrough,
-          ),
+        message: pol.protected
+            ? '${pol.name}\n\nSkyddad policy — kan inte inaktiveras eller tas bort. ${pol.description}'
+            : 'Träffar: ${_hitCountFor(pol.name).$1} paket, ${_hitCountFor(pol.name).$2} bytes',
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (pol.protected) ...[
+              const Icon(Icons.lock, size: 11, color: Colors.amber),
+              const SizedBox(width: 4),
+            ],
+            Flexible(
+              child: Text(
+                pol.name,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: pol.enabled ? Colors.white : Colors.grey,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  decoration: pol.enabled ? null : TextDecoration.lineThrough,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       Text(pol.service, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
@@ -374,18 +387,20 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(Icons.delete_outline, size: 14, color: Colors.redAccent),
+            icon: Icon(Icons.delete_outline, size: 14, color: pol.protected ? Colors.white24 : Colors.redAccent),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            tooltip: 'Ta bort Policy',
-            onPressed: () => _deletePolicy(context, provider, cfg, idx),
+            tooltip: pol.protected ? 'Skyddad policy — kan inte tas bort' : 'Ta bort Policy',
+            onPressed: pol.protected ? () => _showProtectedPolicyNotice(context, pol.name) : () => _deletePolicy(context, provider, cfg, idx),
           ),
           const SizedBox(width: 8),
           Switch(
             value: pol.enabled,
             activeThumbColor: Colors.tealAccent,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            onChanged: (val) => _togglePolicy(context, provider, cfg, idx, val),
+            onChanged: pol.protected && pol.enabled
+                ? null
+                : (val) => _togglePolicy(context, provider, cfg, idx, val),
           ),
         ],
       ),
@@ -623,8 +638,43 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     ));
   }
 
+  // Visas när admin försöker inaktivera/ta bort en Protected policy (t.ex.
+  // Management API-åtkomsten) via en väg som redan är avstängd i GUI:t
+  // (disabled knapp/switch) men som ändå kan nås, t.ex. via delete-ikonens
+  // onPressed. Backend blockerar detta ändå vid Apply (validatePolicies),
+  // men GUI:t ska förklara VARFÖR direkt i stället för att bara ignorera
+  // klicket.
+  Future<void> _showProtectedPolicyNotice(BuildContext context, String policyName) {
+    return showDialog(
+      context: context,
+      builder: (dctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Row(
+          children: const [
+            Icon(Icons.lock, color: Colors.amber, size: 20),
+            SizedBox(width: 8),
+            Text('Skyddad policy', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          '"$policyName" kan inte inaktiveras eller tas bort. Det är den enda vägen in i GUI:t, '
+          'utan en text-baserad reservväg som SSH — att stänga av den skulle riskera att låsa ute '
+          'administratören helt.',
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dctx), child: const Text('OK')),
+        ],
+      ),
+    );
+  }
+
   Future<void> _deletePolicy(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx) async {
     final pol = cfg.policies[idx];
+    if (pol.protected) {
+      await _showProtectedPolicyNotice(context, pol.name);
+      return;
+    }
     if (pol.critical) {
       // Kritiska regler har sin egen, strängare bekräftelse (utelåsnings-
       // varning) — den räcker, ingen extra dialog ovanpå.
@@ -668,6 +718,10 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
 
   Future<void> _togglePolicy(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx, bool enabled) async {
     final cur = cfg.policies[idx];
+    if (cur.protected && !enabled) {
+      await _showProtectedPolicyNotice(context, cur.name);
+      return;
+    }
     if (cur.critical && !enabled) {
       final confirmed = await _confirmCriticalChange(context, cur.name, 'inaktiverar');
       if (!confirmed) return;
@@ -689,6 +743,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       description: cur.description,
       local: cur.local,
       critical: cur.critical,
+      protected: cur.protected,
       schedule: cur.schedule,
     );
     provider.updateCandidate(cfg.copyWith(
@@ -811,16 +866,28 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           value: enabled,
                           activeColor: Colors.tealAccent,
                           checkColor: Colors.black,
-                          onChanged: (v) async {
-                            final newVal = v ?? false;
-                            if (pol != null && pol.critical && enabled && !newVal) {
-                              final confirmed = await _confirmCriticalChange(context, pol.name, 'inaktiverar');
-                              if (!confirmed) return;
-                            }
-                            setState(() => enabled = newVal);
-                          },
+                          onChanged: (pol?.protected ?? false)
+                              ? null
+                              : (v) async {
+                                  final newVal = v ?? false;
+                                  if (pol != null && pol.critical && enabled && !newVal) {
+                                    final confirmed = await _confirmCriticalChange(context, pol.name, 'inaktiverar');
+                                    if (!confirmed) return;
+                                  }
+                                  setState(() => enabled = newVal);
+                                },
                         ),
-                        const Text('Enable', style: TextStyle(color: Colors.white, fontSize: 12)),
+                        Text(
+                          'Enable',
+                          style: TextStyle(color: (pol?.protected ?? false) ? Colors.white38 : Colors.white, fontSize: 12),
+                        ),
+                        if (pol?.protected ?? false) ...[
+                          const SizedBox(width: 6),
+                          const Tooltip(
+                            message: 'Skyddad policy — kan inte inaktiveras, det är den enda vägen in i GUI:t.',
+                            child: Icon(Icons.lock, size: 14, color: Colors.amber),
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -1200,7 +1267,12 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           final newPol = PolicyModel(
                             id: isEditing ? pol!.id : 'pol_${DateTime.now().millisecondsSinceEpoch}',
                             name: nameCtrl.text,
-                            enabled: enabled,
+                            // En Protected policy sparas alltid som enabled=true, oavsett
+                            // vad "enabled" råkar innehålla — checkboxen ovan är redan
+                            // disabled för den, men detta är ett andra skyddslager mot att
+                            // ett dolt/oåtkomligt state ändå slinker med (backend
+                            // blockerar det ändå vid Apply, se validatePolicies).
+                            enabled: (pol?.protected ?? false) ? true : enabled,
                             priority: pol?.priority ?? (cfg.policies.length + 1),
                             sourceZone: srcZones.join(', '),
                             destZone: dstZones.join(', '),
@@ -1211,6 +1283,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                             nat: updatedNAT,
                             local: local,
                             critical: pol?.critical ?? false,
+                            protected: pol?.protected ?? false,
                             schedule: scheduleEnabled
                                 ? PolicyScheduleModel(
                                     enabled: true,

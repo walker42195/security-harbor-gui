@@ -14,6 +14,7 @@ class ConfigModel {
   final SyslogConfigModel? syslog;
   final IDSConfigModel? ids;
   final List<SNIRouteModel> sniRoutes;
+  final List<StaticRouteModel> staticRoutes;
 
   ConfigModel({
     required this.version,
@@ -31,6 +32,7 @@ class ConfigModel {
     this.syslog,
     this.ids,
     this.sniRoutes = const [],
+    this.staticRoutes = const [],
   });
 
   factory ConfigModel.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class ConfigModel {
       syslog: json['syslog'] != null ? SyslogConfigModel.fromJson(json['syslog']) : null,
       ids: json['ids'] != null ? IDSConfigModel.fromJson(json['ids']) : null,
       sniRoutes: (json['sni_routes'] as List? ?? []).map((e) => SNIRouteModel.fromJson(e)).toList(),
+      staticRoutes: (json['static_routes'] as List? ?? []).map((e) => StaticRouteModel.fromJson(e)).toList(),
     );
   }
 
@@ -81,6 +84,7 @@ class ConfigModel {
     SyslogConfigModel? syslog,
     IDSConfigModel? ids,
     List<SNIRouteModel>? sniRoutes,
+    List<StaticRouteModel>? staticRoutes,
   }) =>
       ConfigModel(
         version: version ?? this.version,
@@ -98,6 +102,7 @@ class ConfigModel {
         syslog: syslog ?? this.syslog,
         ids: ids ?? this.ids,
         sniRoutes: sniRoutes ?? this.sniRoutes,
+        staticRoutes: staticRoutes ?? this.staticRoutes,
       );
 
   Map<String, dynamic> toJson() => {
@@ -116,7 +121,70 @@ class ConfigModel {
         if (syslog != null) 'syslog': syslog!.toJson(),
         if (ids != null) 'ids': ids!.toJson(),
         'sni_routes': sniRoutes.map((e) => e.toJson()).toList(),
+        'static_routes': staticRoutes.map((e) => e.toJson()).toList(),
       };
+}
+
+/// Statisk IP-rutt (`ip route add <network> via <gateway>`) — se
+/// pkg/config.StaticRoute i backend. Ett nät som inte nås via brandväggens
+/// vanliga default-rutt utan kräver en specifik gateway, t.ex. ett internt
+/// nät bakom en annan router på LAN-sidan.
+class StaticRouteModel {
+  final String id;
+  final String name;
+  final bool enabled;
+  final String network; // CIDR, t.ex. "192.168.113.0/24"
+  final String gateway; // t.ex. "10.0.0.1"
+  final String interfaceDevice; // Valfritt, t.ex. "ens19" — tomt = låt kärnan välja
+  final String description;
+
+  StaticRouteModel({
+    required this.id,
+    this.name = '',
+    this.enabled = true,
+    required this.network,
+    required this.gateway,
+    this.interfaceDevice = '',
+    this.description = '',
+  });
+
+  factory StaticRouteModel.fromJson(Map<String, dynamic> json) => StaticRouteModel(
+        id: json['id'] ?? '',
+        name: json['name'] ?? '',
+        enabled: json['enabled'] ?? true,
+        network: json['network'] ?? '',
+        gateway: json['gateway'] ?? '',
+        interfaceDevice: json['interface'] ?? '',
+        description: json['description'] ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'enabled': enabled,
+        'network': network,
+        'gateway': gateway,
+        if (interfaceDevice.isNotEmpty) 'interface': interfaceDevice,
+        'description': description,
+      };
+
+  StaticRouteModel copyWith({
+    String? name,
+    bool? enabled,
+    String? network,
+    String? gateway,
+    String? interfaceDevice,
+    String? description,
+  }) =>
+      StaticRouteModel(
+        id: id,
+        name: name ?? this.name,
+        enabled: enabled ?? this.enabled,
+        network: network ?? this.network,
+        gateway: gateway ?? this.gateway,
+        interfaceDevice: interfaceDevice ?? this.interfaceDevice,
+        description: description ?? this.description,
+      );
 }
 
 /// Namnbaserad routning (SNI passthrough via HAProxy) — se pkg/config SNIRoute
@@ -795,6 +863,12 @@ class PolicyModel {
   final String description;
   final bool local; // Gäller åtkomst till brandväggen själv (INPUT), t.ex. SSH
   final bool critical; // Kräver bekräftelse innan den inaktiveras/tas bort
+  // protected är ett strängare skydd än critical: går INTE att inaktivera
+  // eller ta bort ens med bekräftelse — GUI:t blockerar det helt (se
+  // policies_screen.dart), och backend (validatePolicies vid Apply) stoppar
+  // det ändå om GUI-spärren skulle kringgås. Används för Management
+  // API-policyn ("sys-mgmt-api-lan") — se agentens config.MgmtAPIPolicyID.
+  final bool protected;
   final PolicyScheduleModel? schedule; // Fas 7: tidsstyrd policy
 
   PolicyModel({
@@ -813,6 +887,7 @@ class PolicyModel {
     this.description = '',
     this.local = false,
     this.critical = false,
+    this.protected = false,
     this.schedule,
   });
 
@@ -833,6 +908,7 @@ class PolicyModel {
       description: json['description'] ?? '',
       local: json['local'] ?? false,
       critical: json['critical'] ?? false,
+      protected: json['protected'] ?? false,
       schedule: json['schedule'] != null ? PolicyScheduleModel.fromJson(json['schedule']) : null,
     );
   }
@@ -853,6 +929,7 @@ class PolicyModel {
         'description': description,
         'local': local,
         'critical': critical,
+        'protected': protected,
         if (schedule != null) 'schedule': schedule!.toJson(),
       };
 
@@ -872,6 +949,7 @@ class PolicyModel {
         description: description,
         local: local,
         critical: critical,
+        protected: protected,
         schedule: schedule,
       );
 }
