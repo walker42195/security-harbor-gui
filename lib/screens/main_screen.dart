@@ -14,6 +14,7 @@ import 'dns_screen.dart';
 import 'dns_devices_screen.dart';
 import 'dhcp_screen.dart';
 import 'security_events_screen.dart';
+import 'services_screen.dart';
 
 import 'tools_screen.dart';
 
@@ -61,6 +62,7 @@ class _MainScreenState extends State<MainScreen> {
       if (!isHostMode) const DhcpScreen(),
       const ConnectionsScreen(),
       if (!isHostMode) const SecurityEventsScreen(),
+      const ServicesScreen(),
       const ToolsScreen(),
       const SettingsScreen(),
     ];
@@ -77,6 +79,7 @@ class _MainScreenState extends State<MainScreen> {
       if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.devices_other_outlined), selectedIcon: Icon(Icons.devices_other), label: Text('DHCP')),
       const NavigationRailDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: Text('Loggning')),
       if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.gpp_maybe_outlined), selectedIcon: Icon(Icons.gpp_maybe), label: Text('IDS')),
+      const NavigationRailDestination(icon: Icon(Icons.miscellaneous_services_outlined), selectedIcon: Icon(Icons.miscellaneous_services), label: Text('Tjänster')),
       const NavigationRailDestination(icon: Icon(Icons.build_circle_outlined), selectedIcon: Icon(Icons.build_circle), label: Text('Verktyg')),
       const NavigationRailDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: Text('Settings')),
     ];

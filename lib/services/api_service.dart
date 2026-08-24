@@ -375,6 +375,35 @@ class ApiService {
     return [];
   }
 
+  Future<List<ServiceStatusModel>> getServicesStatus() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/services/status'), headers: _headers);
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List;
+        return list.map((e) => ServiceStatusModel.fromJson(e)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// Startar om EN tjänst (matchad på ID, se pkg/api/services.go). Returnerar
+  /// null vid lyckad omstart (undantaget "agent", som alltid returnerar null
+  /// direkt — se kommentaren i services_screen.dart om varför), annars ett
+  /// felmeddelande.
+  Future<String?> restartService(String id) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/services/restart'),
+        headers: _headers,
+        body: jsonEncode({'id': id}),
+      );
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Omstart misslyckades';
+    } catch (e) {
+      return 'Fel: $e';
+    }
+  }
+
   Future<Map<String, dynamic>?> getWireGuardServerInfo() async {
     try {
       final res = await _client.get(Uri.parse('$baseUrl/api/v1/vpn/wireguard/server-info'), headers: _headers);

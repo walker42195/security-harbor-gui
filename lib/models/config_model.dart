@@ -1352,3 +1352,33 @@ class DhcpLeaseModel {
         zone: json['zone'] ?? '',
       );
 }
+
+/// Status för EN systemd-tjänst agenten hanterar (se pkg/api/services.go).
+/// Live status, inte en del av den deklarativa configen — hämtas separat
+/// via ApiService.getServicesStatus().
+class ServiceStatusModel {
+  final String id;
+  final String name;
+  final String description;
+  final String unit;
+  final String active; // ActiveState: active, inactive, failed, activating, ...
+  final String sub; // SubState: running, dead, exited, ...
+
+  ServiceStatusModel({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.unit,
+    required this.active,
+    required this.sub,
+  });
+
+  factory ServiceStatusModel.fromJson(Map<String, dynamic> json) => ServiceStatusModel(
+        id: json['id'] ?? '',
+        name: json['name'] ?? '',
+        description: json['description'] ?? '',
+        unit: json['unit'] ?? '',
+        active: json['active'] ?? 'unknown',
+        sub: json['sub'] ?? 'unknown',
+      );
+}
