@@ -1,4 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Krävs för ALL nätverkstrafik appen gör (anslutning till brandväggens
+         Management API). Fanns tidigare bara i debug/profile-varianternas
+         manifest (Flutter-mallens standard, avsedd för utvecklingsverktygens
+         egna behov) - INTE i main, som release-bygget faktiskt använder.
+         Upptäckt 2026-08-24: release-APK:n på security.novabase.se kunde
+         därför aldrig öppna en enda socket, vilket gjorde inloggning
+         omöjlig på alla nätverk (maskerades i `flutter run`/debug-läge,
+         där debug-manifestets behörighet gällde). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="security_harbor_gui"
         android:name="${applicationName}"
