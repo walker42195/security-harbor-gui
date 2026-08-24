@@ -259,53 +259,69 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
 
-          // Safe Apply Status Bar (Syns när konfigurationen är applicerad i unconfirmed-läge)
+          // Safe Apply Status Bar (Syns när konfigurationen är applicerad i
+          // unconfirmed-läge). Text ovanför knappar (Column) i stället för
+          // allt i EN Row — en lång brödtext i en Expanded bredvid två breda
+          // knappar klämdes tidigare ihop till nästan 0px bredd på en
+          // telefonskärm, vilket radbröt texten en bokstav i taget
+          // (upptäckt 2026-08-24).
           if (provider.applyStatus == ApplyStatus.unconfirmed)
             Container(
               color: const Color(0xFF9A3412),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.timer, color: Colors.amberAccent, size: 18),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'ÄNDRINGAR APPLICERADE PÅ BRANDVÄGGEN (SAFE APPLY): Automatisk rollback sker om ${provider.rollbackSecondsRemaining} sekunder om du inte bekräftar!',
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
+                  Row(
+                    children: [
+                      const Icon(Icons.timer, color: Colors.amberAccent, size: 18),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'ÄNDRINGAR APPLICERADE PÅ BRANDVÄGGEN (SAFE APPLY): Automatisk rollback sker om ${provider.rollbackSecondsRemaining} sekunder om du inte bekräftar!',
+                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.check_circle, size: 14),
-                    label: const Text('BEKRÄFTA (COMMIT)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
-                    onPressed: () async {
-                      final ok = await provider.confirmChanges();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(ok ? 'Konfiguration bekräftad och committad till running.json!' : 'Misslyckades bekräfta'),
-                            backgroundColor: ok ? Colors.green : Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.undo, size: 14),
-                    label: const Text('RULLA TILLBAKA', style: TextStyle(fontSize: 11)),
-                    style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
-                    onPressed: () async {
-                      await provider.rollbackChanges();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Konfigurationen återställd till senast säkra tillstånd.'),
-                            backgroundColor: Colors.orange,
-                          ),
-                        );
-                      }
-                    },
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.check_circle, size: 14),
+                        label: const Text('BEKRÄFTA (COMMIT)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        onPressed: () async {
+                          final ok = await provider.confirmChanges();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(ok ? 'Konfiguration bekräftad och committad till running.json!' : 'Misslyckades bekräfta'),
+                                backgroundColor: ok ? Colors.green : Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.undo, size: 14),
+                        label: const Text('RULLA TILLBAKA', style: TextStyle(fontSize: 11)),
+                        style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        onPressed: () async {
+                          await provider.rollbackChanges();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Konfigurationen återställd till senast säkra tillstånd.'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -320,84 +336,98 @@ class _MainScreenState extends State<MainScreen> {
               decoration: const BoxDecoration(
                 border: Border(bottom: BorderSide(color: Colors.cyanAccent, width: 1)),
               ),
-              child: Row(
+              // Se kommentaren på Safe Apply-bannern ovan — samma
+              // Column(text ovanför, Wrap(knappar) under) i stället för allt
+              // i en Row, av samma anledning (2026-08-24).
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.edit_note, color: Colors.cyanAccent, size: 18),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Du har obekräftade ändringar redo att testas på brandväggen.',
-                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  // Ångra: kastar bort de oapplicerade ändringarna och
-                  // återställer kandidaten till körande config. Räddar t.ex.
-                  // en råkad borttagning av en regel innan Applicera tryckts.
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.undo, size: 14),
-                    label: const Text('ÅNGRA ÄNDRINGAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
-                    onPressed: () async {
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (dctx) => AlertDialog(
-                          backgroundColor: const Color(0xFF1E293B),
-                          title: const Text('Ångra ändringar?', style: TextStyle(color: Colors.white, fontSize: 14)),
-                          content: const Text(
-                            'Alla ändringar du gjort sedan senaste applicering kastas bort och '
-                            'konfigurationen återställs till den som just nu kör på brandväggen. '
-                            'Detta går inte att ångra.',
-                            style: TextStyle(color: Colors.white70, fontSize: 12),
-                          ),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(dctx, false), child: const Text('Avbryt')),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-                              onPressed: () => Navigator.pop(dctx, true),
-                              child: const Text('Ångra ändringar'),
-                            ),
-                          ],
+                  Row(
+                    children: const [
+                      Icon(Icons.edit_note, color: Colors.cyanAccent, size: 18),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Du har obekräftade ändringar redo att testas på brandväggen.',
+                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
                         ),
-                      );
-                      if (confirmed != true) return;
-                      final ok = await provider.discardChanges();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(ok
-                                ? 'Ändringarna återställdes till körande konfiguration.'
-                                : (provider.errorMessage ?? 'Kunde inte återställa ändringarna.')),
-                            backgroundColor: ok ? Colors.teal : Colors.red,
-                          ),
-                        );
-                      }
-                    },
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.play_arrow, size: 14),
-                    label: const Text('APPLICERA (SAFE APPLY)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
-                    onPressed: () async {
-                      final ok = await provider.applyChanges();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(ok
-                                ? 'Ändringar applicerade på brandväggen! Bekräfta (Commit) inom 30s för att behålla dem.'
-                                // Visar servers faktiska felmeddelande (t.ex. ett
-                                // valideringsfel om en policys zon inte matchar
-                                // något gränssnitt) istället för en generisk text
-                                // utan detaljer - upptäckt 2026-08-19 att den
-                                // gamla generiska texten gjorde det omöjligt att
-                                // förstå VARFÖR Apply misslyckades.
-                                : (provider.errorMessage ?? 'Misslyckades applicera konfiguration på brandväggen')),
-                            backgroundColor: ok ? Colors.teal : Colors.red,
-                            duration: Duration(seconds: ok ? 4 : 8),
-                          ),
-                        );
-                      }
-                    },
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      // Ångra: kastar bort de oapplicerade ändringarna och
+                      // återställer kandidaten till körande config. Räddar t.ex.
+                      // en råkad borttagning av en regel innan Applicera tryckts.
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.undo, size: 14),
+                        label: const Text('ÅNGRA ÄNDRINGAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        onPressed: () async {
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (dctx) => AlertDialog(
+                              backgroundColor: const Color(0xFF1E293B),
+                              title: const Text('Ångra ändringar?', style: TextStyle(color: Colors.white, fontSize: 14)),
+                              content: const Text(
+                                'Alla ändringar du gjort sedan senaste applicering kastas bort och '
+                                'konfigurationen återställs till den som just nu kör på brandväggen. '
+                                'Detta går inte att ångra.',
+                                style: TextStyle(color: Colors.white70, fontSize: 12),
+                              ),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(dctx, false), child: const Text('Avbryt')),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                                  onPressed: () => Navigator.pop(dctx, true),
+                                  child: const Text('Ångra ändringar'),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (confirmed != true) return;
+                          final ok = await provider.discardChanges();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(ok
+                                    ? 'Ändringarna återställdes till körande konfiguration.'
+                                    : (provider.errorMessage ?? 'Kunde inte återställa ändringarna.')),
+                                backgroundColor: ok ? Colors.teal : Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.play_arrow, size: 14),
+                        label: const Text('APPLICERA (SAFE APPLY)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        onPressed: () async {
+                          final ok = await provider.applyChanges();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(ok
+                                    ? 'Ändringar applicerade på brandväggen! Bekräfta (Commit) inom 30s för att behålla dem.'
+                                    // Visar servers faktiska felmeddelande (t.ex. ett
+                                    // valideringsfel om en policys zon inte matchar
+                                    // något gränssnitt) istället för en generisk text
+                                    // utan detaljer - upptäckt 2026-08-19 att den
+                                    // gamla generiska texten gjorde det omöjligt att
+                                    // förstå VARFÖR Apply misslyckades.
+                                    : (provider.errorMessage ?? 'Misslyckades applicera konfiguration på brandväggen')),
+                                backgroundColor: ok ? Colors.teal : Colors.red,
+                                duration: Duration(seconds: ok ? 4 : 8),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
