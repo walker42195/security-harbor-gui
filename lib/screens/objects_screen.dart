@@ -27,39 +27,40 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Wrap i stället för Row+spaceBetween: tre knappar med rätt
+            // långa etiketter fick tidigare aldrig plats bredvid varandra på
+            // en telefonskärm - Row overflowade tyst (upptäckt 2026-08-24).
+            // Wrap låter dem falla ner till en ny rad i stället.
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 10,
+              runSpacing: 10,
               children: [
                 const Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.category, color: Colors.cyanAccent, size: 22),
                     SizedBox(width: 10),
                     Text('Objekt & Grupper', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
                 ),
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.dns, size: 14),
-                      label: const Text('+ Skapa Objekt', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
-                      onPressed: () => _showAddObjectDialog(context, provider),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.workspaces_outline, size: 14),
-                      label: const Text('+ Skapa Grupp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
-                      onPressed: () => _showAddGroupDialog(context, provider),
-                    ),
-                    const SizedBox(width: 10),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.shield, size: 14),
-                      label: const Text('+ Hot-lista / GeoIP', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
-                      onPressed: () => _showAddThreatFeedDialog(context, provider),
-                    ),
-                  ],
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.dns, size: 14),
+                  label: const Text('+ Skapa Objekt', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                  onPressed: () => _showAddObjectDialog(context, provider),
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.workspaces_outline, size: 14),
+                  label: const Text('+ Skapa Grupp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
+                  onPressed: () => _showAddGroupDialog(context, provider),
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.shield, size: 14),
+                  label: const Text('+ Hot-lista / GeoIP', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                  onPressed: () => _showAddThreatFeedDialog(context, provider),
                 ),
               ],
             ),
@@ -177,7 +178,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
-          width: 480,
+          width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 480.0),
           height: 560,
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -295,7 +296,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
-          width: 440,
+          width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 440.0),
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -385,7 +386,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
           backgroundColor: const Color(0xFF1E293B),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
-            width: 460,
+            width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 460.0),
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -500,7 +501,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
           backgroundColor: const Color(0xFF1E293B),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
-            width: 460,
+            width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 460.0),
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,

@@ -255,7 +255,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
-          width: 400,
+          width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 400.0),
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -55,12 +55,17 @@ class _ToolsScreenState extends State<ToolsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            // Rubrik och Server-badge
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Rubrik och Server-badge. Wrap i stället för Row+spaceBetween:
+            // titeln + den långa badgetexten overflowade tyst på en
+            // telefonskärm (upptäckt 2026-08-24).
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 10,
+              runSpacing: 8,
               children: [
-                Row(
-                  children: const [
+                const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Icon(Icons.build_circle_outlined, color: Colors.cyanAccent, size: 22),
                     SizedBox(width: 10),
                     Text(

@@ -441,7 +441,7 @@ PersistentKeepalive = 25
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
-          width: 520,
+          width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 520.0),
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -782,7 +782,7 @@ PersistentKeepalive = 25
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
-          width: 520,
+          width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 520.0),
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,

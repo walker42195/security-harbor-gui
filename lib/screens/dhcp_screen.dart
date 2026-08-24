@@ -224,7 +224,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
           backgroundColor: const Color(0xFF1E293B),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
-            width: 420,
+            width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 420.0),
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -339,14 +339,21 @@ class _DhcpScreenState extends State<DhcpScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              const Icon(Icons.push_pin, size: 16, color: Colors.amberAccent),
-              const SizedBox(width: 8),
-              const Text('Statiska reservationer', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 8),
-              Text('(${reservations.length})', style: const TextStyle(color: Colors.white54, fontSize: 11)),
-              const Spacer(),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.push_pin, size: 16, color: Colors.amberAccent),
+                  const SizedBox(width: 8),
+                  const Text('Statiska reservationer', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  const SizedBox(width: 8),
+                  Text('(${reservations.length})', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                ],
+              ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
                 label: const Text('Lägg till reservation', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),

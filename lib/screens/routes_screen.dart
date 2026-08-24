@@ -34,15 +34,22 @@ class _RoutesScreenState extends State<RoutesScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             color: const Color(0xFF1E293B),
-            child: Row(
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                const Icon(Icons.alt_route, color: Colors.cyanAccent, size: 20),
-                const SizedBox(width: 8),
-                const Text(
-                  'Statiska Rutter (Routing)',
-                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.alt_route, color: Colors.cyanAccent, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Statiska Rutter (Routing)',
+                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
-                const Spacer(),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.add, size: 16, color: Colors.cyanAccent),
                   label: const Text('Ny rutt', style: TextStyle(fontSize: 12, color: Colors.white)),
@@ -107,8 +114,12 @@ class _RoutesScreenState extends State<RoutesScreen> {
             color: r.enabled ? Colors.tealAccent : Colors.grey,
           ),
           const SizedBox(width: 10),
-          SizedBox(
-            width: 180,
+          // Expanded (flex) i stället för en hård SizedBox(width: 180) —
+          // på en telefonskärm gav den fasta bredden + ikonknapparna
+          // tillsammans en RenderFlex-overflow (upptäckt 2026-08-24). Namn
+          // och nät/gateway delar nu bredden proportionellt istället.
+          Expanded(
+            flex: 2,
             child: Text(
               r.name.isEmpty ? '(namnlös rutt)' : r.name,
               overflow: TextOverflow.ellipsis,
@@ -119,7 +130,9 @@ class _RoutesScreenState extends State<RoutesScreen> {
               ),
             ),
           ),
+          const SizedBox(width: 8),
           Expanded(
+            flex: 3,
             child: RichText(
               overflow: TextOverflow.ellipsis,
               text: TextSpan(
@@ -235,7 +248,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
             style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
           ),
           content: SizedBox(
-            width: 420,
+            width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 420.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,

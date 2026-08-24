@@ -144,19 +144,29 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // Verktygsfält (Toolbar) för Policy Hantering
+          // Verktygsfält (Toolbar) för Policy Hantering. Wrap i stället för
+          // Row+Spacer: knapparna (särskilt "+ Port Forwarding (DNAT)")
+          // overflowade tyst på en telefonskärm (upptäckt 2026-08-24) - Wrap
+          // låter dem falla ner till en ny rad i stället.
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             color: const Color(0xFF1E293B),
-            child: Row(
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: [
-                const Icon(Icons.shield_outlined, color: Colors.cyanAccent, size: 20),
-                const SizedBox(width: 8),
-                const Text(
-                  'Firewall Policies & Rules',
-                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.shield_outlined, color: Colors.cyanAccent, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Firewall Policies & Rules',
+                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
-                const Spacer(),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.add, size: 16, color: Colors.cyanAccent),
                   label: const Text('Ny Policy', style: TextStyle(fontSize: 12, color: Colors.white)),
@@ -170,8 +180,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 // enkelkorts-/värddator-läge (Fas 13, se
                 // pkg/adapter/nftables.RenderJSON) — döljs helt istället
                 // för att erbjuda en åtgärd som ändå aldrig får effekt.
-                if (!(cfg?.settings.isHostMode ?? false)) ...[
-                  const SizedBox(width: 8),
+                if (!(cfg?.settings.isHostMode ?? false))
                   OutlinedButton.icon(
                     icon: const Icon(Icons.input, size: 16, color: Colors.lightBlueAccent),
                     label: const Text('+ Port Forwarding (DNAT)', style: TextStyle(fontSize: 12, color: Colors.white)),
@@ -181,8 +190,6 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     ),
                     onPressed: () => _showAddDNATDialog(context, provider),
                   ),
-                ],
-                const SizedBox(width: 8),
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
                   tooltip: 'Uppdatera träffräknare (Hit Counters)',
@@ -820,7 +827,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           backgroundColor: const Color(0xFF1E293B),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
-            width: 580,
+            width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 580.0),
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1443,7 +1450,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         builder: (context, setState) => Dialog(
           backgroundColor: const Color(0xFF1E293B),
           child: Container(
-            width: 440,
+            width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 440.0),
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1567,7 +1574,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
-          width: 460,
+          width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 460.0),
           padding: const EdgeInsets.all(16),
           child: SingleChildScrollView(
             child: Column(

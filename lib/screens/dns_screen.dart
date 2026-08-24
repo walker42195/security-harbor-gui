@@ -48,7 +48,7 @@ class _DnsScreenState extends State<DnsScreen> {
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
-          width: 480,
+          width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 480.0),
           height: 560,
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -404,7 +404,7 @@ class _DnsScreenState extends State<DnsScreen> {
           backgroundColor: const Color(0xFF1E293B),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
-            width: 460,
+            width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 460.0),
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,

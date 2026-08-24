@@ -70,38 +70,36 @@ class InterfacesScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // Wrap i stället för Row+spaceBetween: titeln + två knappar
+            // overflowade tyst på en telefonskärm (upptäckt 2026-08-24).
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 const Text(
                   'Nätverksgränssnitt & VLAN',
                   style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.category_outlined, size: 14),
-                      label: const Text('Hantera zoner', style: TextStyle(fontSize: 11)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.cyanAccent,
-                        side: const BorderSide(color: Colors.cyanAccent),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
-                      onPressed: cfg == null ? null : () => _showManageZonesDialog(context, provider, cfg),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.alt_route, size: 14),
-                      label: const Text('+ Skapa VLAN', style: TextStyle(fontSize: 11)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.cyanAccent,
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      ),
-                      onPressed: () => _showAddVLANDialog(context, provider),
-                    ),
-                  ],
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.category_outlined, size: 14),
+                  label: const Text('Hantera zoner', style: TextStyle(fontSize: 11)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.cyanAccent,
+                    side: const BorderSide(color: Colors.cyanAccent),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  onPressed: cfg == null ? null : () => _showManageZonesDialog(context, provider, cfg),
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.alt_route, size: 14),
+                  label: const Text('+ Skapa VLAN', style: TextStyle(fontSize: 11)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.cyanAccent,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  onPressed: () => _showAddVLANDialog(context, provider),
                 ),
               ],
             ),
@@ -223,8 +221,10 @@ class InterfacesScreen extends StatelessWidget {
                                   ],
                                 ),
                               ] else ...[
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                Wrap(
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 8,
+                                  runSpacing: 4,
                                   children: [
                                     Text(
                                       'DHCP Server: ${iface.dhcp != null && iface.dhcp!.enabled ? "AKTIV" : "AVSTÄNGD"}',
@@ -388,7 +388,7 @@ class InterfacesScreen extends StatelessWidget {
           backgroundColor: const Color(0xFF1E293B),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
-            width: 480,
+            width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 480.0),
             padding: const EdgeInsets.all(16),
             child: SingleChildScrollView(
               child: Column(
@@ -621,7 +621,7 @@ class InterfacesScreen extends StatelessWidget {
           backgroundColor: const Color(0xFF1E293B),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
-            width: 480,
+            width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 480.0),
             padding: const EdgeInsets.all(16),
             child: SingleChildScrollView(
               child: Column(
@@ -752,7 +752,7 @@ class InterfacesScreen extends StatelessWidget {
         backgroundColor: const Color(0xFF1E293B),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
-          width: 440,
+          width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 440.0),
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -861,7 +861,7 @@ class InterfacesScreen extends StatelessWidget {
             backgroundColor: const Color(0xFF1E293B),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
             child: Container(
-              width: 480,
+              width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 480.0),
               padding: const EdgeInsets.all(16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
