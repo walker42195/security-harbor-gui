@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import 'dashboard_screen.dart';
 import 'interfaces_screen.dart';
@@ -37,6 +39,35 @@ const double _kNarrowBreakpoint = 700;
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  // Larmbanner för tjänster i "failed"-läge — pollas globalt här (inte bara
+  // på Tjänster-fliken, se services_screen.dart) så en administratör ser
+  // det oavsett vilken vy de råkar stå på. Efterfrågat 2026-08-24, samma
+  // dag Kea DHCP fastnade i "failed" utan att synas förrän man själv
+  // klickade in på Tjänster-fliken.
+  List<ServiceStatusModel> _failedServices = [];
+  Timer? _servicesPollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _pollServices();
+    _servicesPollTimer = Timer.periodic(const Duration(seconds: 20), (_) => _pollServices());
+  }
+
+  @override
+  void dispose() {
+    _servicesPollTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _pollServices() async {
+    final provider = Provider.of<ConfigProvider>(context, listen: false);
+    if (!provider.isAuthenticated) return;
+    final services = await provider.api.getServicesStatus();
+    if (!mounted) return;
+    setState(() => _failedServices = services.where((s) => s.active == 'failed').toList());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -238,6 +269,43 @@ class _MainScreenState extends State<MainScreen> {
               ],
             ),
           ),
+
+          // Tjänstelarm — visas på ALLA vyer (inte bara Tjänster-fliken) så
+          // en administratör märker det direkt, oavsett var de står.
+          if (_failedServices.isNotEmpty)
+            Container(
+              color: const Color(0xFF7F1D1D),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 10,
+                runSpacing: 6,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error, color: Colors.redAccent, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        _failedServices.length == 1
+                            ? 'Tjänsten "${_failedServices.first.name}" har fastnat i ett fel-läge (failed).'
+                            : '${_failedServices.length} tjänster har fastnat i ett fel-läge (failed): ${_failedServices.map((s) => s.name).join(", ")}.',
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.build_circle_outlined, size: 14),
+                    label: const Text('Visa Tjänster', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white), padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
+                    onPressed: () {
+                      final idx = screens.indexWhere((w) => w is ServicesScreen);
+                      if (idx >= 0) setState(() => _selectedIndex = idx);
+                    },
+                  ),
+                ],
+              ),
+            ),
 
           // Loading Status Banner
           if (provider.isLoading && provider.statusMessage != null)

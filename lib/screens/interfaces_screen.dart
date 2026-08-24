@@ -145,6 +145,31 @@ class InterfacesScreen extends StatelessWidget {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Förnya DHCP — bara meningsfullt för ett
+                          // aktiverat gränssnitt i DHCP-läge (t.ex. WAN).
+                          // Efterfrågat 2026-08-24: kör om samma
+                          // dhclient-förhandling som redan sker automatiskt
+                          // vid Apply, men på begäran utan att behöva
+                          // applicera om hela gränssnittet.
+                          if (!isStatic && iface.enabled)
+                            IconButton(
+                              icon: const Icon(Icons.sync, color: Colors.amberAccent, size: 16),
+                              tooltip: 'Förnya DHCP (dhclient renew)',
+                              onPressed: () async {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Förnyar DHCP för ${iface.device}...'), backgroundColor: Colors.blueGrey, duration: const Duration(seconds: 2)),
+                                );
+                                final err = await provider.api.renewDhcp(iface.id);
+                                if (!context.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(err == null ? '${iface.device}: DHCP förnyad.' : 'Misslyckades: $err'),
+                                    backgroundColor: err == null ? Colors.teal : Colors.red,
+                                  ),
+                                );
+                                await provider.refreshAll();
+                              },
+                            ),
                           IconButton(
                             icon: const Icon(Icons.edit, color: Colors.cyanAccent, size: 16),
                             tooltip: 'Redigera gränssnitt',

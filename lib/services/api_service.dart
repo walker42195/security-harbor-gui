@@ -375,6 +375,22 @@ class ApiService {
     return [];
   }
 
+  /// Kör om DHCP-förhandlingen för ETT gränssnitt i DHCP-läge (t.ex. WAN).
+  /// Returnerar null vid lyckad förnyelse, annars ett felmeddelande.
+  Future<String?> renewDhcp(String interfaceId) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/interfaces/renew-dhcp'),
+        headers: _headers,
+        body: jsonEncode({'id': interfaceId}),
+      );
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Förnyelse misslyckades';
+    } catch (e) {
+      return 'Fel: $e';
+    }
+  }
+
   Future<List<ServiceStatusModel>> getServicesStatus() async {
     try {
       final res = await _client.get(Uri.parse('$baseUrl/api/v1/services/status'), headers: _headers);
