@@ -4,14 +4,24 @@ Flutter-baserat administrationsgränssnitt för [Security Harbor](https://securi
 
 ## Installation
 
-**Linux Desktop:**
+**Linux Desktop — direkt från GitHub (en rad):**
 
 ```bash
-tar -xzf security-harbor-gui-linux-x64.tar.gz -C ~/security-harbor-gui
-cd ~/security-harbor-gui && ./install.sh
+curl -fsSL https://raw.githubusercontent.com/walker42195/security-harbor-gui/main/install.sh | bash
 ```
 
-Detta installerar appen i `~/.local/share/security-harbor-gui`, symlänkar `~/.local/bin/security-harbor-gui` och skapar en `.desktop`-genväg.
+Hämtar automatiskt senaste [Release](https://github.com/walker42195/security-harbor-gui/releases/latest), packar upp den och installerar. Körs som vanlig användare (INTE sudo) — installerar bara i din egen hemkatalog, ingen systemändring.
+
+**Linux Desktop — manuellt (t.ex. om du redan laddat ner tarbollen):**
+
+```bash
+curl -fsSL -o security-harbor-gui-linux.tar.gz \
+  https://github.com/walker42195/security-harbor-gui/releases/latest/download/security-harbor-gui-linux.tar.gz
+mkdir -p security-harbor-gui && tar -xzf security-harbor-gui-linux.tar.gz -C security-harbor-gui
+cd security-harbor-gui && ./install.sh
+```
+
+Båda varianterna installerar appen i `~/.local/share/security-harbor-gui`, symlänkar `~/.local/bin/security-harbor-gui` och skapar en `.desktop`-genväg. Uppdatera till en senare version genom att köra installationskommandot igen — `install.sh` är idempotent och skriver bara över den befintliga installationen.
 
 **Android:** ladda ner och installera `security-harbor.apk` från [security.novabase.se](https://security.novabase.se/).
 

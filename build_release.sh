@@ -25,10 +25,13 @@ flutter build linux --release
 BUNDLE="build/linux/x64/release/bundle"
 [ -d "$BUNDLE" ] || { echo "hittar inte $BUNDLE"; exit 1; }
 
-echo "=== 2. Paketerar bundlen som tarboll ==="
+echo "=== 2. Paketerar bundlen (+ install.sh) som tarboll ==="
+cp install.sh "$BUNDLE/install.sh"
+chmod +x "$BUNDLE/install.sh"
 TARBALL="security-harbor-gui-linux.tar.gz"
 rm -f "$TARBALL"
 tar -czf "$TARBALL" -C "$BUNDLE" .
+rm -f "$BUNDLE/install.sh"
 echo "-> $TARBALL"
 
 echo "=== 3. Signerar (Ed25519) och skriver manifest.json ==="
