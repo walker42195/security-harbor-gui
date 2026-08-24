@@ -187,13 +187,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            // Status-översikt (Kompakta kort)
-            Row(
-              children: [
+            // Status-översikt (Kompakta kort). Fyra kort i EN rad tvingar
+            // varje kort ner till en fjärdedel av bredden — på en smal
+            // telefonskärm blev det så trångt att texten radbröts en
+            // bokstav i taget (upptäckt 2026-08-24 av en administratör som
+            // testade på riktigt). LayoutBuilder växlar till en 2x2-Wrap
+            // under 500px bredd, där varje kort i stället får halva bredden.
+            LayoutBuilder(builder: (context, constraints) {
+              final cards = [
                 _buildCompactStatCard('System', sysName, 'Ver: $sysVersion', Icons.dns, Colors.cyanAccent),
-                const SizedBox(width: 10),
                 _buildCompactStatCard('Uptime', uptime, 'Driftstatus: Aktiv', Icons.timer_outlined, Colors.tealAccent),
-                const SizedBox(width: 10),
                 _buildCompactStatCard(
                   'CPU',
                   cpuUsage == null ? '—' : '${cpuUsage.toStringAsFixed(1)}%',
@@ -201,7 +204,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Icons.memory,
                   Colors.amber,
                 ),
-                const SizedBox(width: 10),
                 _buildCompactStatCard(
                   'Minne',
                   memUsage == null ? '—' : '${memUsage.toStringAsFixed(1)}%',
@@ -209,8 +211,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Icons.pie_chart_outline,
                   Colors.lightBlueAccent,
                 ),
-              ],
-            ),
+              ];
+              if (constraints.maxWidth >= 500) {
+                return Row(children: [for (final c in cards) ...[Expanded(child: c), if (c != cards.last) const SizedBox(width: 10)]]);
+              }
+              const gap = 10.0;
+              final cardWidth = (constraints.maxWidth - gap) / 2;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [for (final c in cards) SizedBox(width: cardWidth, child: c)],
+              );
+            }),
             const SizedBox(height: 16),
 
             // Realtids Bandbreddsgrafer per Nätverkskort & VLAN (Uppdateras 1 ggr/sek)
@@ -334,40 +346,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '${kbps.toStringAsFixed(1)} KB/s';
   }
 
+  // OBS: returnerar INTE längre en Expanded här (den kräver en direkt
+  // Row/Column-förälder) — anroparen (LayoutBuilder ovan) avgör själv om
+  // kortet ska wrappas i Expanded (bred skärm, en rad) eller SizedBox
+  // (smal skärm, 2x2-Wrap), så samma kort funkar i båda layouterna.
   Widget _buildCompactStatCard(String title, String mainValue, String subValue, IconData icon, Color accentColor) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
-          border: Border.all(color: const Color(0xFF334155)),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Icon(icon, color: accentColor, size: 18),
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        border: Border.all(color: const Color(0xFF334155)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(4),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 2),
-                  Text(mainValue, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-                  Text(subValue, style: TextStyle(color: accentColor, fontSize: 9)),
-                ],
-              ),
+            child: Icon(icon, color: accentColor, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 2),
+                Text(mainValue, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                Text(subValue, style: TextStyle(color: accentColor, fontSize: 9)),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

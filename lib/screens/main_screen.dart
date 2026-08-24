@@ -24,8 +24,18 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
+// Under denna bredd (dp) räknas fönstret som "smalt" (telefon i stående
+// läge) — NavigationRailen (som ensam tar ~60-90px + text) lämnar då för
+// lite kvar åt innehållet, vilket t.ex. dashboardens statistik-kort visade
+// tydligt (text radbruten till en bokstav per rad, upptäckt 2026-08-24 av
+// en administratör som testade Android-appen på riktigt). Under
+// brytpunkten döljs NavigationRailen helt till förmån för en Drawer
+// (hamburgermeny), så innehållet får hela bredden.
+const double _kNarrowBreakpoint = 700;
+
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
@@ -74,41 +84,68 @@ class _MainScreenState extends State<MainScreen> {
       _selectedIndex = 0;
     }
 
-    return Scaffold(
+    return LayoutBuilder(builder: (context, outerConstraints) {
+      final isNarrow = outerConstraints.maxWidth < _kNarrowBreakpoint;
+      return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: const Color(0xFF0F172A),
-      body: Column(
+      // Drawer ersätter NavigationRailen på smala skärmar (se _kNarrowBreakpoint)
+      // — byggs av samma `destinations`-lista så menyn alltid är i synk.
+      drawer: isNarrow ? _buildDrawer(destinations) : null,
+      body: SafeArea(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          // Slank Huvud-topplist (Top Header Bar) harmoniserad med Slate-temat
+          // Slank Huvud-topplist (Top Header Bar) harmoniserad med Slate-temat.
+          // Höjden är inte längre fast (42px) på smala skärmar — badgen med
+          // servens URL kan bli lång, och en fast höjd gav då en overflow-
+          // varning (gult/svart randigt mönster) i stället för att bara växa.
           Container(
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            constraints: const BoxConstraints(minHeight: 42),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: const BoxDecoration(
               color: Color(0xFF1E293B),
               border: Border(bottom: BorderSide(color: Color(0xFF334155), width: 1)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.shield, color: Colors.cyanAccent, size: 18),
-                const SizedBox(width: 8),
-                const Text(
-                  'SECURITY HARBOR',
-                  style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
-                ),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.cyanAccent.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(3),
+                if (isNarrow) ...[
+                  IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    tooltip: 'Meny',
+                    onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                   ),
-                  child: Text(
-                    'FIREWALL OS ${provider.systemStatus?['version'] ?? '—'}',
-                    style: const TextStyle(color: Colors.cyanAccent, fontSize: 9, fontWeight: FontWeight.bold),
+                  const SizedBox(width: 10),
+                ] else ...[
+                  const Icon(Icons.shield, color: Colors.cyanAccent, size: 18),
+                  const SizedBox(width: 8),
+                ],
+                // Flexible+ellipsis i stället för en obegränsad Text: på en
+                // smal skärm fick titeln + badgar tidigare bara skjuta över
+                // varandra (osynligt overflow) i stället för att synligt
+                // krympa/klippas.
+                if (!isNarrow)
+                  const Text(
+                    'SECURITY HARBOR',
+                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
                   ),
-                ),
-                if (isHostMode) ...[
+                if (!isNarrow) const SizedBox(width: 6),
+                if (!isNarrow)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.cyanAccent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                    child: Text(
+                      'FIREWALL OS ${provider.systemStatus?['version'] ?? '—'}',
+                      style: const TextStyle(color: Colors.cyanAccent, fontSize: 9, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                if (!isNarrow && isHostMode) ...[
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -124,56 +161,77 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ],
                 const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: provider.isAuthenticated ? Colors.tealAccent.withValues(alpha: 0.4) : Colors.amber.withValues(alpha: 0.4)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
+                // Anslutningsstatusen är den enda badgen som alltid syns
+                // (även smalt) — men utan servens URL i klartext där, som
+                // annars var det som fick raden att svälla ut mest.
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F172A),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: provider.isAuthenticated ? Colors.tealAccent.withValues(alpha: 0.4) : Colors.amber.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        provider.isAuthenticated ? 'ONLINE (${provider.api.baseUrl})' : 'EJ ANSLUTEN',
-                        style: TextStyle(
-                          color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            provider.isAuthenticated ? (isNarrow ? 'ONLINE' : 'ONLINE (${provider.api.baseUrl})') : 'EJ ANSLUTEN',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
                 if (provider.isAuthenticated)
                   IconButton(
                     icon: const Icon(Icons.refresh, size: 16, color: Colors.white54),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                     tooltip: 'Uppdatera allt (hämta om status och konfiguration)',
                     onPressed: provider.isLoading ? null : () => provider.refreshAll(),
                   ),
-                if (provider.isAuthenticated)
+                if (provider.isAuthenticated) ...[
+                  const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.logout, size: 16, color: Colors.white54),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                     tooltip: 'Logga ut',
                     onPressed: () => provider.logout(),
                   ),
-                const SizedBox(width: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.person_outline, size: 14, color: Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(provider.api.username ?? '—', style: const TextStyle(color: Colors.grey, fontSize: 11)),
-                  ],
-                ),
+                ],
+                // Användarnamnet döljs på smala skärmar — statusfärgen/
+                // anslutningsbadgen är det som spelar roll där, och raden
+                // hade annars fortsatt svälla ut trots allt ovan.
+                if (!isNarrow) ...[
+                  const SizedBox(width: 8),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.person_outline, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(provider.api.username ?? '—', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -348,59 +406,130 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
             child: Row(
               children: [
-                // Navigation Sidebar. VisualDensity.compact + mindre
-                // ikoner/etiketter/leading-logga krymper var post radikalt
-                // (upptäckt 2026-08-24: med standardstorlek och 13
-                // menyposter + leading-logga tog listan över 1000px höjd,
-                // vilket inte fick plats under 1080px hög skärm minus
-                // topplist/webbläsarchrome — de sista posterna klipptes
-                // bort utan att NavigationRail scrollar). SingleChildScrollView
-                // är dessutom ett strukturellt skyddsnät: om listan ändå
-                // skulle bli för hög (fler menyposter i framtiden, eller en
-                // ännu lägre skärm) går den att scrolla i stället för att
-                // klippas/overflowa tyst.
-                Theme(
-                  data: Theme.of(context).copyWith(visualDensity: VisualDensity.compact),
-                  child: SingleChildScrollView(
-                    child: IntrinsicHeight(
-                      child: NavigationRail(
-                          backgroundColor: const Color(0xFF1E293B),
-                          selectedIndex: _selectedIndex,
-                          onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
-                          labelType: NavigationRailLabelType.all,
-                          minWidth: 56,
-                          selectedIconTheme: const IconThemeData(color: Colors.cyanAccent, size: 18),
-                          selectedLabelTextStyle: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 9),
-                          unselectedIconTheme: const IconThemeData(color: Colors.grey, size: 18),
-                          unselectedLabelTextStyle: const TextStyle(color: Colors.grey, fontSize: 9),
-                          leading: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Column(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(5),
-                                  child: Image.asset(
-                                    'assets/logo.png',
-                                    width: 24,
-                                    height: 24,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) => const Icon(Icons.shield, color: Colors.cyanAccent, size: 22),
+                // Navigation Sidebar — bara på breda skärmar (se
+                // _kNarrowBreakpoint); på smala ersätts den helt av en Drawer
+                // (_buildDrawer), annars lämnar den för lite bredd kvar åt
+                // innehållet (upptäckt 2026-08-24: en administratörs
+                // Android-telefon fick t.ex. dashboardens statistik-kort så
+                // smala att texten radbröts en bokstav i taget).
+                //
+                // VisualDensity.compact + mindre ikoner/etiketter/leading-
+                // logga krymper var post radikalt (upptäckt samma dag: med
+                // standardstorlek och 13 menyposter + leading-logga tog
+                // listan över 1000px höjd, vilket inte fick plats under
+                // 1080px hög skärm minus topplist/webbläsarchrome — de sista
+                // posterna klipptes bort utan att NavigationRail scrollar).
+                // SingleChildScrollView är dessutom ett strukturellt
+                // skyddsnät: om listan ändå skulle bli för hög (fler
+                // menyposter i framtiden, eller en ännu lägre skärm) går den
+                // att scrolla i stället för att klippas/overflowa tyst.
+                if (!isNarrow) ...[
+                  Theme(
+                    data: Theme.of(context).copyWith(visualDensity: VisualDensity.compact),
+                    child: SingleChildScrollView(
+                      child: IntrinsicHeight(
+                        child: NavigationRail(
+                            backgroundColor: const Color(0xFF1E293B),
+                            selectedIndex: _selectedIndex,
+                            onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
+                            labelType: NavigationRailLabelType.all,
+                            minWidth: 56,
+                            selectedIconTheme: const IconThemeData(color: Colors.cyanAccent, size: 18),
+                            selectedLabelTextStyle: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 9),
+                            unselectedIconTheme: const IconThemeData(color: Colors.grey, size: 18),
+                            unselectedLabelTextStyle: const TextStyle(color: Colors.grey, fontSize: 9),
+                            leading: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Column(
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(5),
+                                    child: Image.asset(
+                                      'assets/logo.png',
+                                      width: 24,
+                                      height: 24,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => const Icon(Icons.shield, color: Colors.cyanAccent, size: 22),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
+                            destinations: destinations,
                           ),
-                          destinations: destinations,
                         ),
                       ),
                     ),
-                  ),
-                const VerticalDivider(thickness: 1, width: 1, color: Colors.white10),
+                  const VerticalDivider(thickness: 1, width: 1, color: Colors.white10),
+                ],
                 Expanded(child: screens[_selectedIndex]),
               ],
             ),
           ),
         ],
+      ),
+      ),
+    );
+    });
+  }
+
+  // Drawer-versionen av navigationen (smala skärmar) — byggd av samma
+  // `destinations`-lista (NavigationRailDestination) som den vanliga
+  // NavigationRailen, så de två alltid visar exakt samma menyval i samma
+  // ordning utan att någon lista kan glömmas bort att uppdatera för sig.
+  Widget _buildDrawer(List<NavigationRailDestination> destinations) {
+    return Drawer(
+      backgroundColor: const Color(0xFF1E293B),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(5),
+                    child: Image.asset(
+                      'assets/logo.png',
+                      width: 28,
+                      height: 28,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Icon(Icons.shield, color: Colors.cyanAccent, size: 26),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text('SECURITY HARBOR', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                ],
+              ),
+            ),
+            const Divider(color: Colors.white10, height: 1),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                itemCount: destinations.length,
+                itemBuilder: (context, idx) {
+                  final selected = idx == _selectedIndex;
+                  final dest = destinations[idx];
+                  return ListTile(
+                    leading: selected ? dest.selectedIcon : dest.icon,
+                    title: DefaultTextStyle.merge(
+                      style: TextStyle(color: selected ? Colors.cyanAccent : Colors.white, fontWeight: selected ? FontWeight.bold : FontWeight.normal, fontSize: 13),
+                      child: dest.label,
+                    ),
+                    iconColor: selected ? Colors.cyanAccent : Colors.grey,
+                    selected: selected,
+                    selectedTileColor: Colors.cyanAccent.withValues(alpha: 0.08),
+                    onTap: () {
+                      setState(() => _selectedIndex = idx);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
