@@ -367,10 +367,15 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
     final selected = <String>{...(existing?.values ?? const <String>[])};
 
     final cfg = provider.candidateConfig ?? provider.runningConfig;
-    // Valbara medlemmar: alla objekt utom hot-listor/geoip (automatiska källor)
-    // och utom gruppen själv (en grupp får inte innehålla sig själv).
+    // Valbara medlemmar: alla objekt utom gruppen själv (en grupp får inte
+    // innehålla sig själv). Hot-listor/GeoIP (objekt med en källa, t.ex.
+    // Spamhaus) fick tidigare INTE väljas här — en ren GUI-spärr utan
+    // backend-grund, upptäckt 2026-08-24: resolveObjectCIDRs i
+    // nftables-adaptern löser upp en grupps medlemmar rekursivt oavsett om
+    // medlemmen har en Source eller inte, så en hot-lista fungerar precis
+    // lika bra som ett manuellt objekt som gruppmedlem.
     final candidates = (cfg?.objects ?? const <ObjectModel>[])
-        .where((o) => o.source == null && o.id != existing?.id)
+        .where((o) => o.id != existing?.id)
         .toList();
 
     showDialog(
@@ -407,6 +412,16 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: candidates.map((o) {
                           final isGroup = o.type == 'group';
+                          // En källbaserad hot-lista/GeoIP (t.ex. Spamhaus)
+                          // kan ha tusentals poster — att skriva ut hela
+                          // o.values-listan i subtitle:en (som för ett vanligt
+                          // host/nätverk-objekt) hade gett en oläsbar rad.
+                          // Visa antal poster i stället.
+                          final subtitle = isGroup
+                              ? 'grupp: ${_groupMemberNames(context, o)}'
+                              : o.source != null
+                                  ? '${o.type} (auto: ${o.source!.kind}) · ${o.source!.entryCount} poster'
+                                  : '${o.type} · ${o.values.join(", ")}';
                           return CheckboxListTile(
                             dense: true,
                             contentPadding: EdgeInsets.zero,
@@ -416,7 +431,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                             value: selected.contains(o.id),
                             title: Text(o.name, style: const TextStyle(color: Colors.white, fontSize: 12)),
                             subtitle: Text(
-                              isGroup ? 'grupp: ${_groupMemberNames(context, o)}' : '${o.type} · ${o.values.join(", ")}',
+                              subtitle,
                               style: const TextStyle(color: Colors.white38, fontSize: 10),
                             ),
                             onChanged: (v) => setDialogState(() {
