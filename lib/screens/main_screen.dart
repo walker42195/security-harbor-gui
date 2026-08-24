@@ -435,6 +435,13 @@ class _MainScreenState extends State<MainScreen> {
 
           Expanded(
             child: Row(
+              // start i stället för Row:ens default (center): sidomenyn
+              // krymper till sin egen innehållshöjd (den ligger i en
+              // SingleChildScrollView, se kommentaren nedan) och hamnade då
+              // mitt i fönstret på en hög skärm i stället för högst upp
+              // (upptäckt 2026-08-24). Påverkar inte innehållspanelen till
+              // höger, som redan fyller hela höjden oavsett.
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Navigation Sidebar — bara på breda skärmar (se
                 // _kNarrowBreakpoint); på smala ersätts den helt av en Drawer

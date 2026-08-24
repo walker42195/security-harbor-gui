@@ -1071,7 +1071,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                       controller: customPortCtrl,
                       style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
                       decoration: const InputDecoration(
-                        hintText: 't.ex. 7201 eller tcp:7201 eller udp:5000 eller 7000-8000 eller 80,443,8000-8100',
+                        hintText: 't.ex. 7201 eller tcp:7201 eller udp:5000 eller 7000-8000 eller 80,443,TCP:8000-8100,UDP:53',
                         hintStyle: TextStyle(color: Colors.grey, fontSize: 11),
                         contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         border: OutlineInputBorder(),
@@ -1086,7 +1086,9 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   const SizedBox(height: 6),
                   const Text(
                     'Exempel: "7201" för TCP port 7201, "udp:5000" för UDP port 5000, "icmp" för Ping, '
-                    'eller "80,443,8000-8100" för flera portar/intervall i SAMMA regel (kommaseparerat).',
+                    '"80,443,8000-8100" för flera TCP-portar/intervall i samma regel, eller '
+                    '"TCP:53,TCP:80,UDP:53" för att blanda TCP och UDP (en del utan eget tcp:/udp:-prefix '
+                    'ärver protokollet från föregående del).',
                     style: TextStyle(color: Colors.grey, fontSize: 10),
                   ),
                 ] else ...[
