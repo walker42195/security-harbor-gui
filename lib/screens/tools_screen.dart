@@ -28,6 +28,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
   bool _nmapFullTcp = false;
   bool _nmapUdp = false;
   bool _nmapOsDetect = false;
+  // Snabb timing (-T4) — separat från scanningstyperna ovan eftersom den
+  // går att kombinera med VILKEN som helst av dem (styr bara hur aggressivt
+  // nmap parallelliserar/timeoutar, inte vad som skannas). Efterfrågad av
+  // en administratör 2026-08-24 — nmaps standardtiming (-T3) kan annars
+  // kännas onödigt långsam mot ett eget, pålitligt nät.
+  bool _nmapFastTiming = false;
 
   final TextEditingController _tcpdumpFilterController = TextEditingController();
   String? _tcpdumpInterface;
@@ -170,6 +176,62 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
             const SizedBox(height: 14),
 
+            // nmap-portskanning — placerad direkt under Ping & Traceroute
+            // (näst överst) på uttrycklig begäran 2026-08-24, i stället för
+            // längre ner bland de mer sällan använda verktygen.
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                border: Border.all(color: const Color(0xFF334155)),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.radar, color: Colors.tealAccent, size: 16),
+                      SizedBox(width: 8),
+                      Text('nmap-portskanning', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 0,
+                    children: [
+                      _nmapCheck('TCP SYN-scan (-sS)', _nmapSyn, (v) => setState(() => _nmapSyn = v)),
+                      _nmapCheck('Full TCP-scan (-p- -sV)', _nmapFullTcp, (v) => setState(() => _nmapFullTcp = v)),
+                      _nmapCheck('UDP-scan (-sU)', _nmapUdp, (v) => setState(() => _nmapUdp = v)),
+                      _nmapCheck('OS-detektion (-O)', _nmapOsDetect, (v) => setState(() => _nmapOsDetect = v)),
+                      _nmapCheck('Snabb timing (-T4)', _nmapFastTiming, (v) => setState(() => _nmapFastTiming = v)),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ElevatedButton.icon(
+                    icon: _isNmapLoading
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                        : const Icon(Icons.radar, size: 14),
+                    label: const Text('Kör nmap', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.tealAccent,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    ),
+                    onPressed: _anyLoading || (!_nmapSyn && !_nmapFullTcp && !_nmapUdp && !_nmapOsDetect) ? null : () => _runNmap(provider),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Full TCP-scan och UDP-scan kan ta flera minuter. Kör inte mot mål du inte har rätt att skanna.',
+                    style: TextStyle(color: Colors.amberAccent, fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
             // DNS-uppslag (dig)
             Container(
               padding: const EdgeInsets.all(14),
@@ -195,22 +257,29 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     children: [
                       const Text('Typ:', style: TextStyle(color: Colors.grey, fontSize: 11)),
                       const SizedBox(width: 6),
+                      // Höjden matchar nu textfältet bredvid (36px) i
+                      // stället för att bara krympa till DropdownButtonets
+                      // egen, mindre intrinsiska höjd — de såg tidigare
+                      // omotiverat olika stora ut på samma rad.
                       Container(
+                        height: 36,
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         decoration: BoxDecoration(
                           color: const Color(0xFF0F172A),
                           border: Border.all(color: const Color(0xFF334155)),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: DropdownButton<String>(
-                          value: _digType,
-                          dropdownColor: const Color(0xFF1E293B),
-                          underline: const SizedBox.shrink(),
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
-                          items: const ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SOA', 'PTR', 'SRV']
-                              .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                              .toList(),
-                          onChanged: (v) => setState(() => _digType = v ?? 'A'),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _digType,
+                            isDense: true,
+                            dropdownColor: const Color(0xFF1E293B),
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            items: const ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SOA', 'PTR', 'SRV']
+                                .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                                .toList(),
+                            onChanged: (v) => setState(() => _digType = v ?? 'A'),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -277,59 +346,6 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     ),
                     onPressed: _anyLoading ? null : () => _runArp(provider),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            // nmap-portskanning
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                border: Border.all(color: const Color(0xFF334155)),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.radar, color: Colors.tealAccent, size: 16),
-                      SizedBox(width: 8),
-                      Text('nmap-portskanning', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 0,
-                    children: [
-                      _nmapCheck('TCP SYN-scan (-sS)', _nmapSyn, (v) => setState(() => _nmapSyn = v)),
-                      _nmapCheck('Full TCP-scan (-p- -sV)', _nmapFullTcp, (v) => setState(() => _nmapFullTcp = v)),
-                      _nmapCheck('UDP-scan (-sU)', _nmapUdp, (v) => setState(() => _nmapUdp = v)),
-                      _nmapCheck('OS-detektion (-O)', _nmapOsDetect, (v) => setState(() => _nmapOsDetect = v)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  ElevatedButton.icon(
-                    icon: _isNmapLoading
-                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                        : const Icon(Icons.radar, size: 14),
-                    label: const Text('Kör nmap', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.tealAccent,
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    ),
-                    onPressed: _anyLoading || (!_nmapSyn && !_nmapFullTcp && !_nmapUdp && !_nmapOsDetect) ? null : () => _runNmap(provider),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Full TCP-scan och UDP-scan kan ta flera minuter. Kör inte mot mål du inte har rätt att skanna.',
-                    style: TextStyle(color: Colors.amberAccent, fontSize: 10),
                   ),
                 ],
               ),
@@ -665,6 +681,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       fullTcp: _nmapFullTcp,
       udpScan: _nmapUdp,
       osDetect: _nmapOsDetect,
+      fastTiming: _nmapFastTiming,
     );
     if (!mounted) return;
     setState(() {

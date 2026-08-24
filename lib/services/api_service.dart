@@ -505,7 +505,7 @@ class ApiService {
   }
 
   /// Kör nmap mot host med valfri kombination av skanningstyper.
-  Future<String> nmap(String host, {bool synScan = false, bool fullTcp = false, bool udpScan = false, bool osDetect = false}) async {
+  Future<String> nmap(String host, {bool synScan = false, bool fullTcp = false, bool udpScan = false, bool osDetect = false, bool fastTiming = false}) async {
     try {
       final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/diagnostics/nmap'),
@@ -516,6 +516,7 @@ class ApiService {
           'full_tcp': fullTcp,
           'udp_scan': udpScan,
           'os_detect': osDetect,
+          'fast_timing': fastTiming,
         }),
       );
       if (res.statusCode == 200) {
