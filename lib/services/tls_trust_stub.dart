@@ -5,7 +5,7 @@
 // över hela TOFU-flödet när kIsWeb är sant), men måste ändå finnas här
 // så att `dart:io`-importen i tls_trust_io.dart aldrig behöver kompileras
 // in i en web-build.
-Future<String?> probeCertificateSha256(String host, int port) async => null;
+Future<(String?, String?)> probeCertificateSha256(String host, int port) async => (null, null);
 
 Future<String?> getTrustedFingerprint(String hostPort) async => null;
 

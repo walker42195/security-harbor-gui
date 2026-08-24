@@ -22,7 +22,49 @@ Future<bool> runTlsTrustCheck(BuildContext context, ApiService api) async {
     case TlsTrustStatus.trustedMatch:
     case TlsTrustStatus.skipped:
       return true;
+    case TlsTrustStatus.probeFailed:
+      // Skiljer sig medvetet från "skipped": vi kan INTE bara låta
+      // inloggningen fortsätta här, för då avvisar appens egen
+      // badCertificateCallback det obetrodda certifikatet TYST (se
+      // probeCertificateSha256-kommentaren) — administratören såg då bara
+      // ett obegripligt "Inloggning misslyckades" utan att förstå varför.
+      await showTlsProbeFailedDialog(context, check.error ?? 'Okänt fel');
+      return false;
   }
+}
+
+/// Visas när certifikat-kontrollen (proben) misslyckas av en okänd
+/// anledning INNAN inloggningen ens försöks — se TlsTrustStatus.probeFailed.
+Future<void> showTlsProbeFailedDialog(BuildContext context, String error) {
+  return showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: const Color(0xFF1E293B),
+      title: const Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.redAccent),
+          SizedBox(width: 8),
+          Text('Kunde inte kontrollera certifikatet', style: TextStyle(color: Colors.redAccent, fontSize: 15)),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Appen kunde inte läsa brandväggens TLS-certifikat innan inloggningen skulle fortsätta. '
+            'Inloggningen avbröts för säkerhets skull. Teknisk information:',
+            style: TextStyle(color: Colors.white, fontSize: 12),
+          ),
+          const SizedBox(height: 8),
+          SelectableText(error, style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontFamily: 'monospace')),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
+      ],
+    ),
+  );
 }
 
 /// Dialog för trust-on-first-use: ett HELT NYTT certifikat (ingen tidigare

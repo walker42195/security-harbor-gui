@@ -6,13 +6,20 @@ import 'http_client_factory.dart';
 import 'tls_trust.dart' as tls_trust;
 
 /// Resultatet av en TOFU-certifikatkontroll (se ApiService.checkServerCertificate).
-enum TlsTrustStatus { trustedMatch, newUnknown, mismatch, skipped }
+/// probeFailed skiljer sig från skipped: skipped = medvetet ointressant
+/// (web, eller icke-https), probeFailed = kontrollen FÖRSÖKTE men
+/// misslyckades av en okänd anledning (se TlsCheckResult.error) — det
+/// senare måste stoppa inloggningen med ett begripligt fel i stället för
+/// att tyst försöka ändå (se probeCertificateSha256-kommentaren i
+/// tls_trust_io.dart för bakgrunden).
+enum TlsTrustStatus { trustedMatch, newUnknown, mismatch, skipped, probeFailed }
 
 class TlsCheckResult {
   final TlsTrustStatus status;
   final String? fingerprint; // Vid newUnknown: det nya. Vid mismatch: det NYA (aktuella).
   final String? expectedFingerprint; // Endast vid mismatch: det tidigare sparade.
-  TlsCheckResult(this.status, {this.fingerprint, this.expectedFingerprint});
+  final String? error; // Endast vid probeFailed.
+  TlsCheckResult(this.status, {this.fingerprint, this.expectedFingerprint, this.error});
 }
 
 class ApiService {
@@ -68,11 +75,9 @@ class ApiService {
     final port = uri.hasPort ? uri.port : 443;
     final hostPort = '$host:$port';
 
-    final actual = await tls_trust.probeCertificateSha256(host, port);
+    final (actual, probeError) = await tls_trust.probeCertificateSha256(host, port);
     if (actual == null) {
-      // Kunde inte hämta certifikatet (t.ex. servern är nere) — låt
-      // det faktiska anropet i login() ge det riktiga felmeddelandet.
-      return TlsCheckResult(TlsTrustStatus.skipped);
+      return TlsCheckResult(TlsTrustStatus.probeFailed, error: probeError ?? 'Okänt fel');
     }
 
     final expected = await tls_trust.getTrustedFingerprint(hostPort);

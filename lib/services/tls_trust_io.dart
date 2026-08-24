@@ -10,7 +10,19 @@ const String _prefsPrefix = 'tls_trust_';
 /// faktiskt använda anslutningen. Detta är den enda inbyggda vägen i
 /// dart:io att komma åt ett självsignerat certifikat innan man bestämt
 /// sig för att lita på det (trust-on-first-use).
-Future<String?> probeCertificateSha256(String host, int port) async {
+// Returnerar (fingeravtryck, felmeddelande) — ETT av de två är alltid
+// null. Ett fel returneras numera EXPLICIT (i stället för att bara ge
+// null och låta anroparen anta "servern är nere") sedan en riktig bugg
+// hittades 2026-08-24: om proben av någon anledning misslyckas TYST (utan
+// att onBadCertificate hinner fyra i `captured`, t.ex. ett plattforms-
+// specifikt nätverksfel på en viss Android-enhet/VPN-kombination) tolkade
+// checkServerCertificate() detta som "skipped" och lät inloggningen
+// fortsätta ändå — men då är certifikatet ALDRIG markerat som betrott i
+// _trustedFingerprints, så den RIKTIGA anslutningens egen
+// badCertificateCallback avvisar det självsignerade certifikatet tyst.
+// Resultatet var ett förvirrande "Inloggning misslyckades" helt utan
+// förklaring, utan att någon certifikat-dialog någonsin visades.
+Future<(String?, String?)> probeCertificateSha256(String host, int port) async {
   X509Certificate? captured;
   try {
     final socket = await SecureSocket.connect(
@@ -28,13 +40,13 @@ Future<String?> probeCertificateSha256(String host, int port) async {
     socket.destroy();
   } on HandshakeException {
     // Förväntat — vi avvisade avsiktligt certifikatet ovan.
-  } catch (_) {
-    return null;
+  } catch (e) {
+    return (null, e.toString());
   }
 
   final cert = captured;
-  if (cert == null) return null;
-  return sha256.convert(cert.der).toString();
+  if (cert == null) return (null, 'Anslutningen avbröts innan certifikatet kunde läsas (ingen ytterligare information tillgänglig).');
+  return (sha256.convert(cert.der).toString(), null);
 }
 
 Future<String?> getTrustedFingerprint(String hostPort) async {
