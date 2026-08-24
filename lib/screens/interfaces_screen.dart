@@ -230,6 +230,36 @@ class InterfacesScreen extends StatelessWidget {
                                       'DHCP Server: ${iface.dhcp != null && iface.dhcp!.enabled ? "AKTIV" : "AVSTÄNGD"}',
                                       style: const TextStyle(color: Colors.cyanAccent, fontSize: 11, fontWeight: FontWeight.bold),
                                     ),
+                                    // Snabb av/på utan att behöva öppna
+                                    // dialogen — den kunde tidigare bara
+                                    // SÄTTA PÅ DHCP (dialogens Spara skrev
+                                    // alltid enabled:true), det fanns ingen
+                                    // väg alls att stänga av den igen
+                                    // (upptäckt 2026-08-24, efterfrågad av
+                                    // en administratör). Kräver att scopet
+                                    // redan konfigurerats minst en gång
+                                    // (iface.dhcp != null) — annars finns
+                                    // inget IP-pool/gateway att slå på.
+                                    if (iface.dhcp != null)
+                                      Switch(
+                                        value: iface.dhcp!.enabled,
+                                        activeThumbColor: Colors.tealAccent,
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        onChanged: (v) {
+                                          final updatedDhcp = DHCPConfigModel(
+                                            enabled: v,
+                                            rangeStart: iface.dhcp!.rangeStart,
+                                            rangeEnd: iface.dhcp!.rangeEnd,
+                                            gateway: iface.dhcp!.gateway,
+                                            dnsServers: iface.dhcp!.dnsServers,
+                                            leaseTimeSec: iface.dhcp!.leaseTimeSec,
+                                            reservations: iface.dhcp!.reservations,
+                                          );
+                                          final updated = List<InterfaceModel>.from(cfg.interfaces);
+                                          updated[idx] = iface.copyWith(dhcp: updatedDhcp);
+                                          provider.updateCandidate(cfg.copyWith(interfaces: updated));
+                                        },
+                                      ),
                                     ElevatedButton.icon(
                                       icon: const Icon(Icons.settings_ethernet, size: 14),
                                       label: const Text('Konfigurera DHCP Scope', style: TextStyle(fontSize: 10)),
@@ -793,7 +823,14 @@ class InterfacesScreen extends StatelessWidget {
                     child: const Text('Spara DHCP Scope', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     onPressed: () {
               final newDHCP = DHCPConfigModel(
-                enabled: true,
+                // Bevarar det befintliga på/av-läget (satt via
+                // snabbknappen på gränssnittskortet) i stället för att
+                // alltid tvinga på DHCP igen bara för att man öppnar
+                // dialogen och sparar ett IP-pool-scope — annars hade
+                // "Spara" av misstag återaktiverat en medvetet avstängd
+                // DHCP-server. Standard true för ett HELT NYTT scope
+                // (dhcp var null innan), precis som tidigare.
+                enabled: dhcp?.enabled ?? true,
                 rangeStart: startCtrl.text,
                 rangeEnd: endCtrl.text,
                 gateway: gwCtrl.text,
