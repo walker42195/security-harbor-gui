@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
+import '../localization.dart';
 
 /// DHCP-klienter (Fas 6) — visar alla enheter som fått en adress via
 /// brandväggens DHCP-server, för alla gränssnitt UTOM WAN (ingen DHCP körs
@@ -210,8 +211,8 @@ class _DhcpScreenState extends State<DhcpScreen> {
     final ipCtrl = TextEditingController(text: ip);
     final ifaces = _dhcpInterfaces();
     if (ifaces.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Inget gränssnitt har DHCP aktiverat. Aktivera DHCP på ett gränssnitt först.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(tr('dhcp.inget_granssnitt_har_dhcp_aktiverat_aktivera')),
       ));
       return;
     }
@@ -234,20 +235,20 @@ class _DhcpScreenState extends State<DhcpScreen> {
                   children: [
                     const Icon(Icons.push_pin, size: 18, color: Colors.amberAccent),
                     const SizedBox(width: 8),
-                    Text(mac.isEmpty ? 'Ny DHCP-reservation' : 'Reservera IP till MAC',
+                    Text(mac.isEmpty ? tr('dhcp.ny_dhcp_reservation') : tr('dhcp.reservera_ip_till_mac'),
                         style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                     const Spacer(),
                     IconButton(icon: const Icon(Icons.close, size: 18, color: Colors.white54), onPressed: () => Navigator.pop(ctx)),
                   ],
                 ),
                 const SizedBox(height: 8),
-                _resField(hostCtrl, 'Namn / hostnamn', 't.ex. Kamera-Entre'),
+                _resField(hostCtrl, tr('dhcp.namn_hostnamn_label'), tr('dhcp.namn_hostnamn_hint')),
                 const SizedBox(height: 10),
-                _resField(macCtrl, 'MAC-adress', 'aa:bb:cc:dd:ee:ff'),
+                _resField(macCtrl, tr('dhcp.mac_adress'), 'aa:bb:cc:dd:ee:ff'),
                 const SizedBox(height: 10),
-                _resField(ipCtrl, 'Reserverad IP', 't.ex. 192.168.1.50'),
+                _resField(ipCtrl, tr('dhcp.reserverad_ip_label'), tr('dhcp.reserverad_ip_hint')),
                 const SizedBox(height: 10),
-                const Text('Gränssnitt (DHCP-scope)', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                Text(tr('dhcp.granssnitt_dhcp_scope'), style: TextStyle(color: Colors.grey, fontSize: 11)),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -269,16 +270,16 @@ class _DhcpScreenState extends State<DhcpScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('dhcp.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
-                      child: const Text('Spara reservation', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      child: Text(tr('dhcp.spara_reservation'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () {
                         final newMac = macCtrl.text.trim();
                         final newIp = ipCtrl.text.trim();
                         if (newMac.isEmpty || newIp.isEmpty) {
-                          ScaffoldMessenger.of(ctx).showSnackBar(const SnackBar(content: Text('MAC och IP måste anges.')));
+                          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(tr('dhcp.mac_och_ip_maste_anges'))));
                           return;
                         }
                         final ifaceMatch = _dhcpInterfaces().where((i) => i.device == selectedDevice);
@@ -289,8 +290,8 @@ class _DhcpScreenState extends State<DhcpScreen> {
                         _writeReservations(selectedDevice, current);
                         Navigator.pop(ctx);
                         setState(() {});
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text('Reservation tillagd. Kom ihåg att applicera konfigurationen.'),
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(tr('dhcp.reservation_tillagd_kom_ihag_att_applicera')),
                         ));
                       },
                     ),
@@ -349,23 +350,23 @@ class _DhcpScreenState extends State<DhcpScreen> {
                 children: [
                   const Icon(Icons.push_pin, size: 16, color: Colors.amberAccent),
                   const SizedBox(width: 8),
-                  const Text('Statiska reservationer', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text(tr('dhcp.statiska_reservationer'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(width: 8),
                   Text('(${reservations.length})', style: const TextStyle(color: Colors.white54, fontSize: 11)),
                 ],
               ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
-                label: const Text('Lägg till reservation', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                label: Text(tr('dhcp.lagg_till_reservation'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
                 onPressed: () => _showReservationDialog(context),
               ),
             ],
           ),
           if (reservations.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 8),
-              child: Text('Inga reservationer. Lägg till manuellt, eller tryck på nålen i en rad nedan för att reservera en aktiv lease.',
+              child: Text(tr('dhcp.inga_reservationer_lagg_till_manuellt_eller'),
                   style: TextStyle(color: Colors.white38, fontSize: 11)),
             )
           else
@@ -425,7 +426,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
               children: [
                 const Icon(Icons.devices_other, color: Colors.cyanAccent, size: 22),
                 const SizedBox(width: 10),
-                const Text('DHCP-klienter', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(tr('dhcp.dhcp_klienter'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 IconButton(
                   icon: _loading
@@ -436,8 +437,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Enheter som fått en adress av brandväggens DHCP-server (alla gränssnitt utom WAN).',
+            Text(tr('dhcp.enheter_som_fatt_en_adress_av'),
               style: TextStyle(color: Colors.white54, fontSize: 11),
             ),
             const SizedBox(height: 12),
@@ -466,10 +466,10 @@ class _DhcpScreenState extends State<DhcpScreen> {
                       controller: _search,
                       onChanged: (_) => setState(() {}),
                       style: const TextStyle(fontSize: 12, color: Colors.white),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         isDense: true,
                         prefixIcon: Icon(Icons.search, size: 16, color: Colors.grey),
-                        labelText: 'Sök namn, IP eller MAC',
+                        labelText: tr('dhcp.sok_namn_ip_eller_mac'),
                         labelStyle: TextStyle(fontSize: 11, color: Colors.grey),
                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                         border: OutlineInputBorder(),
@@ -487,8 +487,8 @@ class _DhcpScreenState extends State<DhcpScreen> {
                           dropdownColor: const Color(0xFF1E293B),
                           style: const TextStyle(fontSize: 12, color: Colors.white),
                           items: [
-                            const DropdownMenuItem(value: 'ALL', child: Text('Gränssnitt: Alla')),
-                            ..._interfaces.map((i) => DropdownMenuItem(value: i, child: Text('Gränssnitt: $i'))),
+                            DropdownMenuItem(value: 'ALL', child: Text(tr('dhcp.granssnitt_alla'))),
+                            ..._interfaces.map((i) => DropdownMenuItem(value: i, child: Text(trp('dhcp.granssnitt_colon', {'name': i})))),
                           ],
                           onChanged: (v) => setState(() => _ifaceFilter = v ?? 'ALL'),
                         ),
@@ -504,7 +504,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                   if (_search.text.trim().isNotEmpty || _ifaceFilter != 'ALL')
                     TextButton.icon(
                       icon: const Icon(Icons.clear, size: 14, color: Colors.grey),
-                      label: const Text('Rensa', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      label: Text(tr('dhcp.rensa'), style: TextStyle(fontSize: 11, color: Colors.grey)),
                       onPressed: () => setState(() {
                         _search.clear();
                         _ifaceFilter = 'ALL';
@@ -539,14 +539,14 @@ class _DhcpScreenState extends State<DhcpScreen> {
                             dataRowMinHeight: 32,
                             dataRowMaxHeight: 32,
                             columns: [
-                              DataColumn(label: const Text('Namn', style: _hStyle), onSort: (i, _) => _onSort(0)),
-                              DataColumn(label: const Text('IP-adress', style: _hStyle), onSort: (i, _) => _onSort(1)),
-                              DataColumn(label: const Text('MAC-adress', style: _hStyle), onSort: (i, _) => _onSort(2)),
-                              DataColumn(label: const Text('Gränssnitt', style: _hStyle), onSort: (i, _) => _onSort(3)),
-                              DataColumn(label: const Text('Zon', style: _hStyle), onSort: (i, _) => _onSort(4)),
-                              DataColumn(label: const Text('Fick lease', style: _hStyle), onSort: (i, _) => _onSort(5)),
-                              DataColumn(label: const Text('Utgår', style: _hStyle), onSort: (i, _) => _onSort(6)),
-                              const DataColumn(label: Text('Reservera', style: _hStyle)),
+                              DataColumn(label: Text(tr('dhcp.namn'), style: _hStyle), onSort: (i, _) => _onSort(0)),
+                              DataColumn(label: Text(tr('dhcp.ip_adress'), style: _hStyle), onSort: (i, _) => _onSort(1)),
+                              DataColumn(label: Text(tr('dhcp.mac_adress'), style: _hStyle), onSort: (i, _) => _onSort(2)),
+                              DataColumn(label: Text(tr('dhcp.granssnitt'), style: _hStyle), onSort: (i, _) => _onSort(3)),
+                              DataColumn(label: Text(tr('dhcp.zon'), style: _hStyle), onSort: (i, _) => _onSort(4)),
+                              DataColumn(label: Text(tr('dhcp.fick_lease'), style: _hStyle), onSort: (i, _) => _onSort(5)),
+                              DataColumn(label: Text(tr('dhcp.utgar'), style: _hStyle), onSort: (i, _) => _onSort(6)),
+                              DataColumn(label: Text(tr('dhcp.reservera'), style: _hStyle)),
                             ],
                             rows: visible
                                 .map((l) => DataRow(cells: [
@@ -562,7 +562,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                                           ? const Tooltip(message: 'Redan reserverad', child: Icon(Icons.check_circle, size: 16, color: Colors.greenAccent))
                                           : IconButton(
                                               icon: const Icon(Icons.push_pin_outlined, size: 16, color: Colors.amberAccent),
-                                              tooltip: 'Reservera denna IP till MAC-adressen',
+                                              tooltip: tr('dhcp.reservera_denna_ip_till_mac_adressen'),
                                               onPressed: () => _showReservationDialog(context, hostname: l.hostname, mac: l.mac, ip: l.ip, device: l.interfaceDevice),
                                             )),
                                     ]))
@@ -572,15 +572,15 @@ class _DhcpScreenState extends State<DhcpScreen> {
                       ),
                     ),
                     if (_leases.isEmpty)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.all(20),
-                        child: Text('Inga aktiva DHCP-utlåningar. Enheter dyker upp här när de fått en adress av DHCP-servern.',
+                        child: Text(tr('dhcp.inga_aktiva_dhcp_utlaningar_enheter_dyker'),
                             style: TextStyle(color: Colors.white38, fontSize: 12)),
                       )
                     else if (visible.isEmpty)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.all(20),
-                        child: Text('Inga klienter matchar filtret.', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                        child: Text(tr('dhcp.inga_klienter_matchar_filtret'), style: TextStyle(color: Colors.white38, fontSize: 12)),
                       ),
                   ],
                 ),

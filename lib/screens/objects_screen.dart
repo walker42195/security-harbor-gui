@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import '../widgets/dialog_helpers.dart';
+import '../localization.dart';
 
 class ObjectsScreen extends StatefulWidget {
   const ObjectsScreen({super.key});
@@ -36,29 +37,29 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
               spacing: 10,
               runSpacing: 10,
               children: [
-                const Row(
+                Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.category, color: Colors.cyanAccent, size: 22),
                     SizedBox(width: 10),
-                    Text('Objekt & Grupper', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text(tr('objects.objekt_grupper'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.dns, size: 14),
-                  label: const Text('+ Skapa Objekt', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  label: Text(tr('objects.skapa_objekt'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
                   onPressed: () => _showAddObjectDialog(context, provider),
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.workspaces_outline, size: 14),
-                  label: const Text('+ Skapa Grupp', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  label: Text(tr('objects.skapa_grupp'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
                   onPressed: () => _showAddGroupDialog(context, provider),
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.shield, size: 14),
-                  label: const Text('+ Hot-lista / GeoIP', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  label: Text(tr('objects.hot_lista_geoip'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
                   onPressed: () => _showAddThreatFeedDialog(context, provider),
                 ),
@@ -66,11 +67,11 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
             ),
             const SizedBox(height: 14),
             if (cfg != null && cfg.objects.isEmpty)
-              const Card(
+              Card(
                 color: Color(0xFF1E293B),
                 child: Padding(
                   padding: EdgeInsets.all(32.0),
-                  child: Center(child: Text('Inga sparade nätverksobjekt ännu.', style: TextStyle(color: Colors.grey, fontSize: 12))),
+                  child: Center(child: Text(tr('objects.inga_sparade_natverksobjekt_annu'), style: TextStyle(color: Colors.grey, fontSize: 12))),
                 ),
               )
             else if (cfg != null)
@@ -112,13 +113,13 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                             style: const TextStyle(fontSize: 11, color: Colors.cyanAccent, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
                           ),
                         ),
-                        Text('  (automatisk källa: ${_kindLabel(src.kind)})', style: const TextStyle(fontSize: 11)),
+                        Text(trp('objects.automatisk_kalla', {'kind': _kindLabel(src.kind)}), style: const TextStyle(fontSize: 11)),
                       ],
                     )
                   : Text(
                       obj.type == 'group'
-                          ? 'Typ: GRUPP  |  Medlemmar: ${_groupMemberNames(context, obj)}'
-                          : 'Typ: ${obj.type.toUpperCase()}  |  Värden: ${obj.values.join(", ")}',
+                          ? trp('objects.typ_grupp_medlemmar', {'members': _groupMemberNames(context, obj)})
+                          : trp('objects.typ_varden', {'type': obj.type.toUpperCase(), 'values': obj.values.join(", ")}),
                       style: const TextStyle(fontSize: 11),
                     ),
               trailing: Row(
@@ -132,12 +133,12 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                           )
                         : IconButton(
                             icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
-                            tooltip: 'Uppdatera nu',
+                            tooltip: tr('objects.uppdatera_nu'),
                             onPressed: () => _refreshSource(provider, obj),
                           ),
                   IconButton(
                     icon: const Icon(Icons.edit, size: 18, color: Colors.cyanAccent),
-                    tooltip: 'Redigera',
+                    tooltip: tr('objects.redigera'),
                     onPressed: () => src != null
                         ? _showAddThreatFeedDialog(context, provider, existing: obj)
                         : obj.type == 'group'
@@ -146,7 +147,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-                    tooltip: 'Ta bort',
+                    tooltip: tr('objects.ta_bort'),
                     onPressed: () => _deleteObject(context, provider, obj),
                   ),
                 ],
@@ -188,7 +189,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
               const SizedBox(height: 10),
               Expanded(
                 child: obj.values.isEmpty
-                    ? const Center(child: Text('Inga värden hämtade ännu.', style: TextStyle(color: Colors.grey, fontSize: 12)))
+                    ? Center(child: Text(tr('objects.inga_varden_hamtade_annu'), style: TextStyle(color: Colors.grey, fontSize: 12)))
                     : Container(
                         decoration: BoxDecoration(color: const Color(0xFF0F172A), border: Border.all(color: const Color(0xFF334155)), borderRadius: BorderRadius.circular(4)),
                         child: ListView.builder(
@@ -234,11 +235,11 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
       case 'spamhaus_edrop':
         return 'Spamhaus EDROP';
       case 'tor_exit_nodes':
-        return 'Tor-exit-noder';
+        return tr('objects.tor_exit_noder');
       case 'custom_url':
-        return 'Anpassad URL';
+        return tr('objects.anpassad_url');
       case 'geoip_country':
-        return 'GeoIP-land';
+        return tr('objects.geoip_land');
       default:
         return kind;
     }
@@ -252,7 +253,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
       setState(() => _refreshingIds.remove(obj.id));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ok ? '"${obj.name}" uppdaterad' : 'Misslyckades uppdatera "${obj.name}" — se felmeddelande på objektet'),
+          content: Text(ok ? trp('objects.updated', {'name': obj.name}) : trp('objects.update_failed', {'name': obj.name})),
           backgroundColor: ok ? Colors.teal : Colors.red,
         ),
       );
@@ -264,14 +265,14 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: const Text('Ta bort objekt?', style: TextStyle(color: Colors.white, fontSize: 14)),
+        title: Text(tr('objects.ta_bort_objekt'), style: TextStyle(color: Colors.white, fontSize: 14)),
         content: Text('Är du säker på att du vill ta bort "${obj.name}"? Policies som refererar till det slutar fungera som avsett.', style: const TextStyle(color: Colors.grey, fontSize: 12)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('objects.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.black),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Ta bort', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            child: Text(tr('objects.ta_bort'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -302,23 +303,23 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              dialogTitleRow(context, existing != null ? 'Redigera Nätverksobjekt' : 'Skapa nytt Nätverksobjekt', () => Navigator.pop(ctx)),
+              dialogTitleRow(context, existing != null ? tr('objects.redigera_natverksobjekt') : tr('objects.skapa_nytt_natverksobjekt'), () => Navigator.pop(ctx)),
               const SizedBox(height: 12),
 
-              dialogSection(title: 'OBJEKT', children: [
-                dialogField(nameCtrl, 'Objektnamn'),
+              dialogSection(title: tr('objects.section_objekt'), children: [
+                dialogField(nameCtrl, tr('objects.objektnamn')),
                 const SizedBox(height: 12),
-                dialogField(valCtrl, 'IP / CIDR', hint: 'komma-separerade'),
+                dialogField(valCtrl, tr('objects.ip_cidr'), hint: tr('objects.komma_separerade')),
               ]),
               const SizedBox(height: 16),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('objects.avbryt'), style: TextStyle(fontSize: 12))),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    child: const Text('Spara', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: Text(tr('objects.spara'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     onPressed: () {
               final cfg = provider.candidateConfig ?? provider.runningConfig;
               if (cfg != null) {
@@ -327,7 +328,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                   name: nameCtrl.text,
                   type: existing?.type ?? 'host',
                   values: valCtrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
-                  description: existing?.description ?? 'Skapad i GUI',
+                  description: existing?.description ?? tr('objects.skapad_i_gui'),
                 );
                 final updatedObjs = existing != null
                     ? cfg.objects.map((o) => o.id == existing.id ? savedObj : o).toList()
@@ -392,18 +393,18 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                dialogTitleRow(context, existing != null ? 'Redigera Grupp' : 'Skapa ny Grupp', () => Navigator.pop(ctx)),
+                dialogTitleRow(context, existing != null ? tr('objects.redigera_grupp') : tr('objects.skapa_ny_grupp'), () => Navigator.pop(ctx)),
                 const SizedBox(height: 12),
-                dialogSection(title: 'GRUPP', children: [
-                  dialogField(nameCtrl, 'Gruppnamn'),
+                dialogSection(title: tr('objects.section_grupp'), children: [
+                  dialogField(nameCtrl, tr('objects.gruppnamn')),
                 ]),
                 const SizedBox(height: 12),
-                const Text('MEDLEMMAR', style: TextStyle(color: Colors.cyanAccent, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                Text(tr('objects.medlemmar'), style: TextStyle(color: Colors.cyanAccent, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                 const SizedBox(height: 4),
                 if (candidates.isEmpty)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('Skapa först några objekt (host/nätverk) att gruppera.', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    child: Text(tr('objects.skapa_forst_nagra_objekt_host_natverk'), style: TextStyle(color: Colors.white54, fontSize: 12)),
                   )
                 else
                   ConstrainedBox(
@@ -419,7 +420,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                           // host/nätverk-objekt) hade gett en oläsbar rad.
                           // Visa antal poster i stället.
                           final subtitle = isGroup
-                              ? 'grupp: ${_groupMemberNames(context, o)}'
+                              ? trp('objects.grupp_colon', {'members': _groupMemberNames(context, o)})
                               : o.source != null
                                   ? '${o.type} (auto: ${o.source!.kind}) · ${o.source!.entryCount} poster'
                                   : '${o.type} · ${o.values.join(", ")}';
@@ -451,7 +452,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('objects.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
@@ -462,10 +463,10 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                               if (c != null) {
                                 final savedObj = ObjectModel(
                                   id: existing?.id ?? 'obj_${DateTime.now().millisecondsSinceEpoch}',
-                                  name: nameCtrl.text.trim().isEmpty ? 'Ny grupp' : nameCtrl.text.trim(),
+                                  name: nameCtrl.text.trim().isEmpty ? tr('objects.ny_grupp') : nameCtrl.text.trim(),
                                   type: 'group',
                                   values: selected.toList(),
-                                  description: existing?.description ?? 'Grupp skapad i GUI',
+                                  description: existing?.description ?? tr('objects.grupp_skapad_i_gui'),
                                 );
                                 final updatedObjs = existing != null
                                     ? c.objects.map((o) => o.id == existing.id ? savedObj : o).toList()
@@ -474,7 +475,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                               }
                               Navigator.pop(ctx);
                             },
-                      child: const Text('Spara', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      child: Text(tr('objects.spara'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -507,24 +508,24 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                dialogTitleRow(context, existing != null ? 'Redigera Hot-lista / GeoIP-objekt' : 'Lägg till Hot-lista / GeoIP-objekt', () => Navigator.pop(ctx)),
+                dialogTitleRow(context, existing != null ? tr('objects.redigera_hotlista') : tr('objects.lagg_till_hotlista'), () => Navigator.pop(ctx)),
                 const SizedBox(height: 12),
-                dialogSection(title: 'KÄLLA', children: [
-                  dialogField(nameCtrl, 'Objektnamn'),
+                dialogSection(title: tr('objects.section_kalla'), children: [
+                  dialogField(nameCtrl, tr('objects.objektnamn')),
                   const SizedBox(height: 12),
-                  const Text('Källtyp', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                  Text(tr('objects.kalltyp'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   DropdownButtonFormField<String>(
                     initialValue: kind,
                     dropdownColor: const Color(0xFF1E293B),
                     style: const TextStyle(fontSize: 12, color: Colors.white),
                     decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
-                    items: const [
-                      DropdownMenuItem(value: 'spamhaus_drop', child: Text('Spamhaus DROP (kända spam/botnät-nät)')),
-                      DropdownMenuItem(value: 'spamhaus_edrop', child: Text('Spamhaus EDROP (utökad DROP)')),
-                      DropdownMenuItem(value: 'tor_exit_nodes', child: Text('Tor-exit-noder')),
-                      DropdownMenuItem(value: 'custom_url', child: Text('Anpassad URL (en CIDR/IP per rad)')),
-                      DropdownMenuItem(value: 'geoip_country', child: Text('GeoIP — helt land (landskod)')),
+                    items: [
+                      DropdownMenuItem(value: 'spamhaus_drop', child: Text(tr('objects.spamhaus_drop_kanda_spam_botnat_nat'))),
+                      DropdownMenuItem(value: 'spamhaus_edrop', child: Text(tr('objects.spamhaus_edrop_utokad_drop'))),
+                      DropdownMenuItem(value: 'tor_exit_nodes', child: Text(tr('objects.tor_exit_noder'))),
+                      DropdownMenuItem(value: 'custom_url', child: Text(tr('objects.anpassad_url_en_cidr_ip_per'))),
+                      DropdownMenuItem(value: 'geoip_country', child: Text(tr('objects.geoip_helt_land_landskod'))),
                     ],
                     onChanged: (v) => setDialogState(() => kind = v ?? kind),
                   ),
@@ -532,18 +533,17 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                   if (kind == 'custom_url') dialogField(urlCtrl, 'URL', hint: 'https://exempel.se/blocklist.txt'),
                   if (kind == 'geoip_country') dialogField(countryCtrl, 'Landskod (ISO 3166-1 alpha-2)', hint: 't.ex. RU, CN, KP'),
                   if (kind == 'custom_url' || kind == 'geoip_country') const SizedBox(height: 12),
-                  dialogField(refreshHoursCtrl, 'Uppdateringsintervall (timmar)', hint: '24'),
+                  dialogField(refreshHoursCtrl, tr('objects.uppdateringsintervall_label'), hint: '24'),
                 ]),
                 const SizedBox(height: 6),
-                const Text(
-                  'Listan hämtas automatiskt av brandväggen enligt intervallet ovan. Innehållet syns här efter första hämtningen (kan ta en liten stund).',
+                Text(tr('objects.listan_hamtas_automatiskt_av_brandvaggen_enligt'),
                   style: TextStyle(color: Colors.amberAccent, fontSize: 10),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('objects.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
@@ -565,7 +565,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                           name: nameCtrl.text.trim().isEmpty ? _kindLabel(kind) : nameCtrl.text.trim(),
                           type: objType,
                           values: (existing == null || kindChanged) ? const [] : existing.values,
-                          description: existing?.description ?? 'Automatiskt uppdaterad (${_kindLabel(kind)})',
+                          description: existing?.description ?? trp('objects.automatiskt_uppdaterad', {'kind': _kindLabel(kind)}),
                           source: ObjectSourceModel(
                             kind: kind,
                             url: urlCtrl.text.trim(),
