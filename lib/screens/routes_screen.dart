@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
+import '../localization.dart';
 
 /// Statiska IP-rutter (`ip route add <nät> via <gateway>`) — för nät som
 /// inte nås via brandväggens vanliga default-rutt utan kräver en specifik
@@ -39,20 +40,19 @@ class _RoutesScreenState extends State<RoutesScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                const Row(
+                Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.alt_route, color: Colors.cyanAccent, size: 20),
                     SizedBox(width: 8),
-                    Text(
-                      'Statiska Rutter (Routing)',
+                    Text(tr('routes.statiska_rutter_routing'),
                       style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.add, size: 16, color: Colors.cyanAccent),
-                  label: const Text('Ny rutt', style: TextStyle(fontSize: 12, color: Colors.white)),
+                  label: Text(tr('routes.ny_rutt'), style: TextStyle(fontSize: 12, color: Colors.white)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     side: const BorderSide(color: Colors.cyanAccent),
@@ -66,10 +66,9 @@ class _RoutesScreenState extends State<RoutesScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: const Color(0xFF0F172A),
-            child: const Text(
-              'En rutt gör bara nätet NÅBART. Trafik dit tillåts fortfarande bara om det finns en '
-              'motsvarande Allow-policy under Policies — Default Deny gäller annars som vanligt.',
-              style: TextStyle(color: Colors.grey, fontSize: 11),
+            child: Text(
+              tr('routes.intro_body'),
+              style: const TextStyle(color: Colors.grey, fontSize: 11),
             ),
           ),
 
@@ -83,9 +82,8 @@ class _RoutesScreenState extends State<RoutesScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: routes.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Inga statiska rutter definierade.',
+                  ? Center(
+                      child: Text(tr('routes.inga_statiska_rutter_definierade'),
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                     )
@@ -148,12 +146,12 @@ class _RoutesScreenState extends State<RoutesScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.edit, size: 16, color: Colors.cyanAccent),
-            tooltip: 'Redigera rutt',
+            tooltip: tr('routes.redigera_rutt'),
             onPressed: () => _showEditRouteDialog(context, provider, cfg, idx),
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
-            tooltip: 'Ta bort rutt',
+            tooltip: tr('routes.ta_bort_rutt'),
             onPressed: () => _deleteRoute(context, provider, cfg, idx),
           ),
           Switch(
@@ -177,19 +175,17 @@ class _RoutesScreenState extends State<RoutesScreen> {
       context: context,
       builder: (dctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: const Text('Ta bort rutten?', style: TextStyle(color: Colors.white, fontSize: 14)),
+        title: Text(tr('routes.ta_bort_rutten'), style: TextStyle(color: Colors.white, fontSize: 14)),
         content: Text(
-          'Vill du ta bort rutten "${r.name.isEmpty ? r.network : r.name}"?\n\n'
-          'Ändringen sparas i kandidaten men slår inte igenom på brandväggen förrän du '
-          'trycker Applicera.',
+          trp('routes.delete_confirm_body', {'name': r.name.isEmpty ? r.network : r.name}),
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dctx, false), child: const Text('Avbryt')),
+          TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('routes.avbryt'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(dctx, true),
-            child: const Text('Ta bort'),
+            child: Text(tr('routes.ta_bort')),
           ),
         ],
       ),
@@ -244,7 +240,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
         builder: (context, setState) => AlertDialog(
           backgroundColor: const Color(0xFF1E293B),
           title: Text(
-            isEditing ? 'Redigera rutt' : 'Ny statisk rutt',
+            isEditing ? tr('routes.redigera_rutt') : tr('routes.ny_statisk_rutt'),
             style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
           ),
           content: SizedBox(
@@ -253,13 +249,13 @@ class _RoutesScreenState extends State<RoutesScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _dialogField('Namn (valfritt)', nameCtrl, hint: 't.ex. Kontorsnät via router'),
+                _dialogField(tr('routes.namn_valfritt'), nameCtrl, hint: tr('routes.namn_hint')),
                 const SizedBox(height: 10),
-                _dialogField('Nät (CIDR)', networkCtrl, hint: 't.ex. 192.168.113.0/24'),
+                _dialogField(tr('routes.nat_cidr'), networkCtrl, hint: tr('routes.nat_hint')),
                 const SizedBox(height: 10),
-                _dialogField('Gateway', gatewayCtrl, hint: 't.ex. 10.0.0.1'),
+                _dialogField(tr('routes.gateway'), gatewayCtrl, hint: tr('routes.gateway_hint')),
                 const SizedBox(height: 10),
-                Text('Gränssnitt (valfritt)', style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text(tr('routes.granssnitt_valfritt'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 DropdownButtonFormField<String>(
                   initialValue: selectedDevice,
@@ -270,15 +266,15 @@ class _RoutesScreenState extends State<RoutesScreen> {
                     contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     border: OutlineInputBorder(),
                   ),
-                  hint: const Text('Låt kärnan välja (rekommenderas)', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  hint: Text(tr('routes.lat_karnan_valja_rekommenderas'), style: TextStyle(color: Colors.grey, fontSize: 11)),
                   items: [
-                    const DropdownMenuItem(value: null, child: Text('Låt kärnan välja (rekommenderas)')),
+                    DropdownMenuItem(value: null, child: Text(tr('routes.lat_karnan_valja_rekommenderas'))),
                     for (final d in devices) DropdownMenuItem(value: d, child: Text(d)),
                   ],
                   onChanged: (v) => setState(() => selectedDevice = v),
                 ),
                 const SizedBox(height: 10),
-                _dialogField('Beskrivning (valfritt)', descCtrl),
+                _dialogField(tr('routes.beskrivning_valfritt'), descCtrl),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -288,7 +284,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                       checkColor: Colors.black,
                       onChanged: (v) => setState(() => enabled = v ?? true),
                     ),
-                    const Text('Aktiverad', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    Text(tr('routes.aktiverad'), style: TextStyle(color: Colors.white, fontSize: 12)),
                   ],
                 ),
                 if (formError != null) ...[
@@ -299,7 +295,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt')),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('routes.avbryt'))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
               onPressed: () {
@@ -311,11 +307,11 @@ class _RoutesScreenState extends State<RoutesScreen> {
                 final network = networkCtrl.text.trim();
                 final gateway = gatewayCtrl.text.trim();
                 if (network.isEmpty || !network.contains('/')) {
-                  setState(() => formError = 'Nätet måste anges som CIDR, t.ex. 192.168.113.0/24');
+                  setState(() => formError = tr('routes.error_cidr'));
                   return;
                 }
                 if (gateway.isEmpty) {
-                  setState(() => formError = 'Gateway måste anges, t.ex. 10.0.0.1');
+                  setState(() => formError = tr('routes.error_gateway'));
                   return;
                 }
 
@@ -338,7 +334,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                 provider.updateCandidate(cfg.copyWith(staticRoutes: updated));
                 Navigator.pop(ctx);
               },
-              child: const Text('Spara', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              child: Text(tr('routes.spara'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
             ),
           ],
         ),

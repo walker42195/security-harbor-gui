@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import '../widgets/dialog_helpers.dart';
+import '../localization.dart';
 
 /// Namnbaserad routning (SNI passthrough). En regel = en lyssnarport där
 /// flera värdnamn dirigeras till olika interna servrar utan att TLS
@@ -28,27 +29,26 @@ class SniRoutesScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(
-                  child: Text('Namnbaserad routning (SNI)',
+                Expanded(
+                  child: Text(tr('sni.namnbaserad_routning_sni'),
                       style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add, size: 14),
-                  label: const Text('+ Ny regel', style: TextStyle(fontSize: 11)),
+                  label: Text(tr('sni.ny_regel'), style: TextStyle(fontSize: 11)),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
                   onPressed: cfg == null ? null : () => _showEditDialog(context, provider, cfg, null),
                 ),
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Tar emot TLS på en port och skickar vidare till olika interna servrar beroende på efterfrågat värdnamn (SNI). '
-              'Ingen TLS-terminering — certifikaten stannar på servrarna. Suricata inspekterar handskakningen (SNI/JA3/cert).',
-              style: TextStyle(color: Colors.grey, fontSize: 11),
+            Text(
+              tr('sni.intro_body'),
+              style: const TextStyle(color: Colors.grey, fontSize: 11),
             ),
             const SizedBox(height: 12),
             if (cfg == null)
-              const Text('Laddar…', style: TextStyle(color: Colors.grey))
+              Text(tr('sni.laddar'), style: TextStyle(color: Colors.grey))
             else if (routes.isEmpty)
               const Card(
                 color: Color(0xFF1E293B),
@@ -66,7 +66,7 @@ class SniRoutesScreen extends StatelessWidget {
   }
 
   Widget _buildRouteCard(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx, SNIRouteModel r) {
-    String targetLabel(SNIBackendModel b) => b.isLocalOpenVPN ? 'Lokal OpenVPN' : '${b.targetIp}:${b.targetPort}';
+    String targetLabel(SNIBackendModel b) => b.isLocalOpenVPN ? tr('sni.lokal_openvpn') : '${b.targetIp}:${b.targetPort}';
     return Card(
       color: const Color(0xFF1E293B),
       margin: const EdgeInsets.only(bottom: 8),
@@ -82,7 +82,7 @@ class SniRoutesScreen extends StatelessWidget {
           children: [
             IconButton(
               icon: const Icon(Icons.edit, color: Colors.cyanAccent, size: 16),
-              tooltip: 'Redigera',
+              tooltip: tr('sni.redigera'),
               onPressed: () => _showEditDialog(context, provider, cfg, idx),
             ),
             Switch(
@@ -97,7 +97,7 @@ class SniRoutesScreen extends StatelessWidget {
             ),
             IconButton(
               icon: const Icon(Icons.delete, color: Colors.redAccent, size: 16),
-              tooltip: 'Ta bort',
+              tooltip: tr('sni.ta_bort'),
               onPressed: () {
                 final updated = List<SNIRouteModel>.from(cfg.sniRoutes)..removeAt(idx);
                 provider.updateCandidate(cfg.copyWith(sniRoutes: updated));
@@ -170,34 +170,34 @@ class SniRoutesScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  dialogTitleRow(context, existing == null ? 'Ny SNI-regel' : 'Redigera SNI-regel', () => Navigator.pop(ctx)),
+                  dialogTitleRow(context, existing == null ? tr('sni.ny_sni_regel') : tr('sni.redigera_sni_regel'), () => Navigator.pop(ctx)),
                   const SizedBox(height: 12),
-                  dialogSection(title: 'REGEL', children: [
-                    dialogField(nameCtrl, 'Namn', hint: 't.ex. Interna webbservrar'),
+                  dialogSection(title: tr('sni.section_regel'), children: [
+                    dialogField(nameCtrl, tr('sni.namn'), hint: tr('sni.namn_hint')),
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Expanded(child: dialogField(portCtrl, 'Lyssnarport', hint: '443')),
+                        Expanded(child: dialogField(portCtrl, tr('sni.lyssnarport'), hint: '443')),
                         const SizedBox(width: 12),
-                        Expanded(child: dialogField(extIpCtrl, 'Extern IP (valfri)', hint: 'bind alla om tom')),
+                        Expanded(child: dialogField(extIpCtrl, tr('sni.extern_ip_valfri'), hint: tr('sni.bind_alla_om_tom'))),
                       ],
                     ),
                   ]),
                   const SizedBox(height: 12),
-                  dialogSection(title: 'NAMN → INTERN SERVER', children: [
+                  dialogSection(title: tr('sni.section_namn_till_server'), children: [
                     for (int i = 0; i < backends.length; i++)
                       _buildBackendEditor(context, setState, backends[i], ovpnEnabled, ovpnTcp, allowLocal: true, onRemove: backends.length > 1 ? () => setState(() => backends.removeAt(i)) : null),
                     Align(
                       alignment: Alignment.centerLeft,
                       child: TextButton.icon(
                         icon: const Icon(Icons.add, size: 14, color: Colors.cyanAccent),
-                        label: const Text('Lägg till mål', style: TextStyle(fontSize: 11, color: Colors.cyanAccent)),
+                        label: Text(tr('sni.lagg_till_mal'), style: TextStyle(fontSize: 11, color: Colors.cyanAccent)),
                         onPressed: () => setState(() => backends.add(_BackendEdit())),
                       ),
                     ),
                   ]),
                   const SizedBox(height: 12),
-                  dialogSection(title: 'FALLBACK (SISTA INSTANS)', children: [
+                  dialogSection(title: tr('sni.section_fallback'), children: [
                     Row(
                       children: [
                         Switch(
@@ -206,8 +206,8 @@ class SniRoutesScreen extends StatelessWidget {
                           onChanged: (v) => setState(() => fallbackOn = v),
                         ),
                         const SizedBox(width: 6),
-                        const Expanded(
-                          child: Text('Trafik utan matchande namn (t.ex. OpenVPN, som inte skickar SNI) skickas hit.',
+                        Expanded(
+                          child: Text(tr('sni.trafik_utan_matchande_namn_t_ex'),
                               style: TextStyle(color: Colors.white70, fontSize: 11)),
                         ),
                       ],
@@ -221,11 +221,11 @@ class SniRoutesScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('sni.avbryt'), style: TextStyle(fontSize: 12))),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
-                        child: const Text('Spara', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text(tr('sni.spara'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         onPressed: () {
                           final port = int.tryParse(portCtrl.text.trim()) ?? 0;
                           final route = SNIRouteModel(
@@ -278,36 +278,36 @@ class SniRoutesScreen extends StatelessWidget {
                   initialValue: b.type,
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(color: Colors.white, fontSize: 12),
-                  decoration: const InputDecoration(labelText: 'Måltyp', isDense: true, border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
+                  decoration: InputDecoration(labelText: tr('sni.maltyp'), isDense: true, border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
                   items: [
-                    const DropdownMenuItem(value: 'internal', child: Text('Intern server')),
-                    if (allowLocal) const DropdownMenuItem(value: 'openvpn', child: Text('Lokal OpenVPN')),
+                    DropdownMenuItem(value: 'internal', child: Text(tr('sni.intern_server'))),
+                    if (allowLocal) DropdownMenuItem(value: 'openvpn', child: Text(tr('sni.lokal_openvpn'))),
                   ],
                   onChanged: (v) => setState(() => b.type = v ?? 'internal'),
                 ),
               ),
               if (onRemove != null)
-                IconButton(icon: const Icon(Icons.close, size: 16, color: Colors.redAccent), onPressed: onRemove, tooltip: 'Ta bort mål'),
+                IconButton(icon: Icon(Icons.close, size: 16, color: Colors.redAccent), onPressed: onRemove, tooltip: tr('sni.ta_bort_mal')),
             ],
           ),
           if (b.type == 'openvpn' && (!ovpnEnabled || !ovpnTcp))
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 6),
-              child: Text('OBS: kräver att OpenVPN är aktiverat och kör i TCP-läge.', style: TextStyle(color: Colors.amber, fontSize: 10)),
+              child: Text(tr('sni.obs_kraver_att_openvpn_ar_aktiverat'), style: TextStyle(color: Colors.amber, fontSize: 10)),
             ),
           if (b.type != 'openvpn') ...[
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(flex: 3, child: dialogField(b.ip, 'Intern IP', hint: '192.168.1.10')),
+                Expanded(flex: 3, child: dialogField(b.ip, tr('sni.intern_ip'), hint: '192.168.1.10')),
                 const SizedBox(width: 8),
-                Expanded(flex: 2, child: dialogField(b.port, 'Port', hint: '8006')),
+                Expanded(flex: 2, child: dialogField(b.port, tr('sni.port'), hint: '8006')),
               ],
             ),
           ],
           if (!isFallback) ...[
             const SizedBox(height: 8),
-            dialogField(b.hostnames, 'Värdnamn (komma-separerade, "*.x.se" stöds)', hint: 't.ex. px1.exempel.se, px2.exempel.se'),
+            dialogField(b.hostnames, tr('sni.vardnamn_label'), hint: tr('sni.vardnamn_hint')),
           ],
         ],
       ),
