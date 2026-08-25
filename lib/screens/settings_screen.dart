@@ -63,6 +63,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _desktopVerified = false;
   String? _updateMessage;
 
+  // --- Tidigare versioner (rollback) ---
+  List<Map<String, dynamic>>? _retainedVersions; // versions[] från /system/versions
+  String? _retainedCurrentVersion; // "current" från samma svar
+  bool _loadingRetainedVersions = false;
+  bool _rollbackInProgress = false;
+  String? _rollbackTargetVersion;
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _passwordController = TextEditingController();
     if (provider.isAuthenticated && provider.isAdmin) {
       _loadUsers();
+      _loadRetainedVersions(provider);
     }
   }
 
@@ -525,6 +533,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _updateMessage = 'Kunde inte kontakta uppdateringstjänsten (kräver att brandväggen når internet).';
       }
     });
+    await _loadRetainedVersions(provider);
   }
 
   Future<void> _downloadFirewallUpdate(ConfigProvider provider) async {
@@ -605,6 +614,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _updateMessage = 'Uppgraderingen tar längre tid än väntat. Tryck Kontrollera '
           'om en stund för att se om den nya versionen är igång.';
     });
+  }
+
+  Future<void> _loadRetainedVersions(ConfigProvider provider) async {
+    setState(() => _loadingRetainedVersions = true);
+    final res = await provider.api.listRetainedVersions();
+    if (!mounted) return;
+    setState(() {
+      _retainedVersions = res == null
+          ? null
+          : List<Map<String, dynamic>>.from((res['versions'] as List?) ?? const []);
+      _retainedCurrentVersion = res?['current']?.toString();
+      _loadingRetainedVersions = false;
+    });
+  }
+
+  Future<void> _rollbackToVersion(ConfigProvider provider, String version) async {
+    final ok = await _confirmDialog(
+      'Återställ till version $version?',
+      'Brandväggen installerar om den sparade versionen $version och agenten '
+          'startar om. Din konfiguration bevaras, men den migreras INTE '
+          'automatiskt — en äldre agentversion kan sakna stöd för inställningar '
+          'som sparats av en senare version. Verifiera att allt fungerar som '
+          'väntat efter återställningen.',
+    );
+    if (!ok) return;
+    setState(() {
+      _rollbackInProgress = true;
+      _rollbackTargetVersion = version;
+      _updateMessage = 'Startar återställningen…';
+    });
+    await provider.api.rollbackToVersion(version);
+    if (!mounted) return;
+    // Samma polling-mönster som en vanlig uppgradering — agenten är nere en
+    // stund medan den installerar om och startar om.
+    await _pollForUpgrade(provider, version);
+    if (!mounted) return;
+    setState(() {
+      _rollbackInProgress = false;
+      _rollbackTargetVersion = null;
+    });
+    await _loadRetainedVersions(provider);
   }
 
   Future<void> _downloadDesktopUpdate() async {
@@ -783,6 +833,67 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ],
+            const Divider(color: Colors.white24, height: 24),
+            Row(
+              children: [
+                const Icon(Icons.history, color: Colors.cyanAccent, size: 18),
+                const SizedBox(width: 8),
+                const Text('Tidigare versioner', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 13)),
+                const Spacer(),
+                IconButton(
+                  icon: _loadingRetainedVersions
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.refresh, size: 16, color: Colors.white54),
+                  onPressed: _loadingRetainedVersions ? null : () => _loadRetainedVersions(provider),
+                ),
+              ],
+            ),
+            const Text(
+              'De senast installerade agent-versionerna sparas på brandväggen (upp till 3). '
+              'Om en uppgradering gick fel kan du återställa till en av dem här.',
+              style: TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+            const SizedBox(height: 6),
+            if (_retainedVersions == null || _retainedVersions!.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 6),
+                child: Text('Inga tidigare versioner sparade ännu.', style: TextStyle(color: Colors.white38, fontSize: 11)),
+              )
+            else
+              ..._retainedVersions!.map((v) {
+                final version = v['version']?.toString() ?? '?';
+                final archivedAt = v['archived_at']?.toString();
+                final isCurrent = version == _retainedCurrentVersion;
+                final isTarget = _rollbackInProgress && _rollbackTargetVersion == version;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 90,
+                        child: Text(version, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                      ),
+                      Expanded(
+                        child: Text(
+                          archivedAt != null ? 'Sparad: $archivedAt' : '',
+                          style: const TextStyle(color: Colors.white54, fontSize: 11),
+                        ),
+                      ),
+                      if (isCurrent)
+                        const Text('Körs nu', style: TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold))
+                      else
+                        OutlinedButton.icon(
+                          onPressed: _rollbackInProgress ? null : () => _rollbackToVersion(provider, version),
+                          icon: isTarget
+                              ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.restore, size: 14),
+                          label: const Text('Återställ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          style: OutlinedButton.styleFrom(foregroundColor: Colors.orangeAccent, side: const BorderSide(color: Colors.orangeAccent)),
+                        ),
+                    ],
+                  ),
+                );
+              }),
             if (_updateMessage != null) ...[
               const SizedBox(height: 10),
               Text(_updateMessage!, style: const TextStyle(color: Colors.amberAccent, fontSize: 11)),

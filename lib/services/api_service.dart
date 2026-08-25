@@ -255,6 +255,35 @@ class ApiService {
     }
   }
 
+  /// Listar de senast installerade versionerna som fortfarande finns kvar på
+  /// disk (arkiverade av install.sh/rollback-runner.sh) och går att rulla
+  /// tillbaka till, plus vilken version som är den nu körande.
+  Future<Map<String, dynamic>?> listRetainedVersions() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/system/versions'), headers: _headers);
+      if (res.statusCode == 200) return jsonDecode(res.body) as Map<String, dynamic>;
+    } catch (_) {}
+    return null;
+  }
+
+  /// Ber agenten rulla tillbaka till en tidigare sparad version (en av de
+  /// senaste 3). Triggar samma sorts privilegierade root-installer som
+  /// updateApply, agenten startar om på den valda versionen. Returnerar null
+  /// vid framgång.
+  Future<String?> rollbackToVersion(String version) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/system/versions/rollback'),
+        headers: _headers,
+        body: jsonEncode({'version': version}),
+      );
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Återställning misslyckades';
+    } catch (e) {
+      return null; // Anslutningen bryts när agenten startar om - inte nödvändigtvis ett fel.
+    }
+  }
+
   /// Listar alla administrationsanvändare (admin-only, Fas 8).
   Future<List<Map<String, dynamic>>> getUsers() async {
     try {
