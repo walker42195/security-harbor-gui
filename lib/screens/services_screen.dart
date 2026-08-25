@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
+import '../localization.dart';
 
 /// Tjänstepanel — visar systemd-status för samtliga tjänster agenten
 /// hanterar (Unbound, Kea DHCP, Suricata, HAProxy, OpenVPN, rsyslog, samt
@@ -70,15 +71,15 @@ class _ServicesScreenState extends State<ServicesScreen> {
   String _statusLabel(ServiceStatusModel s) {
     switch (s.active) {
       case 'active':
-        return 'Aktiv';
+        return tr('services.status_active');
       case 'activating':
-        return 'Startar...';
+        return tr('services.status_activating');
       case 'reloading':
-        return 'Laddar om...';
+        return tr('services.status_reloading');
       case 'failed':
-        return 'Misslyckad';
+        return tr('services.status_failed');
       case 'inactive':
-        return 'Inaktiv';
+        return tr('services.status_inactive');
       default:
         return s.active;
     }
@@ -107,21 +108,17 @@ class _ServicesScreenState extends State<ServicesScreen> {
       context: context,
       builder: (dctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: Text('Starta om ${s.name}?', style: const TextStyle(color: Colors.white, fontSize: 14)),
+        title: Text(trp('services.restart_confirm_title', {'name': s.name}), style: const TextStyle(color: Colors.white, fontSize: 14)),
         content: Text(
-          isSelf
-              ? 'Det här är administrations-API:t/GUI:t själv. Din session kopplas ner under omstarten '
-                  '(tar normalt bara någon sekund) — logga in igen efteråt.'
-              : 'Tjänsten stängs ner och startas om. Om den är aktivt konfigurerad (t.ex. DHCP eller DNS '
-                  'på ett gränssnitt som används) kan klienter tappa anslutning en kort stund.',
+          isSelf ? tr('services.restart_confirm_self') : tr('services.restart_confirm_other'),
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dctx, false), child: const Text('Avbryt')),
+          TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('services.avbryt'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(dctx, true),
-            child: const Text('Starta om'),
+            child: Text(tr('services.starta_om')),
           ),
         ],
       ),
@@ -139,7 +136,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       await Future.delayed(const Duration(milliseconds: 800));
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Agenten startar om — logga in igen om en liten stund.'), backgroundColor: Colors.orange),
+        SnackBar(content: Text(tr('services.agenten_startar_om_logga_in_igen')), backgroundColor: Colors.orange),
       );
       await provider.logout();
       return;
@@ -151,7 +148,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(err == null ? '${s.name} omstartad.' : 'Misslyckades: $err'),
+          content: Text(err == null ? trp('services.restarted', {'name': s.name}) : trp('services.restart_failed', {'err': err})),
           backgroundColor: err == null ? Colors.teal : Colors.red,
         ),
       );
@@ -177,17 +174,17 @@ class _ServicesScreenState extends State<ServicesScreen> {
               spacing: 10,
               runSpacing: 8,
               children: [
-                const Row(
+                Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.miscellaneous_services, color: Colors.cyanAccent, size: 20),
-                    SizedBox(width: 8),
-                    Text('Tjänster', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    const Icon(Icons.miscellaneous_services, color: Colors.cyanAccent, size: 20),
+                    const SizedBox(width: 8),
+                    Text(tr('services.tjanster'), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 IconButton(
                   icon: Icon(Icons.refresh, size: 18, color: _loading ? Colors.white24 : Colors.tealAccent),
-                  tooltip: 'Uppdatera status',
+                  tooltip: tr('services.uppdatera_status'),
                   onPressed: _loading ? null : _poll,
                 ),
               ],
@@ -196,10 +193,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: const Color(0xFF0F172A),
-            child: const Text(
-              'Status uppdateras automatiskt var 15:e sekund. En tjänst som inte är konfigurerad (t.ex. '
-              'OpenVPN avstängt) visas som "Inaktiv" — det är normalt, inte ett fel.',
-              style: TextStyle(color: Colors.grey, fontSize: 11),
+            child: Text(
+              tr('services.status_note'),
+              style: const TextStyle(color: Colors.grey, fontSize: 11),
             ),
           ),
           Expanded(
@@ -207,7 +203,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 ? Center(
                     child: _loading
                         ? const CircularProgressIndicator(color: Colors.cyanAccent)
-                        : const Text('Kunde inte hämta tjänststatus.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        : Text(tr('services.kunde_inte_hamta_tjanststatus'), style: TextStyle(color: Colors.grey, fontSize: 12)),
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(12),

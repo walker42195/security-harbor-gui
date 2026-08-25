@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
+import '../localization.dart';
 
 /// Egen sida för DNS-ENHETER: manuella (statiska) DNS-poster och de enheter
 /// som registrerats automatiskt via DHCP. Bröts ut från DNS-sidan (som blev
@@ -72,16 +73,16 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.devices, color: Colors.cyanAccent, size: 22),
                     SizedBox(width: 10),
-                    Text('DNS-enheter', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text(tr('dns_devices.dns_enheter'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.refresh, size: 14),
-                  label: const Text('Uppdatera', style: TextStyle(fontSize: 11)),
+                  label: Text(tr('dns_devices.uppdatera'), style: TextStyle(fontSize: 11)),
                   style: OutlinedButton.styleFrom(foregroundColor: Colors.cyanAccent, side: const BorderSide(color: Colors.cyanAccent)),
                   onPressed: _loadLeases,
                 ),
@@ -118,7 +119,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
               Text('Manuella DNS-poster (${dns.staticRecords.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
-                label: const Text('Lägg till post', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                label: Text(tr('dns_devices.lagg_till_post'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
                 onPressed: () => _showAddStaticRecordDialog(provider, dns),
               ),
@@ -126,9 +127,9 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
           ),
           const SizedBox(height: 8),
           if (dns.staticRecords.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text('Inga manuella poster tillagda ännu.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              child: Text(tr('dns_devices.inga_manuella_poster_tillagda_annu'), style: TextStyle(color: Colors.grey, fontSize: 12)),
             )
           else
             ...dns.staticRecords.map((rec) => Container(
@@ -186,9 +187,9 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
                 width: 200,
                 child: TextField(
                   style: const TextStyle(color: Colors.white, fontSize: 12),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     isDense: true,
-                    hintText: 'Sök namn / IP / MAC',
+                    hintText: tr('dns_devices.sok_namn_ip_mac'),
                     hintStyle: TextStyle(color: Colors.grey, fontSize: 11),
                     prefixIcon: Icon(Icons.search, size: 14, color: Colors.grey),
                     border: OutlineInputBorder(),
@@ -201,29 +202,29 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
           ),
           const SizedBox(height: 6),
           if (!dns.dhcpHostnameRegistration)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 6),
-              child: Text('Automatisk registrering är avstängd — enheterna nedan listas men slås inte upp i DNS förrän du slår på den ovan.',
+              child: Text(tr('dns_devices.automatisk_registrering_ar_avstangd_enheterna_nedan'),
                   style: TextStyle(color: Colors.amber, fontSize: 10)),
             ),
           const SizedBox(height: 6),
           if (_loadingLeases)
             const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
           else if (filtered.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text('Inga DHCP-enheter med värdnamn hittades.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              child: Text(tr('dns_devices.inga_dhcp_enheter_med_vardnamn_hittades'), style: TextStyle(color: Colors.grey, fontSize: 12)),
             )
           else ...[
             Container(
               padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
               color: const Color(0xFF0F172A),
-              child: const Row(
+              child: Row(
                 children: [
-                  Expanded(flex: 3, child: Text('DNS-namn', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
-                  Expanded(flex: 2, child: Text('IP', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
-                  Expanded(flex: 2, child: Text('Gränssnitt', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
-                  Expanded(flex: 2, child: Text('Zon', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
+                  Expanded(flex: 3, child: Text(tr('dns_devices.dns_namn'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
+                  Expanded(flex: 2, child: Text(tr('dns_devices.ip'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
+                  Expanded(flex: 2, child: Text(tr('dns_devices.granssnitt'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
+                  Expanded(flex: 2, child: Text(tr('dns_devices.zon'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
                 ],
               ),
             ),
@@ -261,20 +262,20 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Lägg till DNS-post', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              Text(tr('dns_devices.lagg_till_dns_post'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
-              _labeledField('Namn (exakt, valfri domän)', hostnameCtrl, hint: 't.ex. server1.example.com eller server1'),
+              _labeledField(tr('dns_devices.namn_label'), hostnameCtrl, hint: tr('dns_devices.namn_hint')),
               const SizedBox(height: 12),
-              _labeledField('IP-adress', ipCtrl, hint: '192.168.1.50'),
+              _labeledField(tr('dns_devices.ip_adress_label'), ipCtrl, hint: '192.168.1.50'),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('dns_devices.avbryt'), style: TextStyle(fontSize: 12))),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
-                    child: const Text('Lägg till', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: Text(tr('dns_devices.lagg_till'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     onPressed: () {
                       final hostname = hostnameCtrl.text.trim();
                       final ip = ipCtrl.text.trim();
