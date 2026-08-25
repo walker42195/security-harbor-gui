@@ -71,6 +71,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _rollbackInProgress = false;
   String? _rollbackTargetVersion;
 
+  // --- Tidigare konfigurationer (konfigurationshistorik) ---
+  List<Map<String, dynamic>>? _configHistory; // history[] från /config/history
+  int? _currentConfigRevision;
+  bool _loadingConfigHistory = false;
+  String? _restoringConfigId;
+
   @override
   void initState() {
     super.initState();
@@ -84,6 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (provider.isAuthenticated && provider.isAdmin) {
       _loadUsers();
       _loadRetainedVersions(provider);
+      _loadConfigHistory(provider);
     }
   }
 
@@ -311,6 +318,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (provider.isAuthenticated && provider.isAdmin) ...[
             const SizedBox(height: 16),
             _buildUpdatesCard(provider),
+            const SizedBox(height: 16),
+            _buildConfigHistoryCard(provider),
             const SizedBox(height: 16),
             _buildSyslogCard(provider),
             const SizedBox(height: 16),
@@ -663,6 +672,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
+  Future<void> _loadConfigHistory(ConfigProvider provider) async {
+    setState(() => _loadingConfigHistory = true);
+    final res = await provider.api.listConfigHistory();
+    if (!mounted) return;
+    setState(() {
+      _configHistory = res == null
+          ? null
+          : List<Map<String, dynamic>>.from((res['history'] as List?) ?? const []);
+      _currentConfigRevision = (res?['current_revision'] as num?)?.toInt();
+      _loadingConfigHistory = false;
+    });
+  }
+
+  /// Läser in en sparad konfiguration som kandidat. Den aktiveras INTE här —
+  /// användaren måste trycka Applicera, precis som för varje annan ändring,
+  /// och får då hela Safe Apply-kedjan. Därför är dialogen formulerad som
+  /// "läs in", inte "återställ": inget har ändrats skarpt när den är klar.
+  Future<void> _restoreConfigFromHistory(ConfigProvider provider, Map<String, dynamic> entry) async {
+    final id = entry['id']?.toString() ?? '';
+    if (id.isEmpty) return;
+    final revision = entry['revision']?.toString() ?? '?';
+    final ok = await _confirmDialog(
+      trp('settings.config_history.restore_confirm_title', {'revision': revision}),
+      tr('settings.config_history.restore_confirm_body'),
+    );
+    if (!ok) return;
+    setState(() {
+      _restoringConfigId = id;
+      _updateMessage = null;
+    });
+    final err = await provider.api.restoreConfigFromHistory(id);
+    if (!mounted) return;
+    setState(() => _restoringConfigId = null);
+    if (err != null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(err), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
+    // Kandidaten på servern har bytts ut — hämta hem den så att GUI:t visar
+    // den inlästa konfigurationen och "ej applicerade ändringar"-indikatorn.
+    await provider.fetchAll();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(trp('settings.config_history.restored', {'revision': revision})),
+        backgroundColor: Colors.teal,
+        duration: const Duration(seconds: 6),
+      ),
+    );
+  }
+
   Future<void> _loadRetainedVersions(ConfigProvider provider) async {
     setState(() => _loadingRetainedVersions = true);
     final res = await provider.api.listRetainedVersions();
@@ -940,6 +1003,87 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 10),
               Text(_updateMessage!, style: const TextStyle(color: Colors.amberAccent, fontSize: 11)),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Konfigurationshistorik — de tre senast bekräftade konfigurationerna.
+  /// Skild från "Tidigare versioner" i uppdateringskortet: det gäller
+  /// agentens programvara, det här gäller regelverket. Safe Apply räcker
+  /// bara i stunden; upptäcker man felet dagen efter finns det inget att
+  /// backa till utan den här listan.
+  Widget _buildConfigHistoryCard(ConfigProvider provider) {
+    return Card(
+      color: const Color(0xFF1E293B),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.history_toggle_off, color: Colors.cyanAccent, size: 22),
+                const SizedBox(width: 10),
+                Text(tr('settings.config_history.title'),
+                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                const Spacer(),
+                if (_currentConfigRevision != null)
+                  Text(trp('settings.config_history.current_revision', {'revision': '$_currentConfigRevision'}),
+                      style: const TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                IconButton(
+                  icon: _loadingConfigHistory
+                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.refresh, size: 16, color: Colors.white54),
+                  onPressed: _loadingConfigHistory ? null : () => _loadConfigHistory(provider),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(tr('settings.config_history.body'), style: const TextStyle(color: Colors.white54, fontSize: 11)),
+            const SizedBox(height: 10),
+            if (_configHistory == null || _configHistory!.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(tr('settings.config_history.empty'),
+                    style: const TextStyle(color: Colors.white38, fontSize: 11)),
+              )
+            else
+              ..._configHistory!.map((entry) {
+                final id = entry['id']?.toString() ?? '';
+                final revision = entry['revision']?.toString() ?? '?';
+                final archivedAt = entry['archived_at']?.toString();
+                final busy = _restoringConfigId == id;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 90,
+                        child: Text(trp('settings.config_history.revision', {'revision': revision}),
+                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                      ),
+                      Expanded(
+                        child: Text(
+                          archivedAt != null ? trp('settings.saved_at', {'date': archivedAt}) : '',
+                          style: const TextStyle(color: Colors.white54, fontSize: 11),
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _restoringConfigId != null ? null : () => _restoreConfigFromHistory(provider, entry),
+                        icon: busy
+                            ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.restore_page, size: 14),
+                        label: Text(tr('settings.config_history.load'),
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.orangeAccent, side: const BorderSide(color: Colors.orangeAccent)),
+                      ),
+                    ],
+                  ),
+                );
+              }),
           ],
         ),
       ),

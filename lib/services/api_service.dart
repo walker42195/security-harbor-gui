@@ -269,6 +269,37 @@ class ApiService {
     }
   }
 
+  /// Listar de senast BEKRÄFTADE konfigurationerna som brandväggen sparat.
+  /// Detta är konfigurationshistoriken — skild från versionshistoriken ovan,
+  /// som gäller agentens programvara. Safe Apply skyddar bara i stunden (30 s
+  /// utan bekräftelse = automatisk rollback); den här listan finns kvar så
+  /// att man kan gå tillbaka till ett tidigare regelverk långt efteråt.
+  Future<Map<String, dynamic>?> listConfigHistory() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/config/history'), headers: _headers);
+      if (res.statusCode == 200) return jsonDecode(res.body) as Map<String, dynamic>;
+    } catch (_) {}
+    return null;
+  }
+
+  /// Läser in en sparad konfiguration som KANDIDAT. Den aktiveras inte här —
+  /// användaren trycker Applicera som vanligt och får hela Safe Apply-kedjan
+  /// (validering, 30-sekunders bekräftelse, automatisk rollback). Returnerar
+  /// null vid framgång, annars ett felmeddelande.
+  Future<String?> restoreConfigFromHistory(String id) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/config/history/restore'),
+        headers: _headers,
+        body: jsonEncode({'id': id}),
+      );
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body.trim() : 'Kunde inte läsa in konfigurationen';
+    } catch (e) {
+      return 'Kunde inte nå brandväggen: $e';
+    }
+  }
+
   /// Listar de senast installerade versionerna som fortfarande finns kvar på
   /// disk (arkiverade av install.sh/rollback-runner.sh) och går att rulla
   /// tillbaka till, plus vilken version som är den nu körande.
