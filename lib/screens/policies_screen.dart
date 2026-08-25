@@ -1446,14 +1446,24 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
 
     final selected = List<String>.from(current);
     final customCtrl = TextEditingController();
+    final searchCtrl = TextEditingController();
 
     return showDialog<List<String>>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (context, setState) => Dialog(
+        builder: (context, setState) {
+          final query = searchCtrl.text.trim().toLowerCase();
+          final filtered = query.isEmpty ? available : available.where((item) => item.toLowerCase().contains(query)).toList();
+          // Dialogen skalas mot skärmens storlek (i stället för en fast
+          // bredd/höjd) så listan med tillgängliga objekt/nät/hostar visar
+          // fler poster åt gången — tidigare syntes bara ~4-5 rader oavsett
+          // fönsterstorlek.
+          final screenSize = MediaQuery.of(context).size;
+          return Dialog(
           backgroundColor: const Color(0xFF1E293B),
           child: Container(
-            width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 440.0),
+            width: (screenSize.width - 32).clamp(280.0, 560.0),
+            height: (screenSize.height * 0.8).clamp(420.0, 700.0),
             padding: const EdgeInsets.all(16),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1463,25 +1473,49 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 const SizedBox(height: 10),
                 const Text('Available Members:', style: TextStyle(color: Colors.grey, fontSize: 11)),
                 const SizedBox(height: 4),
-                Container(
-                  height: 110,
-                  decoration: BoxDecoration(border: Border.all(color: const Color(0xFF334155)), color: const Color(0xFF0F172A)),
-                  child: ListView.builder(
-                    itemCount: available.length,
-                    itemBuilder: (c, idx) {
-                      final item = available[idx];
-                      return ListTile(
-                        dense: true,
-                        visualDensity: VisualDensity.compact,
-                        title: Text(item, style: const TextStyle(color: Colors.white, fontSize: 11)),
-                        trailing: const Icon(Icons.add, size: 14, color: Colors.cyanAccent),
-                        onTap: () {
-                          if (!selected.contains(item)) {
-                            setState(() => selected.add(item));
-                          }
-                        },
-                      );
-                    },
+                // Sökrutan filtrerar listan direkt vid varje knapptryck (redan
+                // från första bokstaven) - inget Enter-tryck krävs.
+                SizedBox(
+                  height: 30,
+                  child: TextField(
+                    controller: searchCtrl,
+                    autofocus: true,
+                    style: const TextStyle(fontSize: 11, color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Sök...',
+                      prefixIcon: const Icon(Icons.search, size: 14, color: Colors.grey),
+                      prefixIconConstraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: query.isEmpty ? null : IconButton(icon: const Icon(Icons.clear, size: 14, color: Colors.grey), onPressed: () => setState(() => searchCtrl.clear())),
+                      suffixIconConstraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(border: Border.all(color: const Color(0xFF334155)), color: const Color(0xFF0F172A)),
+                    child: filtered.isEmpty
+                        ? const Center(child: Text('Inga träffar', style: TextStyle(color: Colors.grey, fontSize: 11)))
+                        : ListView.builder(
+                            itemCount: filtered.length,
+                            itemBuilder: (c, idx) {
+                              final item = filtered[idx];
+                              return ListTile(
+                                dense: true,
+                                visualDensity: VisualDensity.compact,
+                                title: Text(item, style: const TextStyle(color: Colors.white, fontSize: 11)),
+                                trailing: const Icon(Icons.add, size: 14, color: Colors.cyanAccent),
+                                onTap: () {
+                                  if (!selected.contains(item)) {
+                                    setState(() => selected.add(item));
+                                  }
+                                },
+                              );
+                            },
+                          ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -1558,7 +1592,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
               ],
             ),
           ),
-        ),
+        );
+        },
       ),
     );
   }
