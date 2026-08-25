@@ -1,5 +1,7 @@
 # security-harbor-gui
 
+> 🇬🇧 English version: [README.en.md](README.en.md)
+
 Flutter-baserat administrationsgränssnitt för [Security Harbor](https://security.novabase.se/) — ett brandväggs- och nätverksappliance-system för Linux. Byggs för Linux Desktop (Arch/Debian/Ubuntu) och Android.
 
 ## Installation
