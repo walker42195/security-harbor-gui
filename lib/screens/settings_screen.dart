@@ -633,10 +633,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _fwUpdate = null; // tvinga en ny "Kontrollera" för uppdaterad status
         if (status != null) {
           provider.systemStatus = status;
-          setState(() => _updateMessage = '✅ Uppgraderingen klar — agenten kör nu $ver.');
+          setState(() => _updateMessage = trp('settings.upgrade_complete', {'ver': ver}));
         } else {
           // Token blev ogiltig av omstarten — visa inloggningsvyn.
-          setState(() => _updateMessage = '✅ Uppgraderingen klar — agenten kör nu $ver. Logga in igen.');
+          setState(() => _updateMessage = trp('settings.upgrade_complete_relogin', {'ver': ver}));
           await provider.logout();
         }
         return;
@@ -1283,7 +1283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: Text('Återställ lösenord för ${user['username']}', style: const TextStyle(color: Colors.white, fontSize: 14)),
+        title: Text(trp('settings.reset_password_for', {'user': user['username']}), style: const TextStyle(color: Colors.white, fontSize: 14)),
         content: TextField(
           controller: pwController,
           obscureText: true,

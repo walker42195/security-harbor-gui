@@ -75,7 +75,7 @@ class SniRoutesScreen extends StatelessWidget {
         leading: Icon(Icons.alt_route, size: 18, color: r.enabled ? Colors.tealAccent : Colors.grey),
         title: Text('${r.name.isNotEmpty ? r.name : r.id}  ·  TCP ${r.listenPort}${r.externalIp.isNotEmpty ? " @ ${r.externalIp}" : ""}',
             style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-        subtitle: Text('${r.backends.length} namn-mål${r.defaultBackend != null ? "  ·  fallback: ${targetLabel(r.defaultBackend!)}" : ""}',
+        subtitle: Text(trp('sni.namn_mal_count', {'n': '${r.backends.length}'}) + (r.defaultBackend != null ? trp('sni.fallback_suffix', {'target': targetLabel(r.defaultBackend!)}) : ''),
             style: const TextStyle(fontSize: 11)),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

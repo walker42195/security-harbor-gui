@@ -160,9 +160,9 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                   spacing: 14,
                   runSpacing: 4,
                   children: [
-                    _statusChip(Icons.update, src.lastUpdated.isEmpty ? 'Aldrig uppdaterad' : 'Uppdaterad: ${_shortTime(src.lastUpdated)}', src.lastError.isNotEmpty ? Colors.amberAccent : Colors.grey),
-                    _statusChip(Icons.timer, 'Var ${src.refreshHours}:e timme', Colors.grey),
-                    if (src.lastError.isNotEmpty) _statusChip(Icons.error_outline, 'Fel: ${src.lastError}', Colors.redAccent),
+                    _statusChip(Icons.update, src.lastUpdated.isEmpty ? tr('objects.aldrig_uppdaterad') : trp('objects.uppdaterad_colon', {'time': _shortTime(src.lastUpdated)}), src.lastError.isNotEmpty ? Colors.amberAccent : Colors.grey),
+                    _statusChip(Icons.timer, trp('objects.var_x_timme', {'hours': '${src.refreshHours}'}), Colors.grey),
+                    if (src.lastError.isNotEmpty) _statusChip(Icons.error_outline, trp('objects.fel_colon', {'err': src.lastError}), Colors.redAccent),
                   ],
                 ),
               ),
@@ -266,7 +266,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         title: Text(tr('objects.ta_bort_objekt'), style: TextStyle(color: Colors.white, fontSize: 14)),
-        content: Text('Är du säker på att du vill ta bort "${obj.name}"? Policies som refererar till det slutar fungera som avsett.', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        content: Text(trp('objects.delete_confirm_body', {'name': obj.name}), style: const TextStyle(color: Colors.grey, fontSize: 12)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('objects.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(

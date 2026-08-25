@@ -289,7 +289,7 @@ class _DnsScreenState extends State<DnsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Domänblocklistor (${dns.blocklists.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(trp('dns.domain_blocklists_count', {'n': '${dns.blocklists.length}'}), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
                 label: Text(tr('dns.lagg_till_blocklista'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),

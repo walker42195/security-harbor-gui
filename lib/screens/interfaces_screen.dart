@@ -213,7 +213,7 @@ class InterfacesScreen extends StatelessWidget {
                                     ),
                                   if (iface.ipv4.contains('/'))
                                     Chip(
-                                      label: Text('Subnät: ${iface.ipv4} (${_cidrNetmask(iface.ipv4)})', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                                      label: Text(trp('iface.subnat_label', {'ip': iface.ipv4, 'mask': _cidrNetmask(iface.ipv4)}), style: const TextStyle(color: Colors.white70, fontSize: 10)),
                                       backgroundColor: Colors.grey.withValues(alpha: 0.2),
                                       visualDensity: VisualDensity.compact,
                                     ),
@@ -610,7 +610,7 @@ class InterfacesScreen extends StatelessWidget {
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
             const SizedBox(width: 8),
-            Expanded(child: Text('Ta bort gränssnitt "$label"?', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold))),
+            Expanded(child: Text(trp('iface.ta_bort_granssnitt_confirm', {'label': label}), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold))),
           ],
         ),
         content: Text(
@@ -814,7 +814,7 @@ class InterfacesScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('DHCP-inställningar för ${iface.id}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(trp('iface.dhcp_installningar_for', {'id': iface.id}), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                   IconButton(
                     icon: const Icon(Icons.close, size: 16, color: Colors.grey),
                     onPressed: () => Navigator.pop(ctx),
@@ -986,7 +986,7 @@ class InterfacesScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: Text('Döp om zon "$oldZone"', style: const TextStyle(color: Colors.white, fontSize: 14)),
+        title: Text(trp('iface.dop_om_zon_title', {'zone': oldZone}), style: const TextStyle(color: Colors.white, fontSize: 14)),
         content: dialogField(ctrl, tr('iface.nytt_zonnamn'), hint: 't.ex. DMZ, KAMEROR'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('iface.avbryt'), style: TextStyle(fontSize: 12))),

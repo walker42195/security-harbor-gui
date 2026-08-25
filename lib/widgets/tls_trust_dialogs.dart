@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../localization.dart';
 
 /// Kör hela trust-on-first-use-flödet: kollar certifikatet, visar rätt
 /// dialog vid behov, och returnerar true om anslutningen ska fortsätta
@@ -28,7 +29,7 @@ Future<bool> runTlsTrustCheck(BuildContext context, ApiService api) async {
       // badCertificateCallback det obetrodda certifikatet TYST (se
       // probeCertificateSha256-kommentaren) — administratören såg då bara
       // ett obegripligt "Inloggning misslyckades" utan att förstå varför.
-      await showTlsProbeFailedDialog(context, check.error ?? 'Okänt fel');
+      await showTlsProbeFailedDialog(context, check.error ?? tr('tls.okant_fel'));
       return false;
   }
 }
@@ -40,28 +41,27 @@ Future<void> showTlsProbeFailedDialog(BuildContext context, String error) {
     context: context,
     builder: (ctx) => AlertDialog(
       backgroundColor: const Color(0xFF1E293B),
-      title: const Row(
+      title: Row(
         children: [
           Icon(Icons.error_outline, color: Colors.redAccent),
           SizedBox(width: 8),
-          Text('Kunde inte kontrollera certifikatet', style: TextStyle(color: Colors.redAccent, fontSize: 15)),
+          Text(tr('tls.kunde_inte_kontrollera_certifikatet'), style: TextStyle(color: Colors.redAccent, fontSize: 15)),
         ],
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Appen kunde inte läsa brandväggens TLS-certifikat innan inloggningen skulle fortsätta. '
-            'Inloggningen avbröts för säkerhets skull. Teknisk information:',
-            style: TextStyle(color: Colors.white, fontSize: 12),
+          Text(
+            tr('tls.probe_failed_body'),
+            style: const TextStyle(color: Colors.white, fontSize: 12),
           ),
           const SizedBox(height: 8),
           SelectableText(error, style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontFamily: 'monospace')),
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
+        TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('tls.ok'))),
       ],
     ),
   );
@@ -75,24 +75,24 @@ Future<bool?> showTrustNewCertificateDialog(BuildContext context, String fingerp
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
       backgroundColor: const Color(0xFF1E293B),
-      title: const Text('Nytt certifikat', style: TextStyle(color: Colors.white, fontSize: 15)),
+      title: Text(tr('tls.nytt_certifikat'), style: TextStyle(color: Colors.white, fontSize: 15)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Brandväggens certifikat:', style: TextStyle(color: Colors.white, fontSize: 12)),
+          Text(tr('tls.brandvaggens_certifikat'), style: TextStyle(color: Colors.white, fontSize: 12)),
           const SizedBox(height: 8),
           SelectableText(fingerprint, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11, fontFamily: 'monospace')),
           const SizedBox(height: 12),
-          const Text('Lita på detta certifikat?', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(tr('tls.lita_pa_detta_certifikat'), style: TextStyle(color: Colors.grey, fontSize: 12)),
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Avbryt')),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('tls.avbryt'))),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
           onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Lita på & anslut'),
+          child: Text(tr('tls.lita_pa_anslut')),
         ),
       ],
     ),
@@ -108,32 +108,32 @@ Future<bool?> showCertificateMismatchDialog(BuildContext context, String expecte
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
       backgroundColor: const Color(0xFF1E293B),
-      title: const Row(
+      title: Row(
         children: [
           Icon(Icons.warning_amber, color: Colors.redAccent),
           SizedBox(width: 8),
-          Text('Certifikatet har ändrats!', style: TextStyle(color: Colors.redAccent, fontSize: 15)),
+          Text(tr('tls.certifikatet_har_andrats'), style: TextStyle(color: Colors.redAccent, fontSize: 15)),
         ],
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Detta kan betyda ett man-in-the-middle-angrepp.', style: TextStyle(color: Colors.white, fontSize: 12)),
+          Text(tr('tls.detta_kan_betyda_ett_man_in'), style: TextStyle(color: Colors.white, fontSize: 12)),
           const SizedBox(height: 12),
-          const Text('Förväntat:', style: TextStyle(color: Colors.grey, fontSize: 11)),
+          Text(tr('tls.forvantat'), style: TextStyle(color: Colors.grey, fontSize: 11)),
           SelectableText(expected, style: const TextStyle(color: Colors.white70, fontSize: 11, fontFamily: 'monospace')),
           const SizedBox(height: 8),
-          const Text('Faktiskt:', style: TextStyle(color: Colors.grey, fontSize: 11)),
+          Text(tr('tls.faktiskt'), style: TextStyle(color: Colors.grey, fontSize: 11)),
           SelectableText(actual, style: const TextStyle(color: Colors.redAccent, fontSize: 11, fontFamily: 'monospace')),
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Avbryt')),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('tls.avbryt'))),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.black),
           onPressed: () => Navigator.pop(ctx, true),
-          child: const Text('Anslut ändå'),
+          child: Text(tr('tls.anslut_anda')),
         ),
       ],
     ),

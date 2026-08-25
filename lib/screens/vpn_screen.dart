@@ -452,7 +452,7 @@ PersistentKeepalive = 25
                   const Icon(Icons.warning_amber, color: Colors.amberAccent, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text('Klientkonfiguration för "${peer.name}"', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    child: Text(trp('vpn.client_config_for', {'name': peer.name}), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -791,7 +791,7 @@ PersistentKeepalive = 25
                   const Icon(Icons.warning_amber, color: Colors.amberAccent, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text('Klientprofil för "${client.name}"', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    child: Text(trp('vpn.client_profile_for', {'name': client.name}), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
