@@ -129,7 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               const Icon(Icons.settings, color: Colors.cyanAccent, size: 22),
               const SizedBox(width: 10),
-              Text(tr('settings.page_title'), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              Text(tr('settings.page_title'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 14),
@@ -146,7 +146,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       const Icon(Icons.security, color: Colors.cyanAccent, size: 22),
                       const SizedBox(width: 10),
-                      Text(tr('settings.login.title'), style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                      Text(tr('settings.login.title'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -157,7 +157,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: const TextStyle(color: Colors.white, fontSize: 12),
                     decoration: InputDecoration(
                       labelText: tr('settings.login.url_label'),
-                      hintText: 'https://192.168.1.1:8443',
+                      hintText: tr('settings.https_192_168_1_1_8443'),
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.link, color: Colors.cyanAccent, size: 18),
                       isDense: true,
@@ -174,7 +174,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           style: const TextStyle(color: Colors.white, fontSize: 12),
                           decoration: InputDecoration(
                             labelText: tr('settings.login.username_label'),
-                            hintText: 'master',
+                            hintText: tr('settings.master'),
                             border: const OutlineInputBorder(),
                             prefixIcon: const Icon(Icons.person, color: Colors.cyanAccent, size: 18),
                             isDense: true,
@@ -210,7 +210,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         icon: _isLoggingIn
                             ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                             : const Icon(Icons.login, size: 16),
-                        label: Text(tr('settings.login.submit'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        label: Text(tr('settings.login.submit'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.cyanAccent,
                           foregroundColor: Colors.black,
@@ -275,15 +275,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   // Övriga Systeminställningar
                   ListTile(
                     dense: true,
-                    title: Text(tr('settings.rollback_timeout.title'), style: const TextStyle(color: Colors.white, fontSize: 12)),
-                    subtitle: Text(tr('settings.rollback_timeout.body'), style: const TextStyle(fontSize: 11)),
-                    trailing: const Chip(label: Text('30s', style: TextStyle(fontSize: 11)), backgroundColor: Colors.cyanAccent),
+                    title: Text(tr('settings.rollback_timeout.title'), style: TextStyle(color: Colors.white, fontSize: 12)),
+                    subtitle: Text(tr('settings.rollback_timeout.body'), style: TextStyle(fontSize: 11)),
+                    trailing: Chip(label: Text(tr('settings.30s'), style: TextStyle(fontSize: 11)), backgroundColor: Colors.cyanAccent),
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(
                     dense: true,
-                    title: Text(tr('settings.wan_lock.title'), style: const TextStyle(color: Colors.white, fontSize: 12)),
-                    subtitle: Text(tr('settings.wan_lock.body'), style: const TextStyle(fontSize: 11)),
+                    title: Text(tr('settings.wan_lock.title'), style: TextStyle(color: Colors.white, fontSize: 12)),
+                    subtitle: Text(tr('settings.wan_lock.body'), style: TextStyle(fontSize: 11)),
                     trailing: const Icon(Icons.verified_user, color: Colors.tealAccent, size: 18),
                   ),
                 ],
@@ -329,11 +329,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 const Icon(Icons.language, color: Colors.cyanAccent, size: 22),
                 const SizedBox(width: 10),
-                Text(tr('settings.language.title'), style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.language.title'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
             const SizedBox(height: 8),
-            Text(tr('settings.language.body'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(tr('settings.language.body'), style: TextStyle(color: Colors.white70, fontSize: 12)),
             const SizedBox(height: 14),
             SegmentedButton<AppLanguage>(
               segments: [
@@ -363,11 +363,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(Icons.password, color: Colors.cyanAccent, size: 22),
                 SizedBox(width: 10),
-                Text('Byt eget lösenord', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.byt_eget_losenord'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
             const SizedBox(height: 16),
@@ -378,8 +378,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: _currentPwController,
                     obscureText: true,
                     style: const TextStyle(color: Colors.white, fontSize: 12),
-                    decoration: const InputDecoration(
-                      labelText: 'Nuvarande lösenord',
+                    decoration: InputDecoration(
+                      labelText: tr('settings.nuvarande_losenord'),
                       border: OutlineInputBorder(),
                       isDense: true,
                     ),
@@ -391,8 +391,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: _newPwController,
                     obscureText: true,
                     style: const TextStyle(color: Colors.white, fontSize: 12),
-                    decoration: const InputDecoration(
-                      labelText: 'Nytt lösenord (minst 8 tecken)',
+                    decoration: InputDecoration(
+                      labelText: tr('settings.nytt_losenord_minst_8_tecken'),
                       border: OutlineInputBorder(),
                       isDense: true,
                     ),
@@ -405,7 +405,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: _isChangingPassword
                   ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                   : const Icon(Icons.save, size: 16),
-              label: const Text('Byt lösenord', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              label: Text(tr('settings.byt_losenord'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.cyanAccent,
                 foregroundColor: Colors.black,
@@ -420,7 +420,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(err ?? 'Lösenordet är ändrat'),
+                          content: Text(err ?? tr('settings.password_changed')),
                           backgroundColor: err == null ? Colors.green : Colors.red,
                         ),
                       );
@@ -466,7 +466,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 const Icon(Icons.forward_to_inbox, color: Colors.cyanAccent, size: 22),
                 const SizedBox(width: 10),
-                const Text('Centraliserad syslog', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.centraliserad_syslog'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
                 const Spacer(),
                 Switch(
                   value: syslog.enabled,
@@ -481,8 +481,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Vidarebefordra brandväggens systemloggar (inklusive tillåten/nekad trafik) till en central syslog-mottagare på nätet, utöver den lokala lagringen.',
+            Text(tr('settings.vidarebefordra_brandvaggens_systemloggar_inklusive_tillaten_nekad'),
               style: TextStyle(color: Colors.white54, fontSize: 11),
             ),
             const SizedBox(height: 16),
@@ -493,8 +492,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: TextField(
                     controller: _syslogHostController,
                     style: const TextStyle(color: Colors.white, fontSize: 12),
-                    decoration: const InputDecoration(
-                      labelText: 'Mottagarens IP eller hostnamn',
+                    decoration: InputDecoration(
+                      labelText: tr('settings.mottagarens_ip_eller_hostnamn'),
                       border: OutlineInputBorder(),
                       isDense: true,
                     ),
@@ -506,8 +505,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: _syslogPortController,
                     keyboardType: TextInputType.number,
                     style: const TextStyle(color: Colors.white, fontSize: 12),
-                    decoration: const InputDecoration(
-                      labelText: 'Port',
+                    decoration: InputDecoration(
+                      labelText: tr('settings.port'),
                       hintText: '514',
                       border: OutlineInputBorder(),
                       isDense: true,
@@ -519,9 +518,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: protocol,
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(color: Colors.white, fontSize: 12),
-                  items: const [
-                    DropdownMenuItem(value: 'udp', child: Text('UDP')),
-                    DropdownMenuItem(value: 'tcp', child: Text('TCP')),
+                  items: [
+                    DropdownMenuItem(value: 'udp', child: Text(tr('settings.udp'))),
+                    DropdownMenuItem(value: 'tcp', child: Text(tr('settings.tcp'))),
                   ],
                   onChanged: (v) => setState(() => _syslogProtocol = v ?? 'udp'),
                 ),
@@ -532,7 +531,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: _isSavingSyslog
                   ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                   : const Icon(Icons.save, size: 16),
-              label: const Text('Spara', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              label: Text(tr('settings.spara'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.cyanAccent,
                 foregroundColor: Colors.black,
@@ -572,7 +571,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _updateChecked = true;
       _checkingUpdate = false;
       if (fw == null) {
-        _updateMessage = 'Kunde inte kontakta uppdateringstjänsten (kräver att brandväggen når internet).';
+        _updateMessage = tr('settings.update_check_failed');
       }
     });
     await _loadRetainedVersions(provider);
@@ -585,22 +584,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _fwDownloading = false;
       _fwVerified = err == null;
-      _updateMessage = err ?? 'Firewall-bunten nedladdad och verifierad (hash + signatur).';
+      _updateMessage = err ?? tr('settings.firmware_downloaded_verified');
     });
   }
 
   Future<void> _applyFirewallUpdate(ConfigProvider provider) async {
     final ok = await _confirmDialog(
-      'Uppgradera brandväggen?',
-      'Har du möjlighet, ta en snapshot av maskinen först. Brandväggen installerar '
-          'den verifierade bunten och agenten startar om på den nya versionen. Din '
-          'konfiguration bevaras.',
+      tr('settings.upgrade_firewall_title'),
+      tr('settings.upgrade_firewall_body'),
     );
     if (!ok) return;
     final target = (_fwUpdate?['agent'] as Map?)?['available']?.toString();
     setState(() {
       _fwApplying = true;
-      _updateMessage = 'Startar installationen…';
+      _updateMessage = tr('settings.starting_install');
     });
     await provider.api.updateApply();
     if (!mounted) return;
@@ -646,15 +643,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
       setState(() {
         _updateMessage = ver == null
-            ? 'Uppgraderar… agenten installerar och startar om (${elapsed}s)'
-            : 'Uppgraderar… väntar på att den nya versionen startar (nu $ver, ${elapsed}s)';
+            ? trp('settings.upgrading_installing', {'s': elapsed.toString()})
+            : trp('settings.upgrading_waiting', {'ver': ver, 's': elapsed.toString()});
       });
     }
     if (!mounted) return;
     setState(() {
       _fwApplying = false;
-      _updateMessage = 'Uppgraderingen tar längre tid än väntat. Tryck Kontrollera '
-          'om en stund för att se om den nya versionen är igång.';
+      _updateMessage = tr('settings.upgrade_taking_long');
     });
   }
 
@@ -673,18 +669,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _rollbackToVersion(ConfigProvider provider, String version) async {
     final ok = await _confirmDialog(
-      'Återställ till version $version?',
-      'Brandväggen installerar om den sparade versionen $version och agenten '
-          'startar om. Din konfiguration bevaras, men den migreras INTE '
-          'automatiskt — en äldre agentversion kan sakna stöd för inställningar '
-          'som sparats av en senare version. Verifiera att allt fungerar som '
-          'väntat efter återställningen.',
+      trp('settings.rollback_confirm_title', {'version': version}),
+      trp('settings.rollback_confirm_body', {'version': version}),
     );
     if (!ok) return;
     setState(() {
       _rollbackInProgress = true;
       _rollbackTargetVersion = version;
-      _updateMessage = 'Startar återställningen…';
+      _updateMessage = tr('settings.starting_rollback');
     });
     await provider.api.rollbackToVersion(version);
     if (!mounted) return;
@@ -707,17 +699,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _desktopDownloading = false;
       _desktopVerified = err == null;
-      _updateMessage = err ?? 'Desktop-bunten nedladdad och verifierad (hash + signatur).';
+      _updateMessage = err ?? tr('settings.desktop_downloaded_verified');
     });
   }
 
   Future<void> _applyDesktopUpdate() async {
     final ok = await _confirmDialog(
-      'Uppgradera desktop-appen?',
-      'Appen ersätts med den nya versionen och startar om automatiskt. Osparade ändringar i vyn går förlorade.',
+      tr('settings.upgrade_desktop_title'),
+      tr('settings.upgrade_desktop_body'),
     );
     if (!ok) return;
-    setState(() => _updateMessage = 'Uppgraderar… appen startar om.');
+    setState(() => _updateMessage = tr('settings.upgrading_app_restart'));
     await applyDesktopUpdate(); // återvänder normalt aldrig (appen avslutas)
   }
 
@@ -729,11 +721,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
         content: Text(body, style: const TextStyle(color: Colors.white70, fontSize: 12)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('settings.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Fortsätt', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            child: Text(tr('settings.fortsatt'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -755,7 +747,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SizedBox(width: 110, child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600))),
           Expanded(
             child: Text(
-              'Nu: $current${available != null ? '   •   Senaste: $available' : ''}',
+              trp('settings.now_latest', {'current': current, 'latest': available != null ? trp('settings.latest_suffix', {'available': available}) : ''}),
               style: TextStyle(color: updateAvailable ? Colors.orangeAccent : Colors.white70, fontSize: 12),
             ),
           ),
@@ -783,31 +775,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 const Icon(Icons.system_update_alt, color: Colors.cyanAccent, size: 20),
                 const SizedBox(width: 8),
-                const Text('Uppdateringar', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.uppdateringar'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
                 const Spacer(),
                 ElevatedButton.icon(
                   onPressed: _checkingUpdate ? null : () => _checkForUpdates(provider),
                   icon: _checkingUpdate
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.refresh, size: 16),
-                  label: const Text('Kontrollera', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  label: Text(tr('settings.kontrollera'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             if (!_updateChecked)
-              const Text('Klicka på Kontrollera för att se om agenten, webb-GUI:t och desktop-appen har nya versioner.',
+              Text(tr('settings.klicka_pa_kontrollera_for_att_se'),
                   style: TextStyle(color: Colors.white70, fontSize: 11)),
             if (_updateChecked && _fwUpdate != null) ...[
               _versionRow(
-                label: 'Agent',
+                label: tr('settings.agent_label'),
                 current: fwAgent?['current']?.toString() ?? '—',
                 available: fwAgent?['available']?.toString(),
                 updateAvailable: agentNew,
               ),
               _versionRow(
-                label: 'Webb-GUI',
+                label: tr('settings.webui_label'),
                 current: fwWeb?['current']?.toString() ?? '—',
                 available: fwWeb?['available']?.toString(),
                 updateAvailable: webNew,
@@ -820,7 +812,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: _fwDownloading
                         ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.download, size: 16),
-                    label: const Text('Ladda ner', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    label: Text(tr('settings.ladda_ner'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey, foregroundColor: Colors.white),
                   ),
                   const SizedBox(width: 10),
@@ -830,7 +822,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: _fwApplying
                         ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.upgrade, size: 16),
-                    label: const Text('Uppgradera', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    label: Text(tr('settings.uppgradera'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
                   ),
                   if (_fwVerified) ...[
@@ -843,7 +835,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (_updateChecked && !kIsWeb && desktopUpdateSupported) ...[
               const Divider(color: Colors.white24, height: 24),
               _versionRow(
-                label: 'Desktop-app',
+                label: tr('settings.desktop_label'),
                 current: _desktopUpdate?.current ?? kGuiVersion,
                 available: _desktopUpdate?.available,
                 updateAvailable: _desktopUpdate?.updateAvailable ?? false,
@@ -858,14 +850,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: _desktopDownloading
                         ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.download, size: 16),
-                    label: const Text('Ladda ner', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    label: Text(tr('settings.ladda_ner'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.blueGrey, foregroundColor: Colors.white),
                   ),
                   const SizedBox(width: 10),
                   ElevatedButton.icon(
                     onPressed: _desktopVerified ? () => _applyDesktopUpdate() : null,
                     icon: const Icon(Icons.upgrade, size: 16),
-                    label: const Text('Uppgradera', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    label: Text(tr('settings.uppgradera'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
                   ),
                   if (_desktopVerified) ...[
@@ -880,7 +872,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 const Icon(Icons.history, color: Colors.cyanAccent, size: 18),
                 const SizedBox(width: 8),
-                const Text('Tidigare versioner', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(tr('settings.tidigare_versioner'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 13)),
                 const Spacer(),
                 IconButton(
                   icon: _loadingRetainedVersions
@@ -890,16 +882,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-            const Text(
-              'De senast installerade agent-versionerna sparas på brandväggen (upp till 3). '
-              'Om en uppgradering gick fel kan du återställa till en av dem här.',
-              style: TextStyle(color: Colors.white54, fontSize: 11),
+            Text(
+              tr('settings.retained_versions_body'),
+              style: const TextStyle(color: Colors.white54, fontSize: 11),
             ),
             const SizedBox(height: 6),
             if (_retainedVersions == null || _retainedVersions!.isEmpty)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 6),
-                child: Text('Inga tidigare versioner sparade ännu.', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                child: Text(tr('settings.inga_tidigare_versioner_sparade_annu'), style: TextStyle(color: Colors.white38, fontSize: 11)),
               )
             else
               ..._retainedVersions!.map((v) {
@@ -917,19 +908,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Expanded(
                         child: Text(
-                          archivedAt != null ? 'Sparad: $archivedAt' : '',
+                          archivedAt != null ? trp('settings.saved_at', {'date': archivedAt}) : '',
                           style: const TextStyle(color: Colors.white54, fontSize: 11),
                         ),
                       ),
                       if (isCurrent)
-                        const Text('Körs nu', style: TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold))
+                        Text(tr('settings.kors_nu'), style: TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold))
                       else
                         OutlinedButton.icon(
                           onPressed: _rollbackInProgress ? null : () => _rollbackToVersion(provider, version),
                           icon: isTarget
                               ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
                               : const Icon(Icons.restore, size: 14),
-                          label: const Text('Återställ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                          label: Text(tr('settings.aterstall'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                           style: OutlinedButton.styleFrom(foregroundColor: Colors.orangeAccent, side: const BorderSide(color: Colors.orangeAccent)),
                         ),
                     ],
@@ -954,20 +945,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(Icons.backup_outlined, color: Colors.cyanAccent, size: 22),
                 SizedBox(width: 10),
-                Text('Backup & Återställning', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.backup_aterstallning'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Backupen innehåller konfigurationen och alla nycklar/certifikat, krypterad under en lösenfras du väljer själv. Spara lösenfrasen separat - den finns inte kvar hos brandväggen.',
+            Text(tr('settings.backupen_innehaller_konfigurationen_och_alla_nycklar'),
               style: TextStyle(color: Colors.white54, fontSize: 11),
             ),
             const SizedBox(height: 16),
-            const Text('Skapa backup', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(tr('settings.skapa_backup'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -977,7 +967,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     obscureText: _obscureBackupPassphrase,
                     style: const TextStyle(color: Colors.white, fontSize: 12),
                     decoration: InputDecoration(
-                      labelText: 'Lösenfras för backupen',
+                      labelText: tr('settings.losenfras_for_backupen'),
                       border: const OutlineInputBorder(),
                       isDense: true,
                       suffixIcon: IconButton(
@@ -992,7 +982,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: _isCreatingBackup
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                       : const Icon(Icons.backup, size: 16),
-                  label: const Text('Skapa backup', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  label: Text(tr('settings.skapa_backup'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
                   onPressed: _isCreatingBackup || _backupPassphraseController.text.isEmpty
                       ? null
@@ -1006,7 +996,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           });
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(result.backupB64 != null ? 'Backup skapad - kopiera och spara texten nedan' : (result.error ?? 'Backup misslyckades')),
+                              content: Text(result.backupB64 != null ? tr('settings.backup_created') : (result.error ?? tr('settings.backup_failed'))),
                               backgroundColor: result.backupB64 != null ? Colors.green : Colors.red,
                             ),
                           );
@@ -1033,21 +1023,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
                   icon: const Icon(Icons.copy, size: 14, color: Colors.cyanAccent),
-                  label: const Text('Kopiera', style: TextStyle(fontSize: 11, color: Colors.cyanAccent)),
+                  label: Text(tr('settings.kopiera'), style: TextStyle(fontSize: 11, color: Colors.cyanAccent)),
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: _backupResultController.text));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Backup kopierad till urklipp!'), backgroundColor: Colors.teal),
+                      SnackBar(content: Text(tr('settings.backup_kopierad_till_urklipp')), backgroundColor: Colors.teal),
                     );
                   },
                 ),
               ),
             ],
             const Divider(color: Colors.white10, height: 32),
-            const Text('Återställ från backup', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(tr('settings.aterstall_fran_backup'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
-            const Text(
-              'Brandväggen startar om automatiskt vid lyckad återställning.',
+            Text(tr('settings.brandvaggen_startar_om_automatiskt_vid_lyckad'),
               style: TextStyle(color: Colors.amberAccent, fontSize: 11),
             ),
             const SizedBox(height: 8),
@@ -1055,7 +1044,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               controller: _restoreB64Controller,
               maxLines: 4,
               style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'monospace'),
-              decoration: const InputDecoration(labelText: 'Klistra in backup-text', border: OutlineInputBorder(), isDense: true),
+              decoration: InputDecoration(labelText: tr('settings.klistra_in_backup_text'), border: OutlineInputBorder(), isDense: true),
             ),
             const SizedBox(height: 8),
             Row(
@@ -1065,7 +1054,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: _restorePassphraseController,
                     obscureText: true,
                     style: const TextStyle(color: Colors.white, fontSize: 12),
-                    decoration: const InputDecoration(labelText: 'Lösenfras', border: OutlineInputBorder(), isDense: true),
+                    decoration: InputDecoration(labelText: tr('settings.losenfras'), border: OutlineInputBorder(), isDense: true),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1073,7 +1062,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: _isRestoring
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                       : const Icon(Icons.restore, size: 16),
-                  label: const Text('Återställ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  label: Text(tr('settings.aterstall'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
                   onPressed: _isRestoring || _restoreB64Controller.text.isEmpty || _restorePassphraseController.text.isEmpty
                       ? null
@@ -1084,7 +1073,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           setState(() => _isRestoring = false);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(err ?? 'Återställning skickad - brandväggen startar om, logga in igen om ~10 sekunder'),
+                              content: Text(err ?? tr('settings.restore_sent')),
                               backgroundColor: err == null ? Colors.green : Colors.red,
                             ),
                           );
@@ -1107,16 +1096,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(Icons.warning_amber, color: Colors.redAccent, size: 22),
                 SizedBox(width: 10),
-                Text('Fabriksåterställning', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.fabriksaterstallning'), style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Tar bort ALL konfiguration, alla nycklar/certifikat och alla användarkonton permanent. Brandväggen startar om med fabriksinställningar (standardinloggning master / SecurityHarbor2026!). Detta går INTE att ångra utan en sparad backup.',
+            Text(tr('settings.tar_bort_all_konfiguration_alla_nycklar'),
               style: TextStyle(color: Colors.white70, fontSize: 11),
             ),
             const SizedBox(height: 16),
@@ -1124,7 +1112,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               controller: _factoryResetPasswordController,
               obscureText: true,
               style: const TextStyle(color: Colors.white, fontSize: 12),
-              decoration: const InputDecoration(labelText: 'Ditt nuvarande lösenord (krävs)', border: OutlineInputBorder(), isDense: true),
+              decoration: InputDecoration(labelText: tr('settings.ditt_nuvarande_losenord_kravs'), border: OutlineInputBorder(), isDense: true),
             ),
             const SizedBox(height: 10),
             Row(
@@ -1134,8 +1122,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   activeColor: Colors.redAccent,
                   onChanged: (v) => setState(() => _factoryResetConfirmed = v ?? false),
                 ),
-                const Expanded(
-                  child: Text('Jag förstår att detta raderar all konfiguration permanent', style: TextStyle(color: Colors.white, fontSize: 12)),
+                Expanded(
+                  child: Text(tr('settings.jag_forstar_att_detta_raderar_all'), style: TextStyle(color: Colors.white, fontSize: 12)),
                 ),
               ],
             ),
@@ -1144,7 +1132,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: _isFactoryResetting
                   ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.delete_forever, size: 16),
-              label: const Text('Fabriksåterställ brandväggen', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              label: Text(tr('settings.fabriksaterstall_brandvaggen'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
               onPressed: !_factoryResetConfirmed || _factoryResetPasswordController.text.isEmpty || _isFactoryResetting
                   ? null
@@ -1155,7 +1143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       setState(() => _isFactoryResetting = false);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(err ?? 'Fabriksåterställning skickad - brandväggen startar om'),
+                          content: Text(err ?? tr('settings.factory_reset_sent')),
                           backgroundColor: err == null ? Colors.green : Colors.red,
                         ),
                       );
@@ -1179,7 +1167,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 const Icon(Icons.group, color: Colors.cyanAccent, size: 22),
                 const SizedBox(width: 10),
-                const Text('Användare', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.anvandare'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
                 const Spacer(),
                 IconButton(
                   icon: _loadingUsers
@@ -1191,7 +1179,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             if (_users.isEmpty && !_loadingUsers)
-              const Text('Inga användare inlästa.', style: TextStyle(color: Colors.white38, fontSize: 12))
+              Text(tr('settings.inga_anvandare_inlasta'), style: TextStyle(color: Colors.white38, fontSize: 12))
             else
               ..._users.map((u) => ListTile(
                     dense: true,
@@ -1203,18 +1191,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.lock_reset, size: 16, color: Colors.amber),
-                          tooltip: 'Återställ lösenord',
+                          tooltip: tr('settings.aterstall_losenord'),
                           onPressed: () => _showResetPasswordDialog(provider, u),
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete, size: 16, color: Colors.redAccent),
-                          tooltip: 'Ta bort användare',
+                          tooltip: tr('settings.ta_bort_anvandare'),
                           onPressed: () async {
                             final err = await provider.api.deleteUser(u['id']);
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(err ?? 'Användaren borttagen'),
+                                content: Text(err ?? tr('settings.user_deleted')),
                                 backgroundColor: err == null ? Colors.green : Colors.red,
                               ),
                             );
@@ -1225,7 +1213,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   )),
             const Divider(color: Colors.white10, height: 32),
-            const Text('Skapa ny användare', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(tr('settings.skapa_ny_anvandare'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -1233,7 +1221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: TextField(
                     controller: _newUserController,
                     style: const TextStyle(color: Colors.white, fontSize: 12),
-                    decoration: const InputDecoration(labelText: 'Användarnamn', border: OutlineInputBorder(), isDense: true),
+                    decoration: InputDecoration(labelText: tr('settings.anvandarnamn'), border: OutlineInputBorder(), isDense: true),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1242,7 +1230,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: _newUserPwController,
                     obscureText: true,
                     style: const TextStyle(color: Colors.white, fontSize: 12),
-                    decoration: const InputDecoration(labelText: 'Lösenord (minst 8 tecken)', border: OutlineInputBorder(), isDense: true),
+                    decoration: InputDecoration(labelText: tr('settings.losenord_minst_8_tecken'), border: OutlineInputBorder(), isDense: true),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1250,9 +1238,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: _newUserRole,
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(color: Colors.white, fontSize: 12),
-                  items: const [
-                    DropdownMenuItem(value: 'viewer', child: Text('viewer')),
-                    DropdownMenuItem(value: 'admin', child: Text('admin')),
+                  items: [
+                    DropdownMenuItem(value: 'viewer', child: Text(tr('settings.viewer'))),
+                    DropdownMenuItem(value: 'admin', child: Text(tr('settings.admin'))),
                   ],
                   onChanged: (v) => setState(() => _newUserRole = v ?? 'viewer'),
                 ),
@@ -1261,7 +1249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 12),
             ElevatedButton.icon(
               icon: const Icon(Icons.person_add, size: 16),
-              label: const Text('Skapa användare', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+              label: Text(tr('settings.skapa_anvandare'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.cyanAccent,
                 foregroundColor: Colors.black,
@@ -1272,7 +1260,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(err ?? 'Användaren skapad'),
+                    content: Text(err ?? tr('settings.user_created')),
                     backgroundColor: err == null ? Colors.green : Colors.red,
                   ),
                 );
@@ -1300,10 +1288,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           controller: pwController,
           obscureText: true,
           style: const TextStyle(color: Colors.white, fontSize: 12),
-          decoration: const InputDecoration(labelText: 'Nytt lösenord (minst 8 tecken)', border: OutlineInputBorder(), isDense: true),
+          decoration: InputDecoration(labelText: tr('settings.nytt_losenord_minst_8_tecken'), border: OutlineInputBorder(), isDense: true),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Avbryt')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(tr('settings.avbryt'))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
             onPressed: () async {
@@ -1313,12 +1301,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(err ?? 'Lösenordet återställt'),
+                  content: Text(err ?? tr('settings.password_reset')),
                   backgroundColor: err == null ? Colors.green : Colors.red,
                 ),
               );
             },
-            child: const Text('Återställ'),
+            child: Text(tr('settings.aterstall')),
           ),
         ],
       ),
