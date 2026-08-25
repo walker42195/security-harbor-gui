@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import '../widgets/dialog_helpers.dart';
+import '../localization.dart';
 
 class InterfacesScreen extends StatelessWidget {
   const InterfacesScreen({super.key});
@@ -31,17 +32,17 @@ class InterfacesScreen extends StatelessWidget {
     // Om inga zoner alls är definierade (t.ex. innan configen hämtats) — visa
     // åtminstone de två grundläggande så dropdownen aldrig är tom.
     if (itemsMap.isEmpty) {
-      itemsMap['LAN'] = 'LAN (Internt nätverk)';
-      itemsMap['WAN'] = 'WAN (Utsida / Internet)';
+      itemsMap['LAN'] = tr('iface.lan_internt');
+      itemsMap['WAN'] = tr('iface.wan_utsida');
     }
 
     final list = itemsMap.entries
         .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
         .toList();
 
-    list.add(const DropdownMenuItem(
+    list.add(DropdownMenuItem(
       value: 'CUSTOM',
-      child: Text('+ Skapa ny / Anpassad zon...', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
+      child: Text(tr('iface.skapa_ny_anpassad_zon'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
     ));
 
     return list;
@@ -77,13 +78,12 @@ class InterfacesScreen extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                const Text(
-                  'Nätverksgränssnitt & VLAN',
+                Text(tr('iface.natverksgranssnitt_vlan'),
                   style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.category_outlined, size: 14),
-                  label: const Text('Hantera zoner', style: TextStyle(fontSize: 11)),
+                  label: Text(tr('iface.hantera_zoner'), style: TextStyle(fontSize: 11)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.cyanAccent,
                     side: const BorderSide(color: Colors.cyanAccent),
@@ -93,7 +93,7 @@ class InterfacesScreen extends StatelessWidget {
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.alt_route, size: 14),
-                  label: const Text('+ Skapa VLAN', style: TextStyle(fontSize: 11)),
+                  label: Text(tr('iface.skapa_vlan'), style: TextStyle(fontSize: 11)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.cyanAccent,
                     foregroundColor: Colors.black,
@@ -105,11 +105,11 @@ class InterfacesScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             if (cfg != null && cfg.interfaces.isEmpty)
-              const Card(
+              Card(
                 color: Color(0xFF1E293B),
                 child: Padding(
                   padding: EdgeInsets.all(24.0),
-                  child: Center(child: Text('Inga konfigurerade gränssnitt ännu.', style: TextStyle(color: Colors.grey, fontSize: 11))),
+                  child: Center(child: Text(tr('iface.inga_konfigurerade_granssnitt_annu'), style: TextStyle(color: Colors.grey, fontSize: 11))),
                 ),
               )
             else if (cfg != null)
@@ -139,7 +139,7 @@ class InterfacesScreen extends StatelessWidget {
                         style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(
-                        'Kort: ${iface.device}  |  Zon: ${iface.zone}  |  Typ: ${isStatic ? "Statisk IP (${iface.ipv4})" : "DHCP-Klient${iface.ipv4.isNotEmpty ? " (${iface.ipv4})" : ""}"}',
+                        trp('iface.card_zone_type', {'device': iface.device, 'zone': iface.zone, 'type': isStatic ? trp('iface.static_ip_paren', {'ip': iface.ipv4}) : trp('iface.dhcp_client_paren', {'ip': iface.ipv4.isNotEmpty ? ' (${iface.ipv4})' : ''})}),
                         style: const TextStyle(fontSize: 11),
                       ),
                       trailing: Row(
@@ -154,16 +154,16 @@ class InterfacesScreen extends StatelessWidget {
                           if (!isStatic && iface.enabled)
                             IconButton(
                               icon: const Icon(Icons.sync, color: Colors.amberAccent, size: 16),
-                              tooltip: 'Förnya DHCP (dhclient renew)',
+                              tooltip: tr('iface.fornya_dhcp_dhclient_renew'),
                               onPressed: () async {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Förnyar DHCP för ${iface.device}...'), backgroundColor: Colors.blueGrey, duration: const Duration(seconds: 2)),
+                                  SnackBar(content: Text(trp('iface.fornyar_dhcp_for', {'device': iface.device})), backgroundColor: Colors.blueGrey, duration: const Duration(seconds: 2)),
                                 );
                                 final err = await provider.api.renewDhcp(iface.id);
                                 if (!context.mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(err == null ? '${iface.device}: DHCP förnyad.' : 'Misslyckades: $err'),
+                                    content: Text(err == null ? trp('iface.dhcp_renewed', {'device': iface.device}) : trp('iface.failed_colon', {'err': err})),
                                     backgroundColor: err == null ? Colors.teal : Colors.red,
                                   ),
                                 );
@@ -172,12 +172,12 @@ class InterfacesScreen extends StatelessWidget {
                             ),
                           IconButton(
                             icon: const Icon(Icons.edit, color: Colors.cyanAccent, size: 16),
-                            tooltip: 'Redigera gränssnitt',
+                            tooltip: tr('iface.redigera_granssnitt'),
                             onPressed: () => _showEditInterfaceDialog(context, provider, cfg, idx),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.redAccent, size: 16),
-                            tooltip: 'Ta bort gränssnitt',
+                            tooltip: tr('iface.ta_bort_granssnitt'),
                             onPressed: () => _deleteInterface(context, provider, cfg, idx),
                           ),
                           Switch(
@@ -234,12 +234,11 @@ class InterfacesScreen extends StatelessWidget {
                               const SizedBox(height: 8),
                               if (isWAN) ...[
                                 Row(
-                                  children: const [
+                                  children: [
                                     Icon(Icons.shield_outlined, color: Colors.amber, size: 16),
                                     SizedBox(width: 6),
                                     Expanded(
-                                      child: Text(
-                                        'WAN-gränssnitt: Kan köras som DHCP-klient eller Statisk IP med valfria DNS-servrar.',
+                                      child: Text(tr('iface.wan_granssnitt_kan_koras_som_dhcp'),
                                         style: TextStyle(color: Colors.amber, fontSize: 10),
                                       ),
                                     ),
@@ -252,7 +251,7 @@ class InterfacesScreen extends StatelessWidget {
                                   runSpacing: 4,
                                   children: [
                                     Text(
-                                      'DHCP Server: ${iface.dhcp != null && iface.dhcp!.enabled ? "AKTIV" : "AVSTÄNGD"}',
+                                      trp('iface.dhcp_server_status', {'status': iface.dhcp != null && iface.dhcp!.enabled ? tr('iface.aktiv_status') : tr('iface.avstangd_status')}),
                                       style: const TextStyle(color: Colors.cyanAccent, fontSize: 11, fontWeight: FontWeight.bold),
                                     ),
                                     // Snabb av/på utan att behöva öppna
@@ -287,7 +286,7 @@ class InterfacesScreen extends StatelessWidget {
                                       ),
                                     ElevatedButton.icon(
                                       icon: const Icon(Icons.settings_ethernet, size: 14),
-                                      label: const Text('Konfigurera DHCP Scope', style: TextStyle(fontSize: 10)),
+                                      label: Text(tr('iface.konfigurera_dhcp_scope'), style: TextStyle(fontSize: 10)),
                                       style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF334155), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
                                       onPressed: () => _showDHCPDialog(context, provider, cfg, idx),
                                     ),
@@ -354,15 +353,15 @@ class InterfacesScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 16),
             Row(
-              children: const [
+              children: [
                 Icon(Icons.new_releases_outlined, size: 16, color: Colors.amberAccent),
                 SizedBox(width: 6),
-                Text('Nya nätverkskort (ej konfigurerade)',
+                Text(tr('iface.nya_natverkskort_ej_konfigurerade'),
                     style: TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 4),
-            const Text('Kort som hittats på systemet men ännu inte lagts till. De aktiveras inte automatiskt.',
+            Text(tr('iface.kort_som_hittats_pa_systemet_men'),
                 style: TextStyle(color: Colors.white54, fontSize: 10)),
             const SizedBox(height: 8),
             ...newNics.map((d) {
@@ -380,11 +379,11 @@ class InterfacesScreen extends StatelessWidget {
                   dense: true,
                   leading: const Icon(Icons.settings_ethernet, size: 18, color: Colors.amberAccent),
                   title: Text(name, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-                  subtitle: Text('MAC: ${mac.isEmpty ? "—" : mac}  |  Länk: ${isUp ? "uppe" : "nere"}  |  Ej konfigurerad',
+                  subtitle: Text(trp('iface.mac_link_unconfigured', {'mac': mac.isEmpty ? "—" : mac, 'link': isUp ? tr('iface.uppe') : tr('iface.nere')}),
                       style: const TextStyle(color: Colors.white54, fontSize: 10)),
                   trailing: ElevatedButton.icon(
                     icon: const Icon(Icons.add, size: 14),
-                    label: const Text('Lägg till', style: TextStyle(fontSize: 11)),
+                    label: Text(tr('iface.lagg_till'), style: TextStyle(fontSize: 11)),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
                     onPressed: () {
                       // Läggs till som INAKTIVERAT — användaren aktiverar och
@@ -450,22 +449,22 @@ class InterfacesScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  dialogTitleRow(context, 'Redigera ${iface.name.isNotEmpty ? iface.name : iface.device}', () => Navigator.pop(ctx)),
+                  dialogTitleRow(context, trp('iface.redigera_x', {'name': iface.name.isNotEmpty ? iface.name : iface.device}), () => Navigator.pop(ctx)),
                   const SizedBox(height: 12),
 
-                  dialogSection(title: 'VISNINGSNAMN', children: [
-                    dialogField(nameCtrl, 'Namn (valfritt)', hint: 't.ex. LAN Kontor, Servernät — kort: ${iface.device}'),
+                  dialogSection(title: tr('iface.section_visningsnamn'), children: [
+                    dialogField(nameCtrl, tr('iface.namn_valfritt'), hint: trp('iface.namn_hint', {'device': iface.device})),
                   ]),
                   const SizedBox(height: 12),
 
                   if (isVLAN) ...[
-                    dialogSection(title: 'FYSISKT KORT (VLAN ${iface.vlanId})', children: [
+                    dialogSection(title: trp('iface.section_fysiskt_kort', {'vlan': '${iface.vlanId}'}), children: [
                       DropdownButtonFormField<String>(
                         initialValue: physicalDevices.contains(selectedParent) ? selectedParent : (physicalDevices.isNotEmpty ? physicalDevices.first : null),
                         dropdownColor: const Color(0xFF1E293B),
                         style: const TextStyle(color: Colors.white, fontSize: 12),
-                        decoration: const InputDecoration(
-                          labelText: 'Föräldrakort',
+                        decoration: InputDecoration(
+                          labelText: tr('iface.foraldrakort'),
                           isDense: true,
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -476,17 +475,17 @@ class InterfacesScreen extends StatelessWidget {
                         },
                       ),
                       const SizedBox(height: 6),
-                      Text('Byter du kort flyttas VLAN ${iface.vlanId} till "$selectedParent.${iface.vlanId}" vid Applicera. Det gamla subinterfacet tas bort automatiskt.',
+                      Text(trp('iface.byter_kort_note', {'vlan': '${iface.vlanId}', 'parent': selectedParent}),
                           style: const TextStyle(color: Colors.amber, fontSize: 10)),
                     ]),
                     const SizedBox(height: 12),
                   ],
 
-                  dialogSection(title: 'ADRESSERINGSTYP', children: [
+                  dialogSection(title: tr('iface.section_adresseringstyp'), children: [
                     SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(value: 'static', label: Text('Statisk IP', style: TextStyle(fontSize: 11)), icon: Icon(Icons.pin, size: 14)),
-                        ButtonSegment(value: 'dhcp', label: Text('DHCP Klient', style: TextStyle(fontSize: 11)), icon: Icon(Icons.sync, size: 14)),
+                      segments: [
+                        ButtonSegment(value: 'static', label: Text(tr('iface.statisk_ip'), style: TextStyle(fontSize: 11)), icon: Icon(Icons.pin, size: 14)),
+                        ButtonSegment(value: 'dhcp', label: Text(tr('iface.dhcp_klient'), style: TextStyle(fontSize: 11)), icon: Icon(Icons.sync, size: 14)),
                       ],
                       selected: {selectedType},
                       onSelectionChanged: (val) => setState(() => selectedType = val.first),
@@ -494,24 +493,24 @@ class InterfacesScreen extends StatelessWidget {
                   ]),
                   const SizedBox(height: 12),
 
-                  dialogSection(title: 'NÄTVERK', children: [
+                  dialogSection(title: tr('iface.section_natverk'), children: [
                     if (selectedType == 'static') ...[
-                      dialogField(ipCtrl, 'IPv4 / CIDR', hint: 't.ex. 192.168.1.1/24'),
+                      dialogField(ipCtrl, tr('iface.ipv4_cidr'), hint: 't.ex. 192.168.1.1/24'),
                       const SizedBox(height: 12),
                     ],
-                    dialogField(gwCtrl, 'Default Gateway IP (Valfri)'),
+                    dialogField(gwCtrl, tr('iface.default_gateway_valfri')),
                     const SizedBox(height: 12),
-                    dialogField(dnsCtrl, 'DNS-servrar', hint: 't.ex. 1.1.1.1, 8.8.8.8'),
+                    dialogField(dnsCtrl, tr('iface.dns_servrar'), hint: 't.ex. 1.1.1.1, 8.8.8.8'),
                   ]),
                   const SizedBox(height: 12),
 
-                  dialogSection(title: 'ZON', children: [
+                  dialogSection(title: tr('iface.section_zon'), children: [
                     DropdownButtonFormField<String>(
                       initialValue: _zoneExistsInMenu(selectedZonePreset, cfg) ? selectedZonePreset : 'CUSTOM',
                       dropdownColor: const Color(0xFF1E293B),
                       style: const TextStyle(color: Colors.white, fontSize: 12),
-                      decoration: const InputDecoration(
-                        labelText: 'Tilldelad Zon',
+                      decoration: InputDecoration(
+                        labelText: tr('iface.tilldelad_zon'),
                         isDense: true,
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -523,7 +522,7 @@ class InterfacesScreen extends StatelessWidget {
                     ),
                     if (selectedZonePreset == 'CUSTOM') ...[
                       const SizedBox(height: 12),
-                      dialogField(customZoneCtrl, 'Ange nytt Zon-namn', hint: 't.ex. DMZ, MANAGEMENT, CAMERAS'),
+                      dialogField(customZoneCtrl, tr('iface.ange_nytt_zonnamn'), hint: 't.ex. DMZ, MANAGEMENT, CAMERAS'),
                     ],
                   ]),
                   const SizedBox(height: 16),
@@ -531,10 +530,10 @@ class InterfacesScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('iface.avbryt'), style: TextStyle(fontSize: 12))),
                       const SizedBox(width: 8),
                       ElevatedButton(
-                        child: const Text('Spara Ändringar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text(tr('iface.spara_andringar'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         onPressed: () {
                 final dnsList = dnsCtrl.text
                     .split(',')
@@ -550,7 +549,7 @@ class InterfacesScreen extends StatelessWidget {
                 if (finalZone.isNotEmpty && !updatedZones.any((z) => z.name.toUpperCase() == finalZone)) {
                   updatedZones.add(ZoneModel(
                     name: finalZone,
-                    description: 'Egen skapad zon',
+                    description: tr('iface.egen_skapad_zon'),
                   ));
                 }
 
@@ -616,16 +615,15 @@ class InterfacesScreen extends StatelessWidget {
         ),
         content: Text(
           isVLAN
-              ? 'VLAN-gränssnittet ${iface.device} tas bort ur konfigurationen och rivs från systemet vid nästa applicering. Enheter på det VLAN:et förlorar sin gateway.'
-              : 'Gränssnittet ${iface.device} tas bort ur konfigurationen. Vid applicering flushas dess IP-adress och ev. default-rutt.\n\n'
-                  'VARNING: Om detta är kortet du administrerar brandväggen genom (t.ex. LAN med management-IP) blir du UTELÅST via nätverket. Ta bort själva det virtuella kortet i hypervisorn separat om du vill städa helt.',
+              ? trp('iface.delete_vlan_body', {'device': iface.device})
+              : trp('iface.delete_iface_body', {'device': iface.device}),
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('iface.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('Ta bort', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            child: Text(tr('iface.ta_bort'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
             onPressed: () {
               Navigator.pop(ctx);
               final updatedIfaces = List<InterfaceModel>.from(cfg.interfaces)..removeAt(idx);
@@ -686,7 +684,7 @@ class InterfacesScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Skapa nytt Linux VLAN', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                      Text(tr('iface.skapa_nytt_linux_vlan'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                       IconButton(
                         icon: const Icon(Icons.close, size: 16, color: Colors.grey),
                         onPressed: () => Navigator.pop(ctx),
@@ -695,20 +693,20 @@ class InterfacesScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  dialogSection(title: 'GRUNDUPPGIFTER', children: [
-                    dialogField(parentCtrl, 'Föräldra-interface (parent)'),
+                  dialogSection(title: tr('iface.section_grunduppgifter'), children: [
+                    dialogField(parentCtrl, tr('iface.foraldra_interface')),
                     const SizedBox(height: 12),
-                    dialogField(vlanIdCtrl, 'VLAN ID (1-4094)'),
+                    dialogField(vlanIdCtrl, tr('iface.vlan_id_label')),
                   ]),
                   const SizedBox(height: 12),
 
-                  dialogSection(title: 'ZON', children: [
+                  dialogSection(title: tr('iface.section_zon'), children: [
                     DropdownButtonFormField<String>(
                       initialValue: selectedZonePreset,
                       dropdownColor: const Color(0xFF1E293B),
                       style: const TextStyle(color: Colors.white, fontSize: 12),
-                      decoration: const InputDecoration(
-                        labelText: 'Tilldelad zon',
+                      decoration: InputDecoration(
+                        labelText: tr('iface.tilldelad_zon_2'),
                         isDense: true,
                         border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -720,25 +718,25 @@ class InterfacesScreen extends StatelessWidget {
                     ),
                     if (selectedZonePreset == 'CUSTOM') ...[
                       const SizedBox(height: 12),
-                      dialogField(customZoneCtrl, 'Ange nytt zon-namn', hint: 't.ex. DMZ, MANAGEMENT, CAMERAS'),
+                      dialogField(customZoneCtrl, tr('iface.ange_nytt_zonnamn'), hint: 't.ex. DMZ, MANAGEMENT, CAMERAS'),
                     ],
                   ]),
                   const SizedBox(height: 12),
 
-                  dialogSection(title: 'NÄTVERK', children: [
-                    dialogField(ipCtrl, 'Statisk IPv4/CIDR', hint: 't.ex. 192.168.10.1/24'),
+                  dialogSection(title: tr('iface.section_natverk'), children: [
+                    dialogField(ipCtrl, tr('iface.statisk_ipv4_cidr'), hint: 't.ex. 192.168.10.1/24'),
                     const SizedBox(height: 12),
-                    dialogField(dnsCtrl, 'DNS-servrar', hint: 't.ex. 1.1.1.1, 8.8.8.8'),
+                    dialogField(dnsCtrl, tr('iface.dns_servrar'), hint: 't.ex. 1.1.1.1, 8.8.8.8'),
                   ]),
                   const SizedBox(height: 16),
 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                      TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('iface.avbryt'), style: TextStyle(fontSize: 12))),
                       const SizedBox(width: 8),
                       ElevatedButton(
-                        child: const Text('Skapa VLAN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: Text(tr('iface.skapa_vlan_2'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         onPressed: () {
                 if (cfg != null) {
                   final vlanId = int.tryParse(vlanIdCtrl.text) ?? 10;
@@ -757,7 +755,7 @@ class InterfacesScreen extends StatelessWidget {
                   if (finalZone.isNotEmpty && !updatedZones.any((z) => z.name.toUpperCase() == finalZone)) {
                     updatedZones.add(ZoneModel(
                       name: finalZone,
-                      description: 'Egen skapad zon',
+                      description: tr('iface.egen_skapad_zon'),
                     ));
                   }
 
@@ -825,27 +823,27 @@ class InterfacesScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              dialogSection(title: 'IP-POOL', children: [
-                dialogField(startCtrl, 'Start IP pool'),
+              dialogSection(title: tr('iface.section_ip_pool'), children: [
+                dialogField(startCtrl, tr('iface.start_ip_pool')),
                 const SizedBox(height: 12),
-                dialogField(endCtrl, 'Slut IP pool'),
+                dialogField(endCtrl, tr('iface.slut_ip_pool')),
               ]),
               const SizedBox(height: 12),
 
-              dialogSection(title: 'NÄTVERK', children: [
-                dialogField(gwCtrl, 'Standard gateway'),
+              dialogSection(title: tr('iface.section_natverk'), children: [
+                dialogField(gwCtrl, tr('iface.standard_gateway')),
                 const SizedBox(height: 12),
-                dialogField(dnsCtrl, 'DNS-servrar', hint: 'komma-separerade'),
+                dialogField(dnsCtrl, tr('iface.dns_servrar'), hint: tr('objects.komma_separerade')),
               ]),
               const SizedBox(height: 16),
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('iface.avbryt'), style: TextStyle(fontSize: 12))),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    child: const Text('Spara DHCP Scope', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: Text(tr('iface.spara_dhcp_scope'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     onPressed: () {
               final newDHCP = DHCPConfigModel(
                 // Bevarar det befintliga på/av-läget (satt via
@@ -929,11 +927,11 @@ class InterfacesScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  dialogTitleRow(context, 'Hantera zoner', () => Navigator.pop(ctx)),
+                  dialogTitleRow(context, tr('iface.hantera_zoner'), () => Navigator.pop(ctx)),
                   const SizedBox(height: 8),
-                  const Text(
-                    'WAN kan inte döpas om eller tas bort — brandväggen använder namnet "WAN" internt för utsida, NAT och drop-regler.',
-                    style: TextStyle(color: Colors.amber, fontSize: 10),
+                  Text(
+                    tr('iface.wan_kan_inte_andras'),
+                    style: const TextStyle(color: Colors.amber, fontSize: 10),
                   ),
                   const SizedBox(height: 12),
                   ConstrainedBox(
@@ -955,14 +953,14 @@ class InterfacesScreen extends StatelessWidget {
                                 children: [
                                   IconButton(
                                     icon: Icon(Icons.edit, size: 16, color: isWAN ? Colors.grey : Colors.cyanAccent),
-                                    tooltip: isWAN ? 'WAN kan inte döpas om' : 'Döp om zon',
+                                    tooltip: isWAN ? tr('iface.wan_kan_inte_dopas_om') : tr('iface.dop_om_zon'),
                                     onPressed: isWAN ? null : () => _promptRenameZone(context, provider, zone, () => setState(() {})),
                                   ),
                                   IconButton(
                                     icon: Icon(Icons.delete, size: 16, color: (isWAN || usage > 0) ? Colors.grey : Colors.redAccent),
                                     tooltip: isWAN
-                                        ? 'WAN kan inte tas bort'
-                                        : (usage > 0 ? 'Zonen används av $usage gränssnitt — flytta dem först' : 'Ta bort zon'),
+                                        ? tr('iface.wan_kan_inte_tas_bort')
+                                        : (usage > 0 ? trp('iface.zon_anvands_av', {'n': '$usage'}) : tr('iface.ta_bort_zon')),
                                     onPressed: (isWAN || usage > 0) ? null : () => _deleteZone(context, provider, zone, () => setState(() {})),
                                   ),
                                 ],
@@ -989,18 +987,18 @@ class InterfacesScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         title: Text('Döp om zon "$oldZone"', style: const TextStyle(color: Colors.white, fontSize: 14)),
-        content: dialogField(ctrl, 'Nytt zonnamn', hint: 't.ex. DMZ, KAMEROR'),
+        content: dialogField(ctrl, tr('iface.nytt_zonnamn'), hint: 't.ex. DMZ, KAMEROR'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('iface.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(
-            child: const Text('Spara', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            child: Text(tr('iface.spara'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
             onPressed: () {
               final newZone = ctrl.text.trim().toUpperCase();
               Navigator.pop(ctx);
               if (newZone.isEmpty || newZone == oldZone) return;
               if (newZone == 'WAN') {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Namnet WAN är reserverat.')),
+                  SnackBar(content: Text(tr('iface.namnet_wan_ar_reserverat'))),
                 );
                 return;
               }
@@ -1022,7 +1020,7 @@ class InterfacesScreen extends StatelessWidget {
     final zones = cfg.zones.map((z) => z.name.toUpperCase() == oldU ? ZoneModel(name: newZone, description: z.description) : z).toList();
     // Se till att den nya zonen finns i listan (om gamla bara var en implicit interface-zon).
     if (!zones.any((z) => z.name.toUpperCase() == newZone)) {
-      zones.add(ZoneModel(name: newZone, description: 'Egen zon'));
+      zones.add(ZoneModel(name: newZone, description: tr('iface.egen_zon')));
     }
 
     // Gränssnitt
@@ -1061,15 +1059,14 @@ class InterfacesScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         title: Text('Ta bort zon "$zone"?', style: const TextStyle(color: Colors.white, fontSize: 14)),
-        content: const Text(
-          'Zonen tas bort ur listan och plockas ut ur alla regler som refererar den. Regler som då saknar käll-/målzon återgår till ANY.',
+        content: Text(tr('iface.zonen_tas_bort_ur_listan_och'),
           style: TextStyle(color: Colors.white70, fontSize: 12),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('iface.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text('Ta bort', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            child: Text(tr('iface.ta_bort'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
             onPressed: () {
               Navigator.pop(ctx);
               final cfg = provider.candidateConfig ?? provider.runningConfig;
