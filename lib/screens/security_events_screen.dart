@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
+import '../localization.dart';
 
 /// Säkerhetshändelser (Fas 9) — visar Suricata-larm och låter admin styra
 /// IDS-läge/auto-block. Inline-IPS (aktiv realtidsblockering) byggs INTE
@@ -126,7 +127,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
               children: [
                 const Icon(Icons.gpp_maybe_outlined, color: Colors.redAccent, size: 22),
                 const SizedBox(width: 10),
-                const Text('Säkerhetshändelser (IDS)', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(tr('sec.sakerhetshandelser_ids'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 IconButton(
                   icon: _loading
@@ -137,8 +138,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Passiv övervakning (Suricata, af-packet-läge) — larmar men blockerar inte trafik i realtid. Se inställningarna nedan för valfri eftersläpande auto-blockering.',
+            Text(tr('sec.passiv_overvakning_suricata_af_packet_lage'),
               style: TextStyle(color: Colors.white54, fontSize: 11),
             ),
             const SizedBox(height: 14),
@@ -188,14 +188,14 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                         _buildIdsFilterBar(),
                         const Divider(color: Color(0xFF334155), height: 1),
                         if (_events.isEmpty)
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.all(20),
-                            child: Text('Inga larm ännu.', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                            child: Text(tr('sec.inga_larm_annu'), style: TextStyle(color: Colors.white38, fontSize: 12)),
                           )
                         else if (filtered.isEmpty)
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.all(20),
-                            child: Text('Inga larm matchar filtret.', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                            child: Text(tr('sec.inga_larm_matchar_filtret'), style: TextStyle(color: Colors.white38, fontSize: 12)),
                           )
                         else
                           SingleChildScrollView(
@@ -205,14 +205,14 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                               dataRowMinHeight: 32,
                               dataRowMaxHeight: 32,
                               showCheckboxColumn: false,
-                              columns: const [
-                                DataColumn(label: Text('Tid', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text('Allvarlighet', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text('Signatur', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text('Kategori', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text('Källa', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text('Mål', style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text('Protokoll', style: TextStyle(color: Colors.grey, fontSize: 11))),
+                              columns: [
+                                DataColumn(label: Text(tr('sec.tid'), style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.allvarlighet'), style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.signatur'), style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.kategori'), style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.kalla'), style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.mal'), style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.protokoll'), style: TextStyle(color: Colors.grey, fontSize: 11))),
                               ],
                               rows: filtered
                                   .map((e) => DataRow(
@@ -275,7 +275,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
         runSpacing: 8,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          field('Tid', _fTid, 150),
+          field(tr('sec.tid'), _fTid, 150),
           SizedBox(
             height: 32,
             child: DropdownButtonHideUnderline(
@@ -286,25 +286,25 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                   value: _fSeverity,
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(fontSize: 11, color: Colors.white),
-                  items: const [
-                    DropdownMenuItem(value: 'ALL', child: Text('Allvarlighet: Alla')),
-                    DropdownMenuItem(value: '1', child: Text('Allvarlighet: 1 (hög)')),
-                    DropdownMenuItem(value: '2', child: Text('Allvarlighet: 2 (medel)')),
-                    DropdownMenuItem(value: '3', child: Text('Allvarlighet: 3 (låg)')),
+                  items: [
+                    DropdownMenuItem(value: 'ALL', child: Text(tr('sec.allvarlighet_alla'))),
+                    DropdownMenuItem(value: '1', child: Text(tr('sec.allvarlighet_1_hog'))),
+                    DropdownMenuItem(value: '2', child: Text(tr('sec.allvarlighet_2_medel'))),
+                    DropdownMenuItem(value: '3', child: Text(tr('sec.allvarlighet_3_lag'))),
                   ],
                   onChanged: (v) => setState(() => _fSeverity = v ?? 'ALL'),
                 ),
               ),
             ),
           ),
-          field('Signatur', _fSignatur, 220),
-          field('Kategori', _fKategori, 180),
-          field('Källa (IP:port)', _fKalla, 150),
-          field('Mål (IP:port)', _fMal, 150),
-          field('Protokoll', _fProtokoll, 100),
+          field(tr('sec.signatur'), _fSignatur, 220),
+          field(tr('sec.kategori'), _fKategori, 180),
+          field(tr('sec.kalla_ip_port'), _fKalla, 150),
+          field(tr('sec.mal_ip_port'), _fMal, 150),
+          field(tr('sec.protokoll'), _fProtokoll, 100),
           TextButton.icon(
             icon: const Icon(Icons.clear, size: 14, color: Colors.grey),
-            label: const Text('Rensa filter', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            label: Text(tr('sec.rensa_filter'), style: TextStyle(fontSize: 11, color: Colors.grey)),
             onPressed: _hasActiveFilter ? _clearFilters : null,
           ),
         ],
@@ -341,19 +341,19 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                   children: [
                     Icon(Icons.gpp_maybe_outlined, color: _severityColor(e.severity), size: 20),
                     const SizedBox(width: 8),
-                    const Expanded(child: Text('Larmdetaljer', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold))),
+                    Expanded(child: Text(tr('sec.larmdetaljer'), style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold))),
                     IconButton(icon: const Icon(Icons.close, color: Colors.white54, size: 18), onPressed: () => Navigator.pop(dctx)),
                   ],
                 ),
                 const Divider(color: Color(0xFF334155)),
                 const SizedBox(height: 4),
-                row('Signatur', e.signature),
-                row('Allvarlighet', '${e.severity}  (${e.severity == 1 ? "hög" : e.severity == 2 ? "medel" : "låg"})', valueColor: _severityColor(e.severity)),
-                row('Kategori', e.category),
-                row('Tidpunkt', e.timestamp),
-                row('Protokoll', e.protocol),
-                row('Källa', '${e.srcIp}${e.srcPort != 0 ? ":${e.srcPort}" : ""}'),
-                row('Mål', '${e.dstIp}${e.dstPort != 0 ? ":${e.dstPort}" : ""}'),
+                row(tr('sec.signatur'), e.signature),
+                row(tr('sec.allvarlighet'), '${e.severity}  (${e.severity == 1 ? tr('sec.hog') : e.severity == 2 ? tr('sec.medel') : tr('sec.lag')})', valueColor: _severityColor(e.severity)),
+                row(tr('sec.kategori'), e.category),
+                row(tr('sec.tidpunkt'), e.timestamp),
+                row(tr('sec.protokoll'), e.protocol),
+                row(tr('sec.kalla'), '${e.srcIp}${e.srcPort != 0 ? ":${e.srcPort}" : ""}'),
+                row(tr('sec.mal'), '${e.dstIp}${e.dstPort != 0 ? ":${e.dstPort}" : ""}'),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(10),
@@ -366,11 +366,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                       Expanded(
                         child: Text(
                           e.category.toLowerCase().contains('generic protocol command decode')
-                              ? 'Detta är ett avkodar-larm från Suricata, inte en attacksignatur — ofta L2-brus '
-                                  '(okända ethertyper, VLAN/STP/LACP). Severity 3 betyder lägsta allvarlighetsgrad.'
-                              : 'Signaturen matchade ett känt mönster i Suricatas regelset. Severity 1 är '
-                                  'allvarligast och bör undersökas; 3 är mest informativt. Klicka på "?" i listans '
-                                  'huvud för mer om hur IDS fungerar.',
+                              ? tr('sec.decoder_alert_note')
+                              : tr('sec.signature_alert_note'),
                           style: const TextStyle(color: Colors.white60, fontSize: 11, height: 1.4),
                         ),
                       ),
@@ -382,7 +379,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton.icon(
                     icon: const Icon(Icons.open_in_new, size: 14, color: Colors.cyanAccent),
-                    label: const Text('Sök signaturen på suricata.io', style: TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+                    label: Text(tr('sec.sok_signaturen_pa_suricata_io'), style: TextStyle(color: Colors.cyanAccent, fontSize: 11)),
                     onPressed: _openSuricata,
                   ),
                 ),
@@ -399,7 +396,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kunde inte öppna länken. Adress: https://suricata.io/')),
+          SnackBar(content: Text(tr('sec.kunde_inte_oppna_lanken_adress_https'))),
         );
       }
     }
@@ -432,8 +429,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                   children: [
                     const Icon(Icons.shield_outlined, color: Colors.cyanAccent, size: 20),
                     const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('Vad är IDS och vad betyder larmen?',
+                    Expanded(
+                      child: Text(tr('sec.vad_ar_ids_och_vad_betyder'),
                           style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
                     ),
                     IconButton(
@@ -448,38 +445,23 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        head('IDS — intrångsdetektering'),
-                        para('IDS (Intrusion Detection System) lyssnar passivt på nätverkstrafiken och '
-                            'larmar när något matchar en känd signatur för misstänkt eller skadlig '
-                            'aktivitet — t.ex. portskanningar, kända attackmönster eller skadlig kod. '
-                            'Den här brandväggen kör IDS i passivt läge: den LARMAR men BLOCKERAR inte '
-                            'trafik i realtid. (Valfri auto-blockering läggs käll-IP:n till ett objekt '
-                            'i efterhand — se inställningarna längre ner.)'),
-                        head('Motorn: Suricata'),
-                        para('Motorn heter Suricata och sniffar trafiken via af-packet. Den använder ett '
-                            'regelset (t.ex. ET Open) med tiotusentals signaturer. Varje larm skrivs till '
-                            'eve.json, och den här vyn visar de senaste raderna därifrån.'),
-                        head('Allvarlighetsgrad'),
-                        para('Kolumnen "Allvarlighet" är Suricatas egen skala: 1 = högst (allvarligt, bör '
-                            'undersökas), 2 = medel, 3 = lägst (mest informativt/brus). Många larm med '
-                            'severity 3 är normalt och betyder sällan en attack.'),
-                        head('Varför så många "Ethertype unknown"-larm?'),
-                        para('Larm som "SURICATA Ethertype unknown" (severity 3, kategori "Generic Protocol '
-                            'Command Decode") kommer från Suricatas avkodare, inte från en attacksignatur. '
-                            'De betyder bara att den sett ethernet-ramtyper den inte känner igen på det '
-                            'sniffade gränssnittet — t.ex. VLAN-taggar, spanning-tree (STP) eller LACP. '
-                            'Det är normalt brus, särskilt på ett interface som ser mycket L2-trafik, och '
-                            'är inte tecken på ett angrepp. Vill du minska bruset kan du sniffa ett '
-                            'gränssnitt med mindre L2-trafik eller finjustera Suricatas regler.'),
+                        head(tr('sec.help_head_1')),
+                        para(tr('sec.help_para_1')),
+                        head(tr('sec.help_head_2')),
+                        para(tr('sec.help_para_2')),
+                        head(tr('sec.help_head_3')),
+                        para(tr('sec.help_para_3')),
+                        head(tr('sec.help_head_4')),
+                        para(tr('sec.help_para_4')),
                         const SizedBox(height: 4),
                         InkWell(
                           onTap: _openSuricata,
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
+                            children: [
                               Icon(Icons.open_in_new, size: 14, color: Colors.cyanAccent),
                               SizedBox(width: 6),
-                              Text('Läs mer på suricata.io',
+                              Text(tr('sec.las_mer_pa_suricata_io'),
                                   style: TextStyle(color: Colors.cyanAccent, fontSize: 12, decoration: TextDecoration.underline)),
                             ],
                           ),
@@ -538,7 +520,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
             children: [
               const Icon(Icons.radar, color: Colors.redAccent, size: 16),
               const SizedBox(width: 8),
-              const Text('IDS-inställningar', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(tr('sec.ids_installningar'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
               const Spacer(),
               Switch(
                 value: ids.enabled,
@@ -555,8 +537,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
             child: DropdownButtonFormField<String>(
               initialValue: selectedIface,
               isDense: true,
-              decoration: const InputDecoration(
-                labelText: 'Gränssnitt att övervaka',
+              decoration: InputDecoration(
+                labelText: tr('sec.granssnitt_att_overvaka'),
                 contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 border: OutlineInputBorder(),
               ),
@@ -575,9 +557,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                 onChanged: (v) => save(ids.copyWith(autoBlock: v, autoBlockObjectId: _objectIdController.text, autoBlockSeverity: _autoBlockSeverity)),
               ),
               const SizedBox(width: 6),
-              const Expanded(
-                child: Text(
-                  'Auto-block: käll-IP:n från larm (upp till vald allvarlighetsgrad) läggs automatiskt till i objektet nedan. Objektet blockerar inget i sig — du måste skapa en Deny-policy som refererar det för att trafiken faktiskt ska stoppas.',
+              Expanded(
+                child: Text(tr('sec.auto_block_kall_ip_n_fran'),
                   style: TextStyle(color: Colors.white, fontSize: 11),
                 ),
               ),
@@ -595,8 +576,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                   isExpanded: true,
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(color: Colors.white, fontSize: 12),
-                  decoration: const InputDecoration(
-                    labelText: 'Objekt att blockera IP i',
+                  decoration: InputDecoration(
+                    labelText: tr('sec.objekt_att_blockera_ip_i'),
                     contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     border: OutlineInputBorder(),
                     isDense: true,
@@ -616,8 +597,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                 child: DropdownButtonFormField<int>(
                   initialValue: _autoBlockSeverity,
                   isDense: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Max allvarlighetsgrad',
+                  decoration: InputDecoration(
+                    labelText: tr('sec.max_allvarlighetsgrad'),
                     contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     border: OutlineInputBorder(),
                   ),
@@ -632,7 +613,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
             icon: _isSavingIds
                 ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                 : const Icon(Icons.save, size: 14),
-            label: const Text('Spara', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            label: Text(tr('sec.spara'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
             onPressed: () => save(ids.copyWith(
               interfaceDevice: _ifaceController.text,
