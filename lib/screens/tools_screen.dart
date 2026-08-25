@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
 import '../models/config_model.dart';
+import '../localization.dart';
 
 class ToolsScreen extends StatefulWidget {
   const ToolsScreen({super.key});
@@ -69,13 +70,12 @@ class _ToolsScreenState extends State<ToolsScreen> {
               spacing: 10,
               runSpacing: 8,
               children: [
-                const Row(
+                Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.build_circle_outlined, color: Colors.cyanAccent, size: 22),
                     SizedBox(width: 10),
-                    Text(
-                      'Nätverksdiagnostik & Verktyg',
+                    Text(tr('tools.natverksdiagnostik_verktyg'),
                       style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -88,10 +88,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     border: Border.all(color: const Color(0xFF334155)),
                   ),
                   child: Row(
-                    children: const [
+                    children: [
                       Icon(Icons.terminal, size: 13, color: Colors.cyanAccent),
                       SizedBox(width: 6),
-                      Text('Körs direkt från brandväggen (inte från din dator)', style: TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+                      Text(tr('tools.kors_direkt_fran_brandvaggen_inte_fran'), style: TextStyle(color: Colors.cyanAccent, fontSize: 11)),
                     ],
                   ),
                 ),
@@ -110,7 +110,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Ange Mål-IP eller Hostnamn:', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold)),
+                  Text(tr('tools.ange_mal_ip_eller_hostnamn'), style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -120,8 +120,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           child: TextField(
                             controller: _targetController,
                             style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
-                            decoration: const InputDecoration(
-                              hintText: 't.ex. 8.8.8.8, 1.1.1.1 eller google.com',
+                            decoration: InputDecoration(
+                              hintText: tr('tools.t_ex_8_8_8_8'),
                               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               border: OutlineInputBorder(),
                             ),
@@ -133,7 +133,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         icon: _isPingLoading
                             ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                             : const Icon(Icons.download, size: 14),
-                        label: const Text('Kör Ping', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        label: Text(tr('tools.kor_ping'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.cyanAccent,
                           foregroundColor: Colors.black,
@@ -146,7 +146,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         icon: _isTracerouteLoading
                             ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                             : const Icon(Icons.alt_route, size: 14),
-                        label: const Text('Kör Traceroute', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        label: Text(tr('tools.kor_traceroute'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.lightBlueAccent,
                           foregroundColor: Colors.white,
@@ -163,10 +163,10 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      const Text('Snabbval:', style: TextStyle(color: Colors.grey, fontSize: 10)),
-                      _buildPresetChip('Google (8.8.8.8)', '8.8.8.8'),
-                      _buildPresetChip('Cloudflare (1.1.1.1)', '1.1.1.1'),
-                      _buildPresetChip('Quad9 (9.9.9.9)', '9.9.9.9'),
+                      Text(tr('tools.snabbval'), style: TextStyle(color: Colors.grey, fontSize: 10)),
+                      _buildPresetChip(tr('tools.google_preset'), '8.8.8.8'),
+                      _buildPresetChip(tr('tools.cloudflare_preset'), '1.1.1.1'),
+                      _buildPresetChip(tr('tools.quad9_preset'), '9.9.9.9'),
                       _buildPresetChip('example.com', 'example.com'),
                     ],
                   ),
@@ -189,11 +189,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
                       Icon(Icons.radar, color: Colors.tealAccent, size: 16),
                       SizedBox(width: 8),
-                      Text('nmap-portskanning', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(tr('tools.nmap_portskanning'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -201,11 +201,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     spacing: 4,
                     runSpacing: 0,
                     children: [
-                      _nmapCheck('TCP SYN-scan (-sS)', _nmapSyn, (v) => setState(() => _nmapSyn = v)),
-                      _nmapCheck('Full TCP-scan (-p- -sV)', _nmapFullTcp, (v) => setState(() => _nmapFullTcp = v)),
-                      _nmapCheck('UDP-scan (-sU)', _nmapUdp, (v) => setState(() => _nmapUdp = v)),
-                      _nmapCheck('OS-detektion (-O)', _nmapOsDetect, (v) => setState(() => _nmapOsDetect = v)),
-                      _nmapCheck('Snabb timing (-T4)', _nmapFastTiming, (v) => setState(() => _nmapFastTiming = v)),
+                      _nmapCheck(tr('tools.tcp_syn_scan'), _nmapSyn, (v) => setState(() => _nmapSyn = v)),
+                      _nmapCheck(tr('tools.full_tcp_scan'), _nmapFullTcp, (v) => setState(() => _nmapFullTcp = v)),
+                      _nmapCheck(tr('tools.udp_scan'), _nmapUdp, (v) => setState(() => _nmapUdp = v)),
+                      _nmapCheck(tr('tools.os_detect'), _nmapOsDetect, (v) => setState(() => _nmapOsDetect = v)),
+                      _nmapCheck(tr('tools.fast_timing'), _nmapFastTiming, (v) => setState(() => _nmapFastTiming = v)),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -213,7 +213,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     icon: _isNmapLoading
                         ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                         : const Icon(Icons.radar, size: 14),
-                    label: const Text('Kör nmap', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    label: Text(tr('tools.kor_nmap'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.tealAccent,
                       foregroundColor: Colors.black,
@@ -222,8 +222,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     onPressed: _anyLoading || (!_nmapSyn && !_nmapFullTcp && !_nmapUdp && !_nmapOsDetect) ? null : () => _runNmap(provider),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Full TCP-scan och UDP-scan kan ta flera minuter. Kör inte mot mål du inte har rätt att skanna.',
+                  Text(tr('tools.full_tcp_scan_och_udp_scan'),
                     style: TextStyle(color: Colors.amberAccent, fontSize: 10),
                   ),
                 ],
@@ -244,18 +243,18 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    children: const [
+                    children: [
                       Icon(Icons.travel_explore, size: 15, color: Colors.cyanAccent),
                       SizedBox(width: 6),
-                      Text('DNS-uppslag (dig)', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(tr('tools.dns_uppslag_dig'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text('Namn att slå upp anges i Mål-fältet ovan.', style: TextStyle(color: Colors.grey, fontSize: 10)),
+                  Text(tr('tools.namn_att_sla_upp_anges_i'), style: TextStyle(color: Colors.grey, fontSize: 10)),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Text('Typ:', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                      Text(tr('tools.typ'), style: TextStyle(color: Colors.grey, fontSize: 11)),
                       const SizedBox(width: 6),
                       // Höjden matchar nu textfältet bredvid (36px) i
                       // stället för att bara krympa till DropdownButtonets
@@ -289,8 +288,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           child: TextField(
                             controller: _digServerController,
                             style: const TextStyle(fontSize: 12, color: Colors.white),
-                            decoration: const InputDecoration(
-                              hintText: 'DNS-server (valfritt, t.ex. 1.1.1.1)',
+                            decoration: InputDecoration(
+                              hintText: tr('tools.dns_server_valfritt_t_ex_1'),
                               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               border: OutlineInputBorder(),
                             ),
@@ -302,7 +301,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         icon: _isDigLoading
                             ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                             : const Icon(Icons.travel_explore, size: 14),
-                        label: const Text('Kör dig', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        label: Text(tr('tools.kor_dig'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.cyanAccent,
                           foregroundColor: Colors.black,
@@ -330,8 +329,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 children: [
                   const Icon(Icons.table_rows_outlined, size: 15, color: Colors.cyanAccent),
                   const SizedBox(width: 6),
-                  const Expanded(
-                    child: Text('ARP-tabell (IP ↔ MAC för enheter brandväggen nyligen sett — bra för DHCP-reservation)',
+                  Expanded(
+                    child: Text(tr('tools.arp_tabell_ip_mac_for_enheter'),
                         style: TextStyle(color: Colors.white70, fontSize: 11)),
                   ),
                   const SizedBox(width: 10),
@@ -339,7 +338,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     icon: _isArpLoading
                         ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                         : const Icon(Icons.table_chart, size: 14),
-                    label: const Text('Visa ARP-tabell', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    label: Text(tr('tools.visa_arp_tabell'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.cyanAccent,
                       foregroundColor: Colors.black,
@@ -364,11 +363,11 @@ class _ToolsScreenState extends State<ToolsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
                       Icon(Icons.podcasts, color: Colors.orangeAccent, size: 16),
                       SizedBox(width: 8),
-                      Text('Paketfångst (tcpdump)', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(tr('tools.paketfangst_tcpdump'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -387,8 +386,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           child: TextField(
                             controller: _tcpdumpFilterController,
                             style: const TextStyle(fontSize: 12, color: Colors.white),
-                            decoration: const InputDecoration(
-                              hintText: 'Valfritt BPF-filter, t.ex. "port 443"',
+                            decoration: InputDecoration(
+                              hintText: tr('tools.valfritt_bpf_filter_t_ex_port'),
                               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               border: OutlineInputBorder(),
                             ),
@@ -402,8 +401,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         child: DropdownButtonFormField<int>(
                           initialValue: _tcpdumpPacketCount,
                           isDense: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Paket',
+                          decoration: InputDecoration(
+                            labelText: tr('tools.paket'),
                             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             border: OutlineInputBorder(),
                           ),
@@ -420,8 +419,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         child: DropdownButtonFormField<int>(
                           initialValue: _tcpdumpDurationSec,
                           isDense: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Sekunder',
+                          decoration: InputDecoration(
+                            labelText: tr('tools.sekunder'),
                             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                             border: OutlineInputBorder(),
                           ),
@@ -438,7 +437,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     icon: _isTcpdumpLoading
                         ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                         : const Icon(Icons.podcasts, size: 14),
-                    label: const Text('Starta fångst', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    label: Text(tr('tools.starta_fangst'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orangeAccent,
                       foregroundColor: Colors.black,
@@ -447,8 +446,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     onPressed: _anyLoading || _tcpdumpInterface == null ? null : () => _runTcpdump(provider),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Fångsten avslutas automatiskt efter valt antal paket eller sekunder, det som inträffar först (max 12 sekunder).',
+                  Text(tr('tools.fangsten_avslutas_automatiskt_efter_valt_antal'),
                     style: TextStyle(color: Colors.grey, fontSize: 10),
                   ),
                 ],
@@ -472,27 +470,26 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Konsol / Utdata:',
+                      Text(tr('tools.konsol_utdata'),
                         style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                       Row(
                         children: [
                           IconButton(
                             icon: const Icon(Icons.copy, size: 14, color: Colors.cyanAccent),
-                            tooltip: 'Kopiera utdata',
+                            tooltip: tr('tools.kopiera_utdata'),
                             onPressed: _output.isEmpty
                                 ? null
                                 : () {
                                     Clipboard.setData(ClipboardData(text: _output));
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Utdata kopierad till urklipp!'), backgroundColor: Colors.teal),
+                                      SnackBar(content: Text(tr('tools.utdata_kopierad_till_urklipp')), backgroundColor: Colors.teal),
                                     );
                                   },
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete_sweep, size: 16, color: Colors.redAccent),
-                            tooltip: 'Rensa konsol',
+                            tooltip: tr('tools.rensa_konsol'),
                             onPressed: () => setState(() => _output = ''),
                           ),
                         ],
@@ -512,7 +509,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     child: SingleChildScrollView(
                       child: SelectableText(
                         _output.isEmpty
-                            ? 'Välj mål och klicka på Kör Ping eller Kör Traceroute för att starta nätverksdiagnos...'
+                            ? tr('tools.placeholder_output')
                             : _output,
                         style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Colors.greenAccent, height: 1.4),
                       ),
@@ -548,7 +545,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
     setState(() {
       _isPingLoading = true;
-      _output = 'Kör ping (4 paket) mot $target från brandväggen...\n--------------------------------------------------\n';
+      _output = trp('tools.running_ping', {'target': target});
     });
     final out = await provider.api.ping(target);
     if (!mounted) return;
@@ -564,7 +561,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
     setState(() {
       _isTracerouteLoading = true;
-      _output = 'Kör traceroute (max 15 hopp) mot $target från brandväggen...\n--------------------------------------------------\n';
+      _output = trp('tools.running_traceroute', {'target': target});
     });
     final out = await provider.api.traceroute(target);
     if (!mounted) return;
@@ -582,7 +579,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
     final server = _digServerController.text.trim();
     setState(() {
       _isDigLoading = true;
-      _output = 'Kör dig $_digType $target${server.isEmpty ? '' : ' @$server'} från brandväggen...\n--------------------------------------------------\n';
+      _output = trp('tools.running_dig', {'type': _digType, 'target': target, 'server': server.isEmpty ? '' : ' @$server'});
     });
     final out = await provider.api.dig(target, type: _digType, server: server);
     if (!mounted) return;
@@ -595,7 +592,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
   void _runArp(ConfigProvider provider) async {
     setState(() {
       _isArpLoading = true;
-      _output = 'Hämtar ARP-/grannbordstabellen från brandväggen (ip neigh show)...\n--------------------------------------------------\n';
+      _output = tr('tools.running_arp');
     });
     final out = await provider.api.arpTable();
     if (!mounted) return;
@@ -616,8 +613,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
       child: DropdownButtonFormField<String>(
         initialValue: interfaces.any((i) => i.device == _tcpdumpInterface) ? _tcpdumpInterface : null,
         isDense: true,
-        decoration: const InputDecoration(
-          labelText: 'Gränssnitt',
+        decoration: InputDecoration(
+          labelText: tr('tools.granssnitt'),
           contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           border: OutlineInputBorder(),
         ),
@@ -638,7 +635,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
     setState(() {
       _isTcpdumpLoading = true;
-      _output = 'Fångar paket på $iface från brandväggen...\n--------------------------------------------------\n';
+      _output = trp('tools.running_capture', {'iface': iface});
     });
     final out = await provider.api.tcpdumpCapture(
       iface,
@@ -673,7 +670,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
     setState(() {
       _isNmapLoading = true;
-      _output = 'Kör nmap mot $target från brandväggen...\n--------------------------------------------------\n';
+      _output = trp('tools.running_nmap', {'target': target});
     });
     final out = await provider.api.nmap(
       target,
