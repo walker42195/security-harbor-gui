@@ -223,6 +223,16 @@ class InterfacesScreen extends StatelessWidget {
                                       backgroundColor: Colors.grey.withValues(alpha: 0.2),
                                       visualDensity: VisualDensity.compact,
                                     ),
+                                  // Visas bara när MAC:en är manuellt satt —
+                                  // en klonad MAC är ett avsteg från
+                                  // hårdvaran och ska synas i översikten.
+                                  if (iface.macAddress.isNotEmpty)
+                                    Chip(
+                                      label: Text(trp('iface.mac_chip', {'mac': iface.macAddress}),
+                                          style: const TextStyle(color: Colors.amberAccent, fontSize: 10)),
+                                      backgroundColor: Colors.amber.withValues(alpha: 0.15),
+                                      visualDensity: VisualDensity.compact,
+                                    ),
                                   if (iface.dnsServers.isNotEmpty)
                                     Chip(
                                       label: Text('DNS: ${iface.dnsServers.join(", ")}', style: const TextStyle(color: Colors.cyanAccent, fontSize: 10, fontWeight: FontWeight.bold)),
@@ -431,6 +441,7 @@ class InterfacesScreen extends StatelessWidget {
     final ipCtrl = TextEditingController(text: iface.ipv4);
     final gwCtrl = TextEditingController(text: iface.gateway);
     final dnsCtrl = TextEditingController(text: iface.dnsServers.join(', '));
+    final macCtrl = TextEditingController(text: iface.macAddress);
     
     String selectedZonePreset = iface.zone.isEmpty ? 'LAN' : iface.zone.toUpperCase();
     final customZoneCtrl = TextEditingController(text: _zoneExistsInMenu(selectedZonePreset, cfg) ? '' : iface.zone);
@@ -501,6 +512,16 @@ class InterfacesScreen extends StatelessWidget {
                     dialogField(gwCtrl, tr('iface.default_gateway_valfri')),
                     const SizedBox(height: 12),
                     dialogField(dnsCtrl, tr('iface.dns_servrar'), hint: 't.ex. 1.1.1.1, 8.8.8.8'),
+                    const SizedBox(height: 12),
+                    // MAC-kloning. Ligger sist i nätverkssektionen eftersom
+                    // det är ett undantagsfall — men det är precis det man
+                    // behöver när en ISP vägrar ge lease till nytt hårdvaru-MAC.
+                    dialogField(macCtrl, tr('iface.mac_address'), hint: 't.ex. aa:bb:cc:dd:ee:ff'),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(tr('iface.mac_address_hint'),
+                          style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                    ),
                   ]),
                   const SizedBox(height: 12),
 
@@ -571,6 +592,7 @@ class InterfacesScreen extends StatelessWidget {
                   gateway: gwCtrl.text,
                   dnsServers: dnsList,
                   mtu: iface.mtu,
+                  macAddress: macCtrl.text.trim(),
                   dhcp: iface.dhcp,
                 );
                 provider.updateCandidate(cfg.copyWith(
@@ -651,6 +673,7 @@ class InterfacesScreen extends StatelessWidget {
       gateway: cur.gateway,
       dnsServers: cur.dnsServers,
       mtu: cur.mtu,
+      macAddress: cur.macAddress,
       dhcp: cur.dhcp,
     );
     provider.updateCandidate(cfg.copyWith(
@@ -874,6 +897,7 @@ class InterfacesScreen extends StatelessWidget {
                 gateway: iface.gateway,
                 dnsServers: iface.dnsServers,
                 mtu: iface.mtu,
+                macAddress: iface.macAddress,
                 dhcp: newDHCP,
               );
               provider.updateCandidate(cfg.copyWith(

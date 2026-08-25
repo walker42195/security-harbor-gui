@@ -77,6 +77,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _loadingConfigHistory = false;
   String? _restoringConfigId;
 
+  // Rollback-timeouten (sekunder) som redigerbart fält.
+  final TextEditingController _rollbackTimeoutController = TextEditingController();
+  int? _rollbackTimeoutLoadedFrom; // värdet fältet fylldes från, för dirty-check
+
   @override
   void initState() {
     super.initState();
@@ -106,6 +110,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _urlController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
+    _rollbackTimeoutController.dispose();
     _currentPwController.dispose();
     _newPwController.dispose();
     _newUserController.dispose();
@@ -123,6 +128,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ConfigProvider>(context);
+    _syncRollbackTimeoutField(provider);
 
     return Container(
       color: const Color(0xFF0F172A),
@@ -280,20 +286,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Divider(color: Colors.white10, height: 32),
 
                   // Övriga Systeminställningar
+                  // Rollback-timeouten var tidigare en Chip — ett värde man
+                  // kunde läsa (knappt: ljus text på cyan botten) men inte
+                  // ändra, trots att agenten läser fältet ur configen. Nu är
+                  // det en riktig inmatningsruta.
                   ListTile(
                     dense: true,
-                    title: Text(tr('settings.rollback_timeout.title'), style: TextStyle(color: Colors.white, fontSize: 12)),
-                    subtitle: Text(tr('settings.rollback_timeout.body'), style: TextStyle(fontSize: 11)),
-                    // Visa det FAKTISKT konfigurerade värdet, inte en
-                    // hårdkodad "30s" som tidigare stod kvar även när
-                    // rollback_timeout_sec var något annat.
-                    trailing: Chip(
-                      label: Text(
-                        '${(provider.runningConfig ?? provider.candidateConfig)?.settings.rollbackTimeoutSec ?? 30}s',
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      backgroundColor: Colors.cyanAccent,
-                    ),
+                    title: Text(tr('settings.rollback_timeout.title'), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    subtitle: Text(tr('settings.rollback_timeout.body'), style: const TextStyle(fontSize: 11)),
+                    trailing: provider.isAdmin
+                        ? SizedBox(
+                            width: 132,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 72,
+                                  child: TextField(
+                                    controller: _rollbackTimeoutController,
+                                    keyboardType: TextInputType.number,
+                                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                                    textAlign: TextAlign.right,
+                                    decoration: const InputDecoration(
+                                      isDense: true,
+                                      suffixText: 's',
+                                      suffixStyle: TextStyle(color: Colors.white54, fontSize: 12),
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      border: OutlineInputBorder(),
+                                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF475569))),
+                                    ),
+                                    onChanged: (_) => setState(() {}),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.save, size: 18, color: Colors.cyanAccent),
+                                  tooltip: tr('settings.rollback_timeout.save'),
+                                  onPressed: _rollbackTimeoutDirty(provider) ? () => _saveRollbackTimeout(provider) : null,
+                                ),
+                              ],
+                            ),
+                          )
+                        : Text(
+                            '${(provider.runningConfig ?? provider.candidateConfig)?.settings.rollbackTimeoutSec ?? 30} s',
+                            style: const TextStyle(color: Colors.cyanAccent, fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(
@@ -670,6 +706,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _fwApplying = false;
       _updateMessage = tr('settings.upgrade_taking_long');
     });
+  }
+
+  /// Synkar textfältet med configen, men BARA när användaren inte håller på
+  /// att redigera det — annars hade varje inkommande statusuppdatering
+  /// skrivit över det man just skrivit in.
+  void _syncRollbackTimeoutField(ConfigProvider provider) {
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    if (cfg == null) return;
+    final value = cfg.settings.rollbackTimeoutSec;
+    if (_rollbackTimeoutLoadedFrom == value) return;
+    _rollbackTimeoutLoadedFrom = value;
+    _rollbackTimeoutController.text = '$value';
+  }
+
+  bool _rollbackTimeoutDirty(ConfigProvider provider) {
+    final parsed = int.tryParse(_rollbackTimeoutController.text.trim());
+    return parsed != null && parsed != _rollbackTimeoutLoadedFrom;
+  }
+
+  /// Sparar timeouten till kandidatkonfigurationen. Agenten klämmer värdet
+  /// till 10 s–10 min; vi avvisar samma intervall här så att användaren får
+  /// veta det direkt istället för att undra varför siffran ändrade sig.
+  Future<void> _saveRollbackTimeout(ConfigProvider provider) async {
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    if (cfg == null) return;
+    final parsed = int.tryParse(_rollbackTimeoutController.text.trim());
+    if (parsed == null || parsed < 10 || parsed > 600) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(tr('settings.rollback_timeout.invalid')), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    await provider.updateCandidate(
+      cfg.copyWith(settings: cfg.settings.copyWith(rollbackTimeoutSec: parsed)),
+    );
+    if (!mounted) return;
+    _rollbackTimeoutLoadedFrom = parsed;
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(tr('settings.rollback_timeout.saved')), backgroundColor: Colors.teal),
+    );
   }
 
   Future<void> _loadConfigHistory(ConfigProvider provider) async {

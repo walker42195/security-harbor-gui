@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
@@ -586,12 +587,21 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   // trots att varje cell för sig var korrekt centrerad. Med SelectionArea
   // slipper vi det problemet helt eftersom cellerna är rena Text-widgetar
   // igen, och man kan dessutom markera text över FLERA celler i ett drag.
+  /// Se kommentaren i _buildTable: SelectionArea överallt UTOM på web.
+  Widget _maybeSelectable(Widget child) => kIsWeb ? child : SelectionArea(child: child);
+
   Widget _buildTable(List<_TrafficRow> rows, List<ObjectModel> objects, Map<String, String> deviceZone) {
-    // OBS: ingen SelectionArea här. Den gav en trasig, ljusgrå ruta i
-    // stället för tabellen på webb-bygget (CanvasKit) — hela trafiken blev
-    // osynlig. Enskilda celler kan göras markerbara med SelectableText om
-    // det behövs, men SelectionArea runt hela den anpassade tabellen
-    // fungerar inte tillförlitligt på web.
+    // SelectionArea runt raderna gör hela loggen musmarkerbar — man kan dra
+    // över flera celler och kopiera med Ctrl+C. Cellerna förblir vanliga
+    // Text-widgetar, så kolumnernas baseline är kvar (SelectableText per
+    // cell reserverar extra utrymme för markör/handtag och gav ett synligt
+    // ojämnt radläge).
+    //
+    // Bara utanför web: på CanvasKit-bygget renderade SelectionArea runt den
+    // här anpassade tabellen en trasig ljusgrå ruta i stället för innehållet
+    // — hela trafiken blev osynlig. Desktop- och Android-byggena har inte
+    // det problemet, och det är där man faktiskt sitter och kopierar
+    // IP-adresser ur loggen.
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -626,10 +636,12 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                               child: Text(tr('conn.ingen_trafik_matchar_filtret'), style: TextStyle(color: Colors.grey, fontSize: 12)),
                             ),
                           )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            itemCount: rows.length,
-                            itemBuilder: (context, i) => _buildDataRow(rows[i], objects, deviceZone, widths),
+                        : _maybeSelectable(
+                            ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              itemCount: rows.length,
+                              itemBuilder: (context, i) => _buildDataRow(rows[i], objects, deviceZone, widths),
+                            ),
                           ),
                   ),
                 ],

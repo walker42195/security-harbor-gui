@@ -590,6 +590,10 @@ class InterfaceModel {
   final String gateway;
   final List<String> dnsServers;
   final int mtu;
+  /// Manuellt satt MAC-adress ("MAC-kloning"). Tomt = kortets brända adress
+  /// används. Främst för WAN: en del ISP:er binder abonnemanget till MAC:en
+  /// på den router som registrerades först.
+  final String macAddress;
   final DHCPConfigModel? dhcp;
 
   InterfaceModel({
@@ -605,6 +609,7 @@ class InterfaceModel {
     this.gateway = '',
     this.dnsServers = const [],
     this.mtu = 1500,
+    this.macAddress = '',
     this.dhcp,
   });
 
@@ -622,6 +627,7 @@ class InterfaceModel {
       gateway: json['gateway'] ?? '',
       dnsServers: List<String>.from(json['dns_servers'] ?? []),
       mtu: json['mtu'] ?? 1500,
+      macAddress: json['mac_address'] ?? '',
       dhcp: json['dhcp'] != null ? DHCPConfigModel.fromJson(json['dhcp']) : null,
     );
   }
@@ -639,10 +645,11 @@ class InterfaceModel {
         'gateway': gateway,
         'dns_servers': dnsServers,
         'mtu': mtu,
+        'mac_address': macAddress,
         if (dhcp != null) 'dhcp': dhcp!.toJson(),
       };
 
-  InterfaceModel copyWith({String? name, String? zone, DHCPConfigModel? dhcp}) => InterfaceModel(
+  InterfaceModel copyWith({String? name, String? zone, String? macAddress, DHCPConfigModel? dhcp}) => InterfaceModel(
         id: id,
         name: name ?? this.name,
         device: device,
@@ -655,6 +662,7 @@ class InterfaceModel {
         gateway: gateway,
         dnsServers: dnsServers,
         mtu: mtu,
+        macAddress: macAddress ?? this.macAddress,
         dhcp: dhcp ?? this.dhcp,
       );
 }
@@ -1211,6 +1219,15 @@ class SettingsModel {
         'rollback_timeout_sec': rollbackTimeoutSec,
         'allowed_management_lan': allowedManagementLan,
       };
+
+  SettingsModel copyWith({String? hostname, int? apiPort, String? mode, int? rollbackTimeoutSec, List<String>? allowedManagementLan}) =>
+      SettingsModel(
+        hostname: hostname ?? this.hostname,
+        apiPort: apiPort ?? this.apiPort,
+        mode: mode ?? this.mode,
+        rollbackTimeoutSec: rollbackTimeoutSec ?? this.rollbackTimeoutSec,
+        allowedManagementLan: allowedManagementLan ?? this.allowedManagementLan,
+      );
 }
 
 class ConntrackModel {

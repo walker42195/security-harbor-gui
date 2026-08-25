@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -198,9 +199,13 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                             child: Text(tr('sec.inga_larm_matchar_filtret'), style: TextStyle(color: Colors.white38, fontSize: 12)),
                           )
                         else
+                          // Samma skäl som i Loggning-vyn: man vill kunna
+                          // dra ut en IP-adress eller ett signaturnamn ur
+                          // tabellen med musen. SelectionArea hoppas över på
+                          // web, där den renderar tabellen som en tom ruta.
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            child: DataTable(
+                            child: _maybeSelectable(DataTable(
                               headingRowHeight: 34,
                               dataRowMinHeight: 32,
                               dataRowMaxHeight: 32,
@@ -236,7 +241,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                                         ],
                                       ))
                                   .toList(),
-                            ),
+                            )),
                           ),
                       ],
                     );
@@ -626,3 +631,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     );
   }
 }
+
+/// SelectionArea överallt utom på web (där CanvasKit renderar den anpassade
+/// tabellen som en tom ljusgrå ruta i stället för innehållet).
+Widget _maybeSelectable(Widget child) => kIsWeb ? child : SelectionArea(child: child);
