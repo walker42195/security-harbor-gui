@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import '../widgets/dialog_helpers.dart';
+import '../localization.dart';
 
 class PoliciesScreen extends StatefulWidget {
   const PoliciesScreen({super.key});
@@ -11,7 +12,16 @@ class PoliciesScreen extends StatefulWidget {
   State<PoliciesScreen> createState() => _PoliciesScreenState();
 }
 
-const List<String> _policyColLabels = ['#', 'Action', 'Policy Name', 'Type / Service', 'From (Källa)', 'To (Mål)', 'Port', 'Åtgärder'];
+List<String> _policyColLabels() => [
+  '#',
+  tr('pol.col_action'),
+  tr('pol.col_policy_name'),
+  tr('pol.col_type_service'),
+  tr('pol.col_from'),
+  tr('pol.col_to'),
+  tr('pol.col_port'),
+  tr('pol.col_atgarder'),
+];
 const List<double> _policyDefaultColWidths = [28, 70, 160, 90, 150, 150, 70, 160];
 const double _policyColMinWidth = 28;
 const double _policyResizeHandleWidth = 14;
@@ -123,7 +133,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           for (int i = 0; i < widths.length; i++) ...[
             SizedBox(
               width: widths[i],
-              child: Text(_policyColLabels[i], style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+              child: Text(_policyColLabels()[i], style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
             ),
             _resizeHandle(i),
           ],
@@ -156,20 +166,19 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                const Row(
+                Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.shield_outlined, color: Colors.cyanAccent, size: 20),
                     SizedBox(width: 8),
-                    Text(
-                      'Firewall Policies & Rules',
+                    Text(tr('pol.firewall_policies_rules'),
                       style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.add, size: 16, color: Colors.cyanAccent),
-                  label: const Text('Ny Policy', style: TextStyle(fontSize: 12, color: Colors.white)),
+                  label: Text(tr('pol.ny_policy'), style: TextStyle(fontSize: 12, color: Colors.white)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     side: const BorderSide(color: Colors.cyanAccent),
@@ -183,7 +192,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 if (!(cfg?.settings.isHostMode ?? false))
                   OutlinedButton.icon(
                     icon: const Icon(Icons.input, size: 16, color: Colors.lightBlueAccent),
-                    label: const Text('+ Port Forwarding (DNAT)', style: TextStyle(fontSize: 12, color: Colors.white)),
+                    label: Text(tr('pol.port_forwarding_dnat'), style: TextStyle(fontSize: 12, color: Colors.white)),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       side: const BorderSide(color: Colors.lightBlueAccent),
@@ -192,7 +201,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   ),
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
-                  tooltip: 'Uppdatera träffräknare (Hit Counters)',
+                  tooltip: tr('pol.uppdatera_traffraknare_hit_counters'),
                   onPressed: _loadHitCounts,
                 ),
               ],
@@ -210,9 +219,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: (cfg == null || cfg.policies.isEmpty)
-                  ? const Center(
-                      child: Text(
-                        'Inga brandväggsregler definierade. Default Deny gäller mellan alla zoner.',
+                  ? Center(
+                      child: Text(tr('pol.inga_brandvaggsregler_definierade_default_deny_galler'),
                         style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                     )
@@ -245,25 +253,21 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                                       if (idx == cfg.policies.length) {
                                         return _buildDefaultDenyRow(
                                           widths,
-                                          name: 'Neka all inkommande från internet (standard)',
+                                          name: tr('pol.deny_wan_name'),
                                           from: 'WAN',
                                           to: 'SELF / LAN',
                                           hitKey: null,
-                                          tooltip: 'Inbyggd standardregel – kan inte flyttas, ändras eller tas bort.\n'
-                                              'Släpper tyst all oombedd inkommande trafik från internet (WAN) mot brandväggen och interna nät. '
-                                              'Svar på anslutningar som startats inifrån släpps ändå igenom (established/related). '
-                                              'Loggas inte, för att internetbrus/portscan inte ska fylla loggen.',
+                                          tooltip: tr('pol.default_deny_wan_tooltip'),
                                         );
                                       }
                                       if (idx == cfg.policies.length + 1) {
                                         return _buildDefaultDenyRow(
                                           widths,
-                                          name: 'Neka all övrig trafik (standard)',
+                                          name: tr('pol.deny_all_name'),
                                           from: 'ANY',
                                           to: 'ANY',
                                           hitKey: 'DefaultDeny',
-                                          tooltip: 'Inbyggd standardregel – kan inte flyttas, ändras eller tas bort.\n'
-                                              'Allt som ingen Allow-policy ovanför släppt igenom nekas här (t.ex. LAN→WAN, trafik mellan zoner).',
+                                          tooltip: tr('pol.default_deny_all_tooltip'),
                                         );
                                       }
                                       return _buildPolicyDataRow(context, provider, cfg, idx, widths);
@@ -296,10 +300,10 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     final actionLabel = isDNAT
         ? 'DNAT'
         : isAllow
-            ? 'Allow'
+            ? tr('pol.allow_short')
             : isReject
-                ? 'Reject'
-                : 'Deny';
+                ? tr('pol.reject_short')
+                : tr('pol.deny');
     final actionColor = isDNAT
         ? Colors.lightBlueAccent
         : isAllow
@@ -334,8 +338,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       ),
       Tooltip(
         message: pol.protected
-            ? '${pol.name}\n\nSkyddad policy — kan inte inaktiveras eller tas bort. ${pol.description}'
-            : 'Träffar: ${_hitCountFor(pol.name).$1} paket, ${_hitCountFor(pol.name).$2} bytes',
+            ? trp('pol.protected_policy_tooltip', {'name': pol.name, 'desc': pol.description})
+            : trp('pol.hit_count', {'packets': '${_hitCountFor(pol.name).$1}', 'bytes': '${_hitCountFor(pol.name).$2}'}),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -374,14 +378,14 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
             icon: const Icon(Icons.arrow_upward, size: 13, color: Colors.grey),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            tooltip: 'Flytta upp (högre prioritet)',
+            tooltip: tr('pol.flytta_upp_hogre_prioritet'),
             onPressed: idx == 0 ? null : () => _movePolicy(provider, cfg, idx, idx - 1),
           ),
           IconButton(
             icon: const Icon(Icons.arrow_downward, size: 13, color: Colors.grey),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            tooltip: 'Flytta ner (lägre prioritet)',
+            tooltip: tr('pol.flytta_ner_lagre_prioritet'),
             onPressed: idx == cfg.policies.length - 1 ? null : () => _movePolicy(provider, cfg, idx, idx + 1),
           ),
           const SizedBox(width: 4),
@@ -389,7 +393,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
             icon: const Icon(Icons.edit, size: 14, color: Colors.cyanAccent),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            tooltip: 'Redigera Policy Properties',
+            tooltip: tr('pol.redigera_policy_properties'),
             onPressed: () => _showEditPolicyDialog(context, provider, cfg, idx),
           ),
           const SizedBox(width: 8),
@@ -397,7 +401,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
             icon: Icon(Icons.delete_outline, size: 14, color: pol.protected ? Colors.white24 : Colors.redAccent),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            tooltip: pol.protected ? 'Skyddad policy — kan inte tas bort' : 'Ta bort Policy',
+            tooltip: pol.protected ? tr('pol.skyddad_policy_kan_inte_tas_bort') : tr('pol.ta_bort_policy'),
             onPressed: pol.protected ? () => _showProtectedPolicyNotice(context, pol.name) : () => _deletePolicy(context, provider, cfg, idx),
           ),
           const SizedBox(width: 8),
@@ -451,17 +455,17 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   }) {
     const denyColor = Colors.redAccent;
     final nameTooltip = hitKey == null
-        ? 'Loggas inte (tyst drop)'
-        : 'Träffar: ${_hitCountFor(hitKey).$1} paket, ${_hitCountFor(hitKey).$2} bytes';
+        ? tr('pol.loggas_inte_tyst_drop')
+        : trp('pol.hit_count', {'packets': '${_hitCountFor(hitKey).$1}', 'bytes': '${_hitCountFor(hitKey).$2}'});
     final cells = <Widget>[
       const Icon(Icons.lock, size: 13, color: Colors.grey),
       Row(
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           Icon(Icons.block, size: 15, color: denyColor),
           SizedBox(width: 4),
           Flexible(
-            child: Text('Deny', overflow: TextOverflow.ellipsis,
+            child: Text(tr('pol.deny'), overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: denyColor, fontSize: 11, fontWeight: FontWeight.bold)),
           ),
         ],
@@ -472,18 +476,18 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
       ),
-      const Text('ANY', overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+      Text(tr('pol.any'), overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.cyanAccent, fontSize: 11)),
       _truncatedCell(from),
       _truncatedCell(to),
-      const Text('any', overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.amber, fontSize: 11)),
+      Text(tr('pol.any_2'), overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.amber, fontSize: 11)),
       Tooltip(
         message: tooltip,
-        child: const Row(
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.lock_outline, size: 14, color: Colors.grey),
             SizedBox(width: 6),
-            Text('Låst', style: TextStyle(color: Colors.grey, fontSize: 11, fontStyle: FontStyle.italic)),
+            Text(tr('pol.last'), style: TextStyle(color: Colors.grey, fontSize: 11, fontStyle: FontStyle.italic)),
           ],
         ),
       ),
@@ -558,9 +562,9 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   }
 
   String _dayLabel(String enDay) {
-    const labels = {
-      'Monday': 'Mån', 'Tuesday': 'Tis', 'Wednesday': 'Ons', 'Thursday': 'Tors',
-      'Friday': 'Fre', 'Saturday': 'Lör', 'Sunday': 'Sön',
+    final labels = {
+      'Monday': tr('pol.day_mon'), 'Tuesday': tr('pol.day_tue'), 'Wednesday': tr('pol.day_wed'), 'Thursday': tr('pol.day_thu'),
+      'Friday': tr('pol.day_fri'), 'Saturday': tr('pol.day_sat'), 'Sunday': tr('pol.day_sun'),
     };
     return labels[enDay] ?? enDay;
   }
@@ -576,7 +580,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           child: TextField(
             controller: ctrl,
             style: const TextStyle(fontSize: 12, color: Colors.white),
-            decoration: const InputDecoration(isDense: true, hintText: 'HH:MM', contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
+            decoration: InputDecoration(isDense: true, hintText: tr('pol.hh_mm'), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
           ),
         ),
       ],
@@ -607,23 +611,22 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         title: Row(
-          children: const [
+          children: [
             Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
             SizedBox(width: 8),
-            Text('Är du säker?', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+            Text(tr('pol.ar_du_saker'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
-          '"$policyName" styr kritisk åtkomst till brandväggen själv. Om du $actionVerb den kan du bli utelåst från detta gränssnitt via nätverket.\n\n'
-          'Se till att du har en annan väg in (t.ex. tangentbord och skärm, eller seriekonsol) innan du fortsätter.',
+          trp('pol.critical_change_body', {'name': policyName, 'verb': actionVerb}),
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('pol.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Ja, jag är säker', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            child: Text(tr('pol.ja_jag_ar_saker'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -657,20 +660,18 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       builder: (dctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
         title: Row(
-          children: const [
+          children: [
             Icon(Icons.lock, color: Colors.amber, size: 20),
             SizedBox(width: 8),
-            Text('Skyddad policy', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+            Text(tr('pol.skyddad_policy'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
-          '"$policyName" kan inte inaktiveras eller tas bort. Det är den enda vägen in i GUI:t, '
-          'utan en text-baserad reservväg som SSH — att stänga av den skulle riskera att låsa ute '
-          'administratören helt.',
+          trp('pol.protected_notice_body', {'name': policyName}),
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dctx), child: const Text('OK')),
+          TextButton(onPressed: () => Navigator.pop(dctx), child: Text(tr('pol.ok'))),
         ],
       ),
     );
@@ -685,7 +686,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     if (pol.critical) {
       // Kritiska regler har sin egen, strängare bekräftelse (utelåsnings-
       // varning) — den räcker, ingen extra dialog ovanpå.
-      final confirmed = await _confirmCriticalChange(context, pol.name, 'tar bort');
+      final confirmed = await _confirmCriticalChange(context, pol.name, tr('pol.verb_tar_bort'));
       if (!confirmed) return;
     } else {
       // Bekräfta ALLA borttagningar, inte bara kritiska — en råkad delete
@@ -697,20 +698,17 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         context: context,
         builder: (dctx) => AlertDialog(
           backgroundColor: const Color(0xFF1E293B),
-          title: const Text('Ta bort regeln?', style: TextStyle(color: Colors.white, fontSize: 14)),
+          title: Text(tr('pol.ta_bort_regeln'), style: TextStyle(color: Colors.white, fontSize: 14)),
           content: Text(
-            'Vill du ta bort regeln "${pol.name}"?\n\n'
-            'Ändringen sparas i kandidaten men slår inte igenom på brandväggen '
-            'förrän du trycker Applicera. Innan dess kan du ångra med '
-            '"Ångra ändringar".',
+            trp('pol.delete_rule_body', {'name': pol.name}),
             style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dctx, false), child: const Text('Avbryt')),
+            TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('pol.avbryt'))),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(dctx, true),
-              child: const Text('Ta bort'),
+              child: Text(tr('pol.ta_bort')),
             ),
           ],
         ),
@@ -730,7 +728,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
       return;
     }
     if (cur.critical && !enabled) {
-      final confirmed = await _confirmCriticalChange(context, cur.name, 'inaktiverar');
+      final confirmed = await _confirmCriticalChange(context, cur.name, tr('pol.verb_inaktiverar'));
       if (!confirmed) return;
     }
     final updatedPolicies = List<PolicyModel>.from(cfg.policies);
@@ -762,7 +760,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     final isEditing = policyIndex != null && cfg != null;
     final pol = isEditing ? cfg.policies[policyIndex] : null;
 
-    final nameCtrl = TextEditingController(text: pol?.name ?? 'Ny Brandväggsregel');
+    final nameCtrl = TextEditingController(text: pol?.name ?? tr('pol.ny_brandvaggsregel'));
     bool enabled = pol?.enabled ?? true;
     String action = pol?.action ?? 'accept';
 
@@ -838,7 +836,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      isEditing ? 'Edit Policy Properties' : 'Add Policy Properties',
+                      isEditing ? tr('pol.edit_policy_properties') : tr('pol.add_policy_properties'),
                       style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                     IconButton(
@@ -852,7 +850,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 // Name & Enable Checkbox
                 Row(
                   children: [
-                    const Text('Name: ', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    Text(tr('pol.name'), style: TextStyle(color: Colors.white, fontSize: 12)),
                     Expanded(
                       child: SizedBox(
                         height: 32,
@@ -878,21 +876,20 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                               : (v) async {
                                   final newVal = v ?? false;
                                   if (pol != null && pol.critical && enabled && !newVal) {
-                                    final confirmed = await _confirmCriticalChange(context, pol.name, 'inaktiverar');
+                                    final confirmed = await _confirmCriticalChange(context, pol.name, tr('pol.verb_inaktiverar'));
                                     if (!confirmed) return;
                                   }
                                   setState(() => enabled = newVal);
                                 },
                         ),
-                        Text(
-                          'Enable',
+                        Text(tr('pol.enable'),
                           style: TextStyle(color: (pol?.protected ?? false) ? Colors.white38 : Colors.white, fontSize: 12),
                         ),
                         if (pol?.protected ?? false) ...[
                           const SizedBox(width: 6),
-                          const Tooltip(
-                            message: 'Skyddad policy — kan inte inaktiveras, det är den enda vägen in i GUI:t.',
-                            child: Icon(Icons.lock, size: 14, color: Colors.amber),
+                          Tooltip(
+                            message: tr('pol.protected_policy_disable_tooltip'),
+                            child: const Icon(Icons.lock, size: 14, color: Colors.amber),
                           ),
                         ],
                       ],
@@ -904,9 +901,9 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 // Flikar (Policy, Properties, Advanced)
                 Row(
                   children: [
-                    _buildTabButton('Policy', 0, selectedTab, (idx) => setState(() => selectedTab = idx)),
-                    _buildTabButton('Properties / Portar', 1, selectedTab, (idx) => setState(() => selectedTab = idx)),
-                    _buildTabButton('Advanced', 2, selectedTab, (idx) => setState(() => selectedTab = idx)),
+                    _buildTabButton(tr('pol.tab_policy'), 0, selectedTab, (idx) => setState(() => selectedTab = idx)),
+                    _buildTabButton(tr('pol.tab_properties'), 1, selectedTab, (idx) => setState(() => selectedTab = idx)),
+                    _buildTabButton(tr('pol.tab_advanced'), 2, selectedTab, (idx) => setState(() => selectedTab = idx)),
                   ],
                 ),
                 const Divider(color: Colors.white24, height: 1),
@@ -916,15 +913,15 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   // Action Selector
                   Row(
                     children: [
-                      Text('${nameCtrl.text} connections are... ', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                      Text(trp('pol.connections_are', {'name': nameCtrl.text}), style: const TextStyle(color: Colors.grey, fontSize: 11)),
                       const SizedBox(width: 8),
                       DropdownButton<String>(
                         value: action,
                         dropdownColor: const Color(0xFF1E293B),
                         style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                        items: const [
-                          DropdownMenuItem(value: 'accept', child: Text('Allowed', style: TextStyle(color: Colors.tealAccent))),
-                          DropdownMenuItem(value: 'drop', child: Text('Denied (Drop)', style: TextStyle(color: Colors.redAccent))),
+                        items: [
+                          DropdownMenuItem(value: 'accept', child: Text(tr('pol.allowed'), style: TextStyle(color: Colors.tealAccent))),
+                          DropdownMenuItem(value: 'drop', child: Text(tr('pol.denied_drop'), style: TextStyle(color: Colors.redAccent))),
                           // Reject fanns redan i backend-datamodellen men
                           // genererade tidigare ingen regel alls; sedan
                           // 2026-08-20 renderas den som ett riktigt
@@ -932,8 +929,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           // den kan erbjudas här. Skillnad mot Drop:
                           // avsändaren får ett tydligt avslag direkt i
                           // stället för att vänta ut en timeout.
-                          DropdownMenuItem(value: 'reject', child: Text('Denied (Reject)', style: TextStyle(color: Colors.orangeAccent))),
-                          DropdownMenuItem(value: 'dnat', child: Text('DNAT (Port Forward)', style: TextStyle(color: Colors.lightBlueAccent))),
+                          DropdownMenuItem(value: 'reject', child: Text(tr('pol.denied_reject'), style: TextStyle(color: Colors.orangeAccent))),
+                          DropdownMenuItem(value: 'dnat', child: Text(tr('pol.dnat_port_forward'), style: TextStyle(color: Colors.lightBlueAccent))),
                         ],
                         onChanged: (v) => setState(() => action = v ?? 'accept'),
                       ),
@@ -944,7 +941,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   // From Box
                   _buildMemberBox(
                     context: context,
-                    title: 'From (Källadresser / Zoner)',
+                    title: tr('pol.from_title'),
                     members: fromMembers,
                     onAdd: () async {
                       final selected = await _showAddressPicker(context, cfg, fromMembers);
@@ -965,9 +962,9 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     child: _buildMemberBox(
                       context: context,
                       title: local
-                          ? 'To (används INTE — regeln gäller brandväggen själv)'
-                          : 'To (Måladresser / Zoner)',
-                      members: local ? ['Brandväggen själv'] : toMembers,
+                          ? tr('pol.to_title_local')
+                          : tr('pol.to_title'),
+                      members: local ? [tr('pol.brandvaggen_sjalv')] : toMembers,
                       onAdd: local
                           ? () {}
                           : () async {
@@ -995,12 +992,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                         Expanded(
                           child: Text(
                             local
-                                ? 'PÅ: regeln gäller trafik TILL brandväggen själv — att nå brandväggens '
-                                    'egen IP, t.ex. pinga eller SSH:a TILL brandväggen. "To"-fältet ovan '
-                                    'används inte. (Detta styr INTE trafik ut genom brandväggen.)'
-                                : 'AV: regeln gäller trafik GENOM brandväggen, från "From" till "To" — '
-                                    't.ex. att en LAN-enhet pingar ut mot internet. (Detta styr INTE om man '
-                                    'kan pinga brandväggen själv — bocka i rutan för det.)',
+                                ? tr('pol.local_on_note')
+                                : tr('pol.local_off_note'),
                             style: const TextStyle(color: Colors.white70, fontSize: 11),
                           ),
                         ),
@@ -1016,17 +1009,17 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Port Forwarding (DNAT) Parametrar:', style: TextStyle(color: Colors.lightBlueAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                          Text(tr('pol.port_forwarding_dnat_parametrar'), style: TextStyle(color: Colors.lightBlueAccent, fontSize: 11, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              Expanded(child: TextField(controller: extPortCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'WAN Port', isDense: true))),
+                              Expanded(child: TextField(controller: extPortCtrl, style: TextStyle(fontSize: 11, color: Colors.white), decoration: InputDecoration(labelText: tr('pol.wan_port'), isDense: true))),
                               const SizedBox(width: 8),
-                              Expanded(child: TextField(controller: intIpCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Intern IP', isDense: true))),
+                              Expanded(child: TextField(controller: intIpCtrl, style: TextStyle(fontSize: 11, color: Colors.white), decoration: InputDecoration(labelText: tr('pol.intern_ip'), isDense: true))),
                               const SizedBox(width: 8),
-                              Expanded(child: TextField(controller: intPortCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Intern Port', isDense: true))),
+                              Expanded(child: TextField(controller: intPortCtrl, style: TextStyle(fontSize: 11, color: Colors.white), decoration: InputDecoration(labelText: tr('pol.intern_port'), isDense: true))),
                               const SizedBox(width: 8),
-                              Expanded(child: TextField(controller: protoCtrl, style: const TextStyle(fontSize: 11, color: Colors.white), decoration: const InputDecoration(labelText: 'Protokoll', isDense: true))),
+                              Expanded(child: TextField(controller: protoCtrl, style: TextStyle(fontSize: 11, color: Colors.white), decoration: InputDecoration(labelText: tr('pol.protokoll'), isDense: true))),
                             ],
                           ),
                         ],
@@ -1034,22 +1027,22 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     ),
                   ],
                 ] else if (selectedTab == 1) ...[
-                  const Text('Förinställd Tjänst / Protokoll:', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  Text(tr('pol.forinstalld_tjanst_protokoll'), style: TextStyle(color: Colors.white, fontSize: 12)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     initialValue: selectedServicePreset,
                     dropdownColor: const Color(0xFF1E293B),
                     style: const TextStyle(color: Colors.white, fontSize: 12),
                     decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4), border: OutlineInputBorder()),
-                    items: const [
-                      DropdownMenuItem(value: 'ANY', child: Text('ANY (Alla tjänster & portar)')),
-                      DropdownMenuItem(value: 'HTTP', child: Text('HTTP (TCP 80)')),
-                      DropdownMenuItem(value: 'HTTPS', child: Text('HTTPS (TCP 443)')),
-                      DropdownMenuItem(value: 'SSH', child: Text('SSH (TCP 22)')),
-                      DropdownMenuItem(value: 'DNS', child: Text('DNS (UDP 53)')),
-                      DropdownMenuItem(value: 'RDP', child: Text('RDP (TCP 3389)')),
-                      DropdownMenuItem(value: 'ICMP', child: Text('ICMP (Ping)')),
-                      DropdownMenuItem(value: 'CUSTOM', child: Text('+ Anpassad Port / Protokoll (Skriv själv t.ex. 7201)', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold))),
+                    items: [
+                      DropdownMenuItem(value: 'ANY', child: Text(tr('pol.any_alla_tjanster_portar'))),
+                      DropdownMenuItem(value: 'HTTP', child: Text(tr('pol.http_tcp_80'))),
+                      DropdownMenuItem(value: 'HTTPS', child: Text(tr('pol.https_tcp_443'))),
+                      DropdownMenuItem(value: 'SSH', child: Text(tr('pol.ssh_tcp_22'))),
+                      DropdownMenuItem(value: 'DNS', child: Text(tr('pol.dns_udp_53'))),
+                      DropdownMenuItem(value: 'RDP', child: Text(tr('pol.rdp_tcp_3389'))),
+                      DropdownMenuItem(value: 'ICMP', child: Text(tr('pol.icmp_ping'))),
+                      DropdownMenuItem(value: 'CUSTOM', child: Text(tr('pol.anpassad_port_protokoll_skriv_sjalv_t'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold))),
                     ],
                     onChanged: (v) {
                       if (v != null) {
@@ -1063,15 +1056,15 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     },
                   ),
                   const SizedBox(height: 12),
-                  const Text('Anpassat Portnummer eller Protokoll (skriv in valfri port, t.ex. 7201):', style: TextStyle(color: Colors.cyanAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text(tr('pol.anpassat_portnummer_eller_protokoll_skriv_in'), style: TextStyle(color: Colors.cyanAccent, fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   SizedBox(
                     height: 36,
                     child: TextField(
                       controller: customPortCtrl,
                       style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
-                      decoration: const InputDecoration(
-                        hintText: 't.ex. 7201 eller tcp:7201 eller udp:5000 eller 7000-8000 eller 80,443,TCP:8000-8100,UDP:53',
+                      decoration: InputDecoration(
+                        hintText: tr('pol.t_ex_7201_eller_tcp_7201'),
                         hintStyle: TextStyle(color: Colors.grey, fontSize: 11),
                         contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         border: OutlineInputBorder(),
@@ -1084,15 +1077,12 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Exempel: "7201" för TCP port 7201, "udp:5000" för UDP port 5000, "icmp" för Ping, '
-                    '"80,443,8000-8100" för flera TCP-portar/intervall i samma regel, eller '
-                    '"TCP:53,TCP:80,UDP:53" för att blanda TCP och UDP (en del utan eget tcp:/udp:-prefix '
-                    'ärver protokollet från föregående del).',
-                    style: TextStyle(color: Colors.grey, fontSize: 10),
+                  Text(
+                    tr('pol.custom_port_example'),
+                    style: const TextStyle(color: Colors.grey, fontSize: 10),
                   ),
                 ] else ...[
-                  const Text('Schema (Fas 7 — tidsstyrd regel)', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text(tr('pol.schema_fas_7_tidsstyrd_regel'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -1103,14 +1093,14 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        scheduleEnabled ? 'Aktiv bara under angivna dagar/tider' : 'Alltid aktiv (inget schema)',
+                        scheduleEnabled ? tr('pol.schedule_active_note') : tr('pol.schedule_always_active'),
                         style: TextStyle(color: scheduleEnabled ? Colors.tealAccent : Colors.grey, fontSize: 11),
                       ),
                     ],
                   ),
                   if (scheduleEnabled) ...[
                     const SizedBox(height: 10),
-                    const Text('Veckodagar', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                    Text(tr('pol.veckodagar'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
                     Wrap(
                       spacing: 6,
@@ -1134,9 +1124,9 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        Expanded(child: _dialogTimeField('Från (HH:MM)', scheduleStartCtrl)),
+                        Expanded(child: _dialogTimeField(tr('pol.fran_hh_mm'), scheduleStartCtrl)),
                         const SizedBox(width: 10),
-                        Expanded(child: _dialogTimeField('Till (HH:MM)', scheduleEndCtrl)),
+                        Expanded(child: _dialogTimeField(tr('pol.till_hh_mm'), scheduleEndCtrl)),
                       ],
                     ),
                   ],
@@ -1149,7 +1139,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   children: [
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
-                      child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      child: Text(tr('pol.ok'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                       onPressed: () {
                         if (cfg != null) {
                           NATConfigModel? updatedNAT;
@@ -1214,7 +1204,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                                     name: m,
                                     type: m.contains('/') ? 'network' : 'host',
                                     values: [m],
-                                    description: 'Automatiskt skapad från policy-editorns "Ange egen IP"-fält',
+                                    description: tr('pol.auto_created_desc'),
                                   );
                                   newObjects.add(obj);
                                 }
@@ -1250,23 +1240,19 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           }
 
                           if (srcMatchedObjs.length > 1 || dstMatchedObjs.length > 1) {
-                            final side = srcMatchedObjs.length > 1 ? 'Källa' : 'Mål';
+                            final side = srcMatchedObjs.length > 1 ? tr('pol.kalla_side') : tr('pol.mal_side');
                             final names = (srcMatchedObjs.length > 1 ? srcMatchedObjs : dstMatchedObjs).join(', ');
                             showDialog(
                               context: context,
                               builder: (dctx) => AlertDialog(
                                 backgroundColor: const Color(0xFF1E293B),
-                                title: const Text('Flera objekt valda', style: TextStyle(color: Colors.white, fontSize: 14)),
+                                title: Text(tr('pol.flera_objekt_valda'), style: TextStyle(color: Colors.white, fontSize: 14)),
                                 content: Text(
-                                  'Du har valt $side objekt: $names.\n\n'
-                                  'En regel kan bara referera ETT objekt direkt.\n\n'
-                                  'Skapa istället en Grupp under Objekt-vyn som innehåller $names, '
-                                  'och välj den gruppen här - brandväggen matchar mot alla objekt i '
-                                  'gruppen samtidigt.',
+                                  trp('pol.multi_object_body', {'side': side, 'names': names}),
                                   style: const TextStyle(color: Colors.white70, fontSize: 12),
                                 ),
                                 actions: [
-                                  TextButton(onPressed: () => Navigator.pop(dctx), child: const Text('OK, jag fixar det')),
+                                  TextButton(onPressed: () => Navigator.pop(dctx), child: Text(tr('pol.ok_jag_fixar_det'))),
                                 ],
                               ),
                             );
@@ -1321,7 +1307,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     const SizedBox(width: 8),
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
-                      child: const Text('Cancel', style: TextStyle(fontSize: 12)),
+                      child: Text(tr('pol.cancel'), style: TextStyle(fontSize: 12)),
                       onPressed: () => Navigator.pop(ctx),
                     ),
                   ],
@@ -1378,7 +1364,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
             padding: const EdgeInsets.all(6),
             color: const Color(0xFF0F172A),
             child: members.isEmpty
-                ? const Text('Inga adresser tillagda', style: TextStyle(color: Colors.grey, fontSize: 11))
+                ? Text(tr('pol.inga_adresser_tillagda'), style: TextStyle(color: Colors.grey, fontSize: 11))
                 : ListView.builder(
                     itemCount: members.length,
                     itemBuilder: (ctx, i) {
@@ -1406,7 +1392,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
               children: [
                 OutlinedButton.icon(
                   icon: const Icon(Icons.add, size: 12),
-                  label: const Text('Add...', style: TextStyle(fontSize: 11)),
+                  label: Text(tr('pol.add'), style: TextStyle(fontSize: 11)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     minimumSize: Size.zero,
@@ -1469,9 +1455,9 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Add Address / Member', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                Text(tr('pol.add_address_member'), style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
-                const Text('Available Members:', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                Text(tr('pol.available_members'), style: TextStyle(color: Colors.grey, fontSize: 11)),
                 const SizedBox(height: 4),
                 // Sökrutan filtrerar listan direkt vid varje knapptryck (redan
                 // från första bokstaven) - inget Enter-tryck krävs.
@@ -1482,7 +1468,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     autofocus: true,
                     style: const TextStyle(fontSize: 11, color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Sök...',
+                      hintText: tr('pol.sok'),
                       prefixIcon: const Icon(Icons.search, size: 14, color: Colors.grey),
                       prefixIconConstraints: const BoxConstraints(minWidth: 30, minHeight: 30),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1498,7 +1484,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   child: Container(
                     decoration: BoxDecoration(border: Border.all(color: const Color(0xFF334155)), color: const Color(0xFF0F172A)),
                     child: filtered.isEmpty
-                        ? const Center(child: Text('Inga träffar', style: TextStyle(color: Colors.grey, fontSize: 11)))
+                        ? Center(child: Text(tr('pol.inga_traffar'), style: TextStyle(color: Colors.grey, fontSize: 11)))
                         : ListView.builder(
                             itemCount: filtered.length,
                             itemBuilder: (c, idx) {
@@ -1527,8 +1513,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                         child: TextField(
                           controller: customCtrl,
                           style: const TextStyle(fontSize: 11, color: Colors.white),
-                          decoration: const InputDecoration(
-                            hintText: 'Ange egen IP eller subnet (t.ex. 10.13.13.14)',
+                          decoration: InputDecoration(
+                            hintText: tr('pol.ange_egen_ip_eller_subnet_t'),
                             contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             border: OutlineInputBorder(),
                           ),
@@ -1546,12 +1532,12 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           });
                         }
                       },
-                      child: const Text('Add Other', style: TextStyle(fontSize: 11)),
+                      child: Text(tr('pol.add_other'), style: TextStyle(fontSize: 11)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Text('Selected Members and Addresses:', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                Text(tr('pol.selected_members_and_addresses'), style: TextStyle(color: Colors.grey, fontSize: 11)),
                 const SizedBox(height: 4),
                 Container(
                   height: 90,
@@ -1579,13 +1565,13 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
                       onPressed: () => Navigator.pop(ctx, selected),
-                      child: const Text('OK', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                      child: Text(tr('pol.ok'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(width: 8),
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
                       onPressed: () => Navigator.pop(ctx, null),
-                      child: const Text('Cancel', style: TextStyle(fontSize: 11)),
+                      child: Text(tr('pol.cancel'), style: TextStyle(fontSize: 11)),
                     ),
                   ],
                 ),
@@ -1619,36 +1605,36 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                dialogTitleRow(context, 'Skapa Port Forwarding (DNAT)', () => Navigator.pop(ctx)),
+                dialogTitleRow(context, tr('pol.skapa_port_forwarding'), () => Navigator.pop(ctx)),
                 const SizedBox(height: 12),
 
-                dialogSection(title: 'REGEL', children: [
-                  dialogField(nameCtrl, 'Regelnamn'),
+                dialogSection(title: tr('pol.section_regel'), children: [
+                  dialogField(nameCtrl, tr('pol.regelnamn')),
                 ]),
                 const SizedBox(height: 12),
 
-                dialogSection(title: 'EXTERN (WAN)', children: [
-                  dialogField(extPortCtrl, 'Extern port på WAN', hint: 't.ex. 443'),
+                dialogSection(title: tr('pol.section_extern'), children: [
+                  dialogField(extPortCtrl, tr('pol.extern_port_wan'), hint: 't.ex. 443'),
                 ]),
                 const SizedBox(height: 12),
 
-                dialogSection(title: 'INTERN (LAN)', children: [
-                  dialogField(intIpCtrl, 'Intern mål-IP', hint: 't.ex. 192.168.10.10'),
+                dialogSection(title: tr('pol.section_intern'), children: [
+                  dialogField(intIpCtrl, tr('pol.intern_mal_ip'), hint: 't.ex. 192.168.10.10'),
                   const SizedBox(height: 12),
-                  dialogField(intPortCtrl, 'Intern målport', hint: 't.ex. 443'),
+                  dialogField(intPortCtrl, tr('pol.intern_malport'), hint: 't.ex. 443'),
                   const SizedBox(height: 12),
-                  dialogField(protoCtrl, 'Protokoll (tcp/udp)'),
+                  dialogField(protoCtrl, tr('pol.protokoll_tcp_udp')),
                 ]),
                 const SizedBox(height: 16),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('pol.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
-                    child: const Text('Spara DNAT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: Text(tr('pol.spara_dnat'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     onPressed: () {
                       if (cfg != null) {
                         final extP = int.tryParse(extPortCtrl.text) ?? 443;
