@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
+import '../localization.dart';
 
 class DnsScreen extends StatefulWidget {
   const DnsScreen({super.key});
@@ -32,7 +33,7 @@ class _DnsScreenState extends State<DnsScreen> {
       setState(() => _refreshingIds.remove(src.id));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ok ? '"${src.name}" uppdaterad' : 'Misslyckades uppdatera "${src.name}" — se felmeddelande på källan'),
+          content: Text(ok ? trp('dns.blocklist_updated', {'name': src.name}) : trp('dns.blocklist_update_failed', {'name': src.name})),
           backgroundColor: ok ? Colors.teal : Colors.red,
         ),
       );
@@ -57,7 +58,7 @@ class _DnsScreenState extends State<DnsScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: Text('Blockerade domäner — ${src.name} (${domains.length})',
+                    child: Text(trp('dns.blocked_domains_title', {'name': src.name, 'count': '${domains.length}'}),
                         style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                   ),
                   IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),
@@ -66,7 +67,7 @@ class _DnsScreenState extends State<DnsScreen> {
               const SizedBox(height: 10),
               Expanded(
                 child: domains.isEmpty
-                    ? const Center(child: Text('Inga domäner hämtade ännu.', style: TextStyle(color: Colors.grey, fontSize: 12)))
+                    ? Center(child: Text(tr('dns.inga_domaner_hamtade_annu'), style: TextStyle(color: Colors.grey, fontSize: 12)))
                     : Container(
                         decoration: BoxDecoration(color: const Color(0xFF0F172A), border: Border.all(color: const Color(0xFF334155)), borderRadius: BorderRadius.circular(4)),
                         child: ListView.builder(
@@ -98,11 +99,11 @@ class _DnsScreenState extends State<DnsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(Icons.dns, color: Colors.cyanAccent, size: 22),
                 SizedBox(width: 10),
-                Text('DNS & DNS-filtrering', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(tr('dns.dns_dns_filtrering'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 14),
@@ -134,7 +135,7 @@ class _DnsScreenState extends State<DnsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Lokal DNS-resolver', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(tr('dns.lokal_dns_resolver'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
               Row(
                 children: [
                   Switch(
@@ -142,13 +143,13 @@ class _DnsScreenState extends State<DnsScreen> {
                     activeThumbColor: Colors.tealAccent,
                     onChanged: (v) => _save(provider, dns.copyWith(enabled: v)),
                   ),
-                  Text(dns.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: dns.enabled ? Colors.tealAccent : Colors.grey, fontSize: 11)),
+                  Text(dns.enabled ? tr('dns.aktiverad') : tr('dns.inaktiverad'), style: TextStyle(color: dns.enabled ? Colors.tealAccent : Colors.grey, fontSize: 11)),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 10),
-          const Text('Upplösningsläge', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+          Text(tr('dns.upplosningslage'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           RadioGroup<bool>(
             groupValue: dns.recursive,
@@ -160,7 +161,7 @@ class _DnsScreenState extends State<DnsScreen> {
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     activeColor: Colors.tealAccent,
-                    title: const Text('Vidarebefordra till upstream-servrar', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    title: Text(tr('dns.vidarebefordra_till_upstream_servrar'), style: TextStyle(color: Colors.white, fontSize: 12)),
                     value: false,
                   ),
                 ),
@@ -169,7 +170,7 @@ class _DnsScreenState extends State<DnsScreen> {
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     activeColor: Colors.tealAccent,
-                    title: const Text('Slå upp själv mot rot-servrarna (rekursiv)', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    title: Text(tr('dns.sla_upp_sjalv_mot_rot_servrarna'), style: TextStyle(color: Colors.white, fontSize: 12)),
                     value: true,
                   ),
                 ),
@@ -178,7 +179,7 @@ class _DnsScreenState extends State<DnsScreen> {
           ),
           if (!dns.recursive) ...[
             const SizedBox(height: 10),
-            _labeledField('Upstream DNS-servrar (komma-separerade)', upstreamCtrl, hint: '1.1.1.1, 1.0.0.1'),
+            _labeledField(tr('dns.upstream_label'), upstreamCtrl, hint: '1.1.1.1, 1.0.0.1'),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -188,24 +189,23 @@ class _DnsScreenState extends State<DnsScreen> {
                   onChanged: (v) => _save(provider, dns.copyWith(dotEnabled: v)),
                 ),
                 const SizedBox(width: 6),
-                const Text('DNS-over-TLS (DoT) mot upstream', style: TextStyle(color: Colors.white, fontSize: 12)),
+                Text(tr('dns.dns_over_tls_dot_mot_upstream'), style: TextStyle(color: Colors.white, fontSize: 12)),
               ],
             ),
             if (dns.dotEnabled) ...[
               const SizedBox(height: 6),
-              _labeledField('TLS-hostnamn för verifiering', dotHostCtrl, hint: 'cloudflare-dns.com'),
+              _labeledField(tr('dns.tls_hostname_label'), dotHostCtrl, hint: 'cloudflare-dns.com'),
             ],
           ] else ...[
             const SizedBox(height: 6),
-            const Text(
-              'I rekursivt läge slår servern upp domäner direkt mot DNS-rotens namnservrar istället för att fråga en upstream-leverantör (t.ex. Cloudflare/Google).',
+            Text(tr('dns.i_rekursivt_lage_slar_servern_upp'),
               style: TextStyle(color: Colors.grey, fontSize: 10),
             ),
           ],
           const SizedBox(height: 10),
           ElevatedButton.icon(
             icon: const Icon(Icons.save, size: 14),
-            label: const Text('Spara', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            label: Text(tr('dns.spara'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
             onPressed: () {
               final upstream = upstreamCtrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
@@ -213,8 +213,7 @@ class _DnsScreenState extends State<DnsScreen> {
             },
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Kom ihåg att applicera & bekräfta ändringarna för att öppna DNS-porten (53) mot LAN och starta resolvern.',
+          Text(tr('dns.kom_ihag_att_applicera_bekrafta_andringarna'),
             style: TextStyle(color: Colors.amberAccent, fontSize: 10),
           ),
         ],
@@ -234,7 +233,7 @@ class _DnsScreenState extends State<DnsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Lokal DNS-zon', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+          Text(tr('dns.lokal_dns_zon'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -244,29 +243,29 @@ class _DnsScreenState extends State<DnsScreen> {
                 onChanged: (v) => _save(provider, dns.copyWith(dhcpHostnameRegistration: v)),
               ),
               const SizedBox(width: 6),
-              const Expanded(
-                child: Text('Registrera DHCP-tilldelade enheters värdnamn automatiskt i DNS', style: TextStyle(color: Colors.white, fontSize: 12)),
+              Expanded(
+                child: Text(tr('dns.registrera_dhcp_tilldelade_enheters_vardnamn_automatiskt'), style: TextStyle(color: Colors.white, fontSize: 12)),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          _labeledField('Lokal domän (suffix, t.ex. "lan")', localDomainCtrl, hint: 'lan'),
+          _labeledField(tr('dns.lokal_domain_label'), localDomainCtrl, hint: 'lan'),
           const SizedBox(height: 8),
           ElevatedButton.icon(
             icon: const Icon(Icons.save, size: 14),
-            label: const Text('Spara', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            label: Text(tr('dns.spara'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
             onPressed: () => _save(provider, dns.copyWith(localDomain: localDomainCtrl.text.trim())),
           ),
           const SizedBox(height: 8),
-          const Row(
+          Row(
             children: [
-              Icon(Icons.devices, color: Colors.cyanAccent, size: 16),
-              SizedBox(width: 8),
+              const Icon(Icons.devices, color: Colors.cyanAccent, size: 16),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Manuella DNS-poster och de registrerade enheterna listas på sidan "DNS-enheter" i vänstermenyn.',
-                  style: TextStyle(color: Colors.white70, fontSize: 10),
+                  tr('dns.dns_devices_hint'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 10),
                 ),
               ),
             ],
@@ -293,22 +292,21 @@ class _DnsScreenState extends State<DnsScreen> {
               Text('Domänblocklistor (${dns.blocklists.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
-                label: const Text('Lägg till blocklista', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                label: Text(tr('dns.lagg_till_blocklista'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
                 onPressed: () => _showAddBlocklistDialog(provider, dns),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Flera blocklistor kan vara aktiva samtidigt — de slås ihop till en gemensam lista i Unbound.',
+          Text(tr('dns.flera_blocklistor_kan_vara_aktiva_samtidigt'),
             style: TextStyle(color: Colors.grey, fontSize: 10),
           ),
           const SizedBox(height: 10),
           if (dns.blocklists.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text('Inga domänblocklistor tillagda ännu.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              child: Text(tr('dns.inga_domanblocklistor_tillagda_annu'), style: TextStyle(color: Colors.grey, fontSize: 12)),
             )
           else
             ...dns.blocklists.map((src) => _buildBlocklistRow(provider, dns, src)),
@@ -354,7 +352,7 @@ class _DnsScreenState extends State<DnsScreen> {
               else
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
-                  tooltip: 'Uppdatera nu',
+                  tooltip: tr('dns.uppdatera_nu'),
                   onPressed: () => _refreshBlocklist(provider, dns, src),
                 ),
               Switch(
@@ -367,7 +365,7 @@ class _DnsScreenState extends State<DnsScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
-                tooltip: 'Ta bort',
+                tooltip: tr('dns.ta_bort'),
                 onPressed: () {
                   final updated = dns.blocklists.where((b) => b.id != src.id).toList();
                   _save(provider, dns.copyWith(blocklists: updated));
@@ -410,20 +408,20 @@ class _DnsScreenState extends State<DnsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Lägg till domänblocklista', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(tr('dns.lagg_till_domanblocklista'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
-                _labeledField('Namn', nameCtrl),
+                _labeledField(tr('dns.namn_label'), nameCtrl),
                 const SizedBox(height: 12),
-                const Text('Källtyp', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text(tr('dns.kalltyp'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 DropdownButtonFormField<String>(
                   initialValue: kind,
                   dropdownColor: const Color(0xFF1E293B),
                   style: const TextStyle(fontSize: 12, color: Colors.white),
                   decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
-                  items: const [
-                    DropdownMenuItem(value: 'stevenblack_hosts', child: Text('StevenBlack hosts (ads/malware/tracking)')),
-                    DropdownMenuItem(value: 'custom_domain_url', child: Text('Anpassad URL (en domän per rad)')),
+                  items: [
+                    DropdownMenuItem(value: 'stevenblack_hosts', child: Text(tr('dns.stevenblack_hosts_ads_malware_tracking'))),
+                    DropdownMenuItem(value: 'custom_domain_url', child: Text(tr('dns.anpassad_url_en_doman_per_rad'))),
                   ],
                   onChanged: (v) => setDialogState(() {
                     kind = v ?? kind;
@@ -432,24 +430,23 @@ class _DnsScreenState extends State<DnsScreen> {
                 ),
                 if (kind == 'custom_domain_url') ...[
                   const SizedBox(height: 12),
-                  _labeledField('URL', urlCtrl, hint: 'https://exempel.se/domains.txt'),
+                  _labeledField(tr('dns.url_label'), urlCtrl, hint: 'https://exempel.se/domains.txt'),
                 ],
                 const SizedBox(height: 12),
-                _labeledField('Uppdateringsintervall (timmar)', refreshHoursCtrl, hint: '24'),
+                _labeledField(tr('dns.uppdateringsintervall_label'), refreshHoursCtrl, hint: '24'),
                 const SizedBox(height: 6),
-                const Text(
-                  'Listan hämtas automatiskt enligt intervallet ovan. Innehållet syns i vyn efter första hämtningen.',
+                Text(tr('dns.listan_hamtas_automatiskt_enligt_intervallet_ovan'),
                   style: TextStyle(color: Colors.amberAccent, fontSize: 10),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Avbryt', style: TextStyle(fontSize: 12))),
+                    TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('dns.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
-                      child: const Text('Skapa & hämta nu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      child: Text(tr('dns.skapa_hamta_nu'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () async {
                         final newSrc = DNSBlocklistSourceModel(
                           id: 'dnsbl_${DateTime.now().millisecondsSinceEpoch}',
@@ -481,7 +478,7 @@ class _DnsScreenState extends State<DnsScreen> {
       case 'stevenblack_hosts':
         return 'StevenBlack hosts';
       case 'custom_domain_url':
-        return 'Anpassad URL';
+        return tr('dns.anpassad_url');
       default:
         return kind;
     }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
+import '../localization.dart';
 
 class InterfaceMetricHistory {
   final String device;
@@ -83,7 +84,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       for (final i in cfg.interfaces) {
         final id = i.id;
         final dev = i.device.isNotEmpty ? i.device : i.id;
-        final zone = i.zone.isNotEmpty ? i.zone : 'Okonfigurerad';
+        final zone = i.zone.isNotEmpty ? i.zone : tr('dashboard.okonfigurerad');
         targetIfaces.add({'key': id, 'dev': dev, 'label': '$id ($zone)'});
       }
     } else {
@@ -195,19 +196,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // under 500px bredd, där varje kort i stället får halva bredden.
             LayoutBuilder(builder: (context, constraints) {
               final cards = [
-                _buildCompactStatCard('System', sysName, 'Ver: $sysVersion', Icons.dns, Colors.cyanAccent),
-                _buildCompactStatCard('Uptime', uptime, 'Driftstatus: Aktiv', Icons.timer_outlined, Colors.tealAccent),
+                _buildCompactStatCard(tr('dashboard.system'), sysName, trp('dashboard.ver', {'v': sysVersion}), Icons.dns, Colors.cyanAccent),
+                _buildCompactStatCard(tr('dashboard.uptime'), uptime, tr('dashboard.driftstatus_aktiv'), Icons.timer_outlined, Colors.tealAccent),
                 _buildCompactStatCard(
-                  'CPU',
+                  tr('dashboard.cpu'),
                   cpuUsage == null ? '—' : '${cpuUsage.toStringAsFixed(1)}%',
-                  cpuCores == null ? '—' : 'Kärnor: $cpuCores',
+                  cpuCores == null ? '—' : trp('dashboard.karnor', {'n': '$cpuCores'}),
                   Icons.memory,
                   Colors.amber,
                 ),
                 _buildCompactStatCard(
-                  'Minne',
+                  tr('dashboard.minne'),
                   memUsage == null ? '—' : '${memUsage.toStringAsFixed(1)}%',
-                  (memTotalGB == null || memFreePct == null) ? '—' : 'RAM: $memTotalGB GB (LEDIGT $memFreePct%)',
+                  (memTotalGB == null || memFreePct == null) ? '—' : trp('dashboard.ram_ledigt', {'gb': '$memTotalGB', 'pct': '$memFreePct'}),
                   Icons.pie_chart_outline,
                   Colors.lightBlueAccent,
                 ),
@@ -229,9 +230,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(
-                  child: Text(
-                    'Realtid Trafik & Bandbredd per Interface / VLAN (1ggr/sek)',
+                Expanded(
+                  child: Text(tr('dashboard.realtid_trafik_bandbredd_per_interface_vlan'),
                     style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -240,11 +240,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.tealAccent, shape: BoxShape.circle)),
                     const SizedBox(width: 4),
-                    const Text('IN (RX)', style: TextStyle(color: Colors.tealAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                    Text(tr('dashboard.in_rx'), style: TextStyle(color: Colors.tealAccent, fontSize: 10, fontWeight: FontWeight.bold)),
                     const SizedBox(width: 12),
                     Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.amberAccent, shape: BoxShape.circle)),
                     const SizedBox(width: 4),
-                    const Text('UT (TX)', style: TextStyle(color: Colors.amberAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                    Text(tr('dashboard.ut_tx'), style: TextStyle(color: Colors.amberAccent, fontSize: 10, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ],
