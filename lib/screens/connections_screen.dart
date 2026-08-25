@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
+import '../localization.dart';
 
 /// En rad i loggvyn — läst direkt ur brandväggens kärnlogg (både
 /// tillåten OCH nekad trafik loggas numera med ett policynamns-bärande
@@ -130,7 +131,18 @@ class ConnectionsScreen extends StatefulWidget {
 /// bredderna alltid är synkade. Källa/Mål var tidigare Expanded(flex: 3) men
 /// måste vara fasta bredder för att kunna dras i storlek.
 const List<double> _defaultColWidths = [62, 130, 90, 170, 60, 200, 130, 200, 130, 90];
-const List<String> _colLabels = ['Åtgärd', 'Tid', 'Riktning', 'Regel', 'Protokoll', 'Källa', 'Källans MAC', 'Mål', 'Målets MAC', 'State/Kedja'];
+List<String> _colLabels() => [
+  tr('conn.col_atgard'),
+  tr('conn.col_tid'),
+  tr('conn.col_riktning'),
+  tr('conn.col_regel'),
+  tr('conn.col_protokoll'),
+  tr('conn.col_kalla'),
+  tr('conn.col_kallans_mac'),
+  tr('conn.col_mal'),
+  tr('conn.col_malets_mac'),
+  tr('conn.col_state_kedja'),
+];
 const double _colMinWidth = 40;
 const double _resizeHandleWidth = 14;
 
@@ -262,12 +274,11 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.list_alt, color: Colors.cyanAccent, size: 22),
                     SizedBox(width: 10),
-                    Text(
-                      'Anslutningar & Loggning',
+                    Text(tr('conn.anslutningar_loggning'),
                       style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -279,12 +290,12 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                         padding: EdgeInsets.only(right: 10),
                         child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent)),
                       ),
-                    Text('${rows.length} rader', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                    Text(trp('conn.rader_count', {'n': '${rows.length}'}), style: const TextStyle(color: Colors.grey, fontSize: 11)),
                     const SizedBox(width: 10),
                     // Dölj/visa DefaultDeny-raderna.
                     TextButton.icon(
                       icon: Icon(_hideDefaultDeny ? Icons.visibility_off : Icons.visibility, size: 15, color: _hideDefaultDeny ? Colors.orangeAccent : Colors.grey),
-                      label: Text(_hideDefaultDeny ? 'DefaultDeny dold' : 'Dölj DefaultDeny',
+                      label: Text(_hideDefaultDeny ? tr('conn.defaultdeny_dold') : tr('conn.dolj_defaultdeny'),
                           style: TextStyle(fontSize: 11, color: _hideDefaultDeny ? Colors.orangeAccent : Colors.grey)),
                       onPressed: () => setState(() => _hideDefaultDeny = !_hideDefaultDeny),
                     ),
@@ -292,13 +303,13 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                     // Pausa/återuppta den automatiska uppdateringen.
                     TextButton.icon(
                       icon: Icon(_paused ? Icons.play_arrow : Icons.pause, size: 16, color: _paused ? Colors.tealAccent : Colors.amberAccent),
-                      label: Text(_paused ? 'Pausad' : 'Pausa',
+                      label: Text(_paused ? tr('conn.pausad') : tr('conn.pausa'),
                           style: TextStyle(fontSize: 11, color: _paused ? Colors.tealAccent : Colors.amberAccent)),
                       onPressed: () => setState(() => _paused = !_paused),
                     ),
                     IconButton(
                       icon: const Icon(Icons.refresh, size: 18, color: Colors.cyanAccent),
-                      tooltip: 'Uppdatera nu',
+                      tooltip: tr('conn.uppdatera_nu'),
                       onPressed: _poll,
                     ),
                   ],
@@ -328,37 +339,36 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         runSpacing: 10,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          _buildFilterField('IP-adress', _ipController, width: 160),
-          _buildFilterField('MAC-adress', _macController, width: 160),
+          _buildFilterField(tr('conn.ip_adress'), _ipController, width: 160),
+          _buildFilterField(tr('conn.mac_adress'), _macController, width: 160),
           Tooltip(
-            message: 'Söker på namnet på ett sparat Objekt (Host/Network) vars IP matchar källan eller målet,\n'
-                'OCH på namnet på den brandväggsregel som tillät/nekade trafiken.',
-            child: _buildFilterField('Namn / Regel', _nameController, width: 180),
+            message: tr('conn.namn_regel_tooltip'),
+            child: _buildFilterField(tr('conn.namn_regel'), _nameController, width: 180),
           ),
-          _buildDropdown('Från/Till', _directionFilterField, const {
-            'ANY': 'Från/Till',
-            'FROM': 'Från (källa)',
-            'TO': 'Till (mål)',
+          _buildDropdown(tr('conn.fran_till'), _directionFilterField, {
+            'ANY': tr('conn.fran_till'),
+            'FROM': tr('conn.fran_kalla'),
+            'TO': tr('conn.till_mal'),
           }, (v) => setState(() => _directionFilterField = v)),
-          _buildDropdown('Riktning', _trafficDirectionFilter, const {
-            'ALL': 'Alla',
-            'IN': 'Inkommande (från WAN)',
-            'OUT': 'Utgående (till WAN)',
-            'INTERNAL': 'Internt/Lokalt',
+          _buildDropdown(tr('conn.riktning'), _trafficDirectionFilter, {
+            'ALL': tr('conn.alla'),
+            'IN': tr('conn.inkommande'),
+            'OUT': tr('conn.utgaende'),
+            'INTERNAL': tr('conn.internt_lokalt'),
           }, (v) => setState(() => _trafficDirectionFilter = v)),
-          _buildDropdown('Åtgärd', _actionFilter, const {
-            'ALL': 'Alla',
-            'ACCEPT': 'Endast Accept',
-            'DENY': 'Endast Deny',
+          _buildDropdown(tr('conn.col_atgard'), _actionFilter, {
+            'ALL': tr('conn.alla'),
+            'ACCEPT': tr('conn.endast_accept'),
+            'DENY': tr('conn.endast_deny'),
           }, (v) => setState(() => _actionFilter = v)),
-          _buildDropdown('IP-version', _ipVersionFilter, const {
-            'ALL': 'Alla',
-            'IPV4': 'Endast IPv4',
-            'IPV6': 'Endast IPv6',
+          _buildDropdown(tr('conn.ip_version'), _ipVersionFilter, {
+            'ALL': tr('conn.alla'),
+            'IPV4': tr('conn.endast_ipv4'),
+            'IPV6': tr('conn.endast_ipv6'),
           }, (v) => setState(() => _ipVersionFilter = v)),
           TextButton.icon(
             icon: const Icon(Icons.clear, size: 14, color: Colors.grey),
-            label: const Text('Rensa filter', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            label: Text(tr('conn.rensa_filter'), style: TextStyle(fontSize: 11, color: Colors.grey)),
             onPressed: () => setState(() {
               _ipController.clear();
               _macController.clear();
@@ -488,7 +498,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       child: Row(
         children: [
           for (int i = 0; i < widths.length; i++) ...[
-            SizedBox(width: widths[i], child: Text(_colLabels[i], style: _headerStyle)),
+            SizedBox(width: widths[i], child: Text(_colLabels()[i], style: _headerStyle)),
             _resizeHandle(i),
           ],
         ],
@@ -523,7 +533,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
           ),
           const SizedBox(width: 4),
           Text(
-            direction == 'IN' ? 'Inkommande' : (direction == 'OUT' ? 'Utgående' : 'Internt'),
+            direction == 'IN' ? tr('conn.inkommande_kort') : (direction == 'OUT' ? tr('conn.utgaende_kort') : tr('conn.internt_kort')),
             style: _cellStyle,
             overflow: TextOverflow.ellipsis,
           ),
@@ -610,10 +620,10 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                   ),
                   Expanded(
                     child: rows.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Padding(
                               padding: EdgeInsets.all(24.0),
-                              child: Text('Ingen trafik matchar filtret.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                              child: Text(tr('conn.ingen_trafik_matchar_filtret'), style: TextStyle(color: Colors.grey, fontSize: 12)),
                             ),
                           )
                         : ListView.builder(
