@@ -1174,8 +1174,23 @@ class SettingsModel {
   // mode: "" eller "gateway" (router/appliance, standard) eller "host"
   // (enkelkorts-/värddator-läge, Fas 13). Se pkg/config/model.go.
   final String mode;
+  // rollbackTimeoutSec och allowedManagementLan fanns i agentens
+  // Settings-struct men SAKNADES här. Eftersom GUI:t läser hela configen och
+  // skriver tillbaka den vid varje sparning innebar det att fälten TYST
+  // nollställdes varje gång någon ändrade något i gränssnittet — för
+  // allowed_management_lan (IP-begränsningen för management-API:t) är det en
+  // säkerhetsregression, inte bara en förlorad inställning. Upptäckt vid
+  // kodgranskning 2026-08-25.
+  final int rollbackTimeoutSec;
+  final List<String> allowedManagementLan;
 
-  SettingsModel({required this.hostname, required this.apiPort, this.mode = ''});
+  SettingsModel({
+    required this.hostname,
+    required this.apiPort,
+    this.mode = '',
+    this.rollbackTimeoutSec = 30,
+    this.allowedManagementLan = const [],
+  });
 
   bool get isHostMode => mode == 'host';
 
@@ -1184,10 +1199,18 @@ class SettingsModel {
       hostname: json['hostname'] ?? 'security-harbor',
       apiPort: json['api_port'] ?? 8443,
       mode: json['mode'] ?? '',
+      rollbackTimeoutSec: json['rollback_timeout_sec'] ?? 30,
+      allowedManagementLan: List<String>.from(json['allowed_management_lan'] ?? const []),
     );
   }
 
-  Map<String, dynamic> toJson() => {'hostname': hostname, 'api_port': apiPort, 'mode': mode};
+  Map<String, dynamic> toJson() => {
+        'hostname': hostname,
+        'api_port': apiPort,
+        'mode': mode,
+        'rollback_timeout_sec': rollbackTimeoutSec,
+        'allowed_management_lan': allowedManagementLan,
+      };
 }
 
 class ConntrackModel {

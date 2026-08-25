@@ -277,7 +277,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     dense: true,
                     title: Text(tr('settings.rollback_timeout.title'), style: TextStyle(color: Colors.white, fontSize: 12)),
                     subtitle: Text(tr('settings.rollback_timeout.body'), style: TextStyle(fontSize: 11)),
-                    trailing: Chip(label: Text(tr('settings.30s'), style: TextStyle(fontSize: 11)), backgroundColor: Colors.cyanAccent),
+                    // Visa det FAKTISKT konfigurerade värdet, inte en
+                    // hårdkodad "30s" som tidigare stod kvar även när
+                    // rollback_timeout_sec var något annat.
+                    trailing: Chip(
+                      label: Text(
+                        '${(provider.runningConfig ?? provider.candidateConfig)?.settings.rollbackTimeoutSec ?? 30}s',
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      backgroundColor: Colors.cyanAccent,
+                    ),
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(

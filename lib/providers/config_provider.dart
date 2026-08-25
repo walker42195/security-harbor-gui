@@ -175,6 +175,11 @@ class ConfigProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // Återkalla sessionen PÅ SERVERN först — att bara rensa klientens minne
+    // lämnade tokenen giltig i upp till 24 timmar (kodgranskning
+    // 2026-08-25). Fel ignoreras: kan agenten inte nås ska utloggningen
+    // lokalt ändå gå igenom.
+    await api.logout();
     isAuthenticated = false;
     api.token = null;
     api.role = null;

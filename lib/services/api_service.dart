@@ -255,6 +255,20 @@ class ApiService {
     }
   }
 
+  /// Återkallar den aktuella sessionen PÅ SERVERN. Utan detta levde tokenen
+  /// vidare tills den gick ut, även efter "Logga ut" i GUI:t.
+  Future<void> logout() async {
+    if (token == null) return;
+    try {
+      await _client
+          .post(Uri.parse('$baseUrl/api/v1/auth/logout'), headers: _headers)
+          .timeout(const Duration(seconds: 5));
+    } catch (_) {
+      // Nås inte agenten loggas man ändå ut lokalt — sessionen går ut av sig
+      // själv, och att blockera utloggningen vore sämre.
+    }
+  }
+
   /// Listar de senast installerade versionerna som fortfarande finns kvar på
   /// disk (arkiverade av install.sh/rollback-runner.sh) och går att rulla
   /// tillbaka till, plus vilken version som är den nu körande.
