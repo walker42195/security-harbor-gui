@@ -275,6 +275,31 @@ class _MainScreenState extends State<MainScreen> {
 
           // Tjänstelarm — visas på ALLA vyer (inte bara Tjänster-fliken) så
           // en administratör märker det direkt, oavsett var de står.
+          // Degraderade backends: appliceringen gick igenom, men en icke-
+          // trafikstyrande funktion (i praktiken IDS) kunde inte startas.
+          // Ska synas — annars försvinner det tyst i agentloggen.
+          if ((provider.systemStatus?['degraded_backends'] as List?)?.isNotEmpty ?? false)
+            Container(
+              color: const Color(0xFF78350F),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      (provider.systemStatus!['degraded_backends'] as List)
+                          .map((w) => (w as Map)['message']?.toString() ?? '')
+                          .where((m) => m.isNotEmpty)
+                          .join('\n'),
+                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           if (_failedServices.isNotEmpty)
             Container(
               color: const Color(0xFF7F1D1D),

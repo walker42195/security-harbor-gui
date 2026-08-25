@@ -1386,6 +1386,12 @@ class ServiceStatusModel {
   final String unit;
   final String active; // ActiveState: active, inactive, failed, activating, ...
   final String sub; // SubState: running, dead, exited, ...
+  // configured = funktionen är påslagen i brandväggens konfiguration, till
+  // skillnad från active som bara speglar systemd. rsyslog är systemets
+  // ordinarie logghanterare och körs ALLTID — utan det här fältet såg
+  // Tjänstepanelen ut att påstå att syslog-vidarebefordran var aktiv trots
+  // att den var avstängd i inställningarna.
+  final bool configured;
 
   ServiceStatusModel({
     required this.id,
@@ -1394,6 +1400,7 @@ class ServiceStatusModel {
     required this.unit,
     required this.active,
     required this.sub,
+    this.configured = true,
   });
 
   factory ServiceStatusModel.fromJson(Map<String, dynamic> json) => ServiceStatusModel(
@@ -1402,6 +1409,7 @@ class ServiceStatusModel {
         description: json['description'] ?? '',
         unit: json['unit'] ?? '',
         active: json['active'] ?? 'unknown',
+        configured: json['configured'] ?? true,
         sub: json['sub'] ?? 'unknown',
       );
 }

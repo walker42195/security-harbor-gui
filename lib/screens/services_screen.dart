@@ -243,7 +243,29 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(s.name, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(child: Text(s.name, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))),
+                          // En tjänst kan vara igång i systemd utan att
+                          // FUNKTIONEN är påslagen hos oss — rsyslog är
+                          // systemets ordinarie logghanterare och körs
+                          // alltid, oavsett om vi vidarebefordrar loggar.
+                          if (!s.configured) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: Colors.white10,
+                                borderRadius: BorderRadius.circular(3),
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              child: Text(tr('services.not_configured'),
+                                  style: const TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ],
+                      ),
                       Text(s.description, style: const TextStyle(color: Colors.grey, fontSize: 10)),
                     ],
                   ),
@@ -260,7 +282,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
             ),
             child: Text(
               '${_statusLabel(s)} (${s.sub})',
-              style: TextStyle(color: _statusColor(s), fontSize: 10, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: s.configured ? _statusColor(s) : Colors.white38,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           Text(s.unit, style: const TextStyle(color: Colors.white38, fontSize: 10, fontFamily: 'monospace')),
