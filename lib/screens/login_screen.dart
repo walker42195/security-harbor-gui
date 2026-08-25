@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../localization.dart';
 import '../providers/config_provider.dart';
 import '../widgets/tls_trust_dialogs.dart';
 
@@ -89,8 +90,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      const Text('Administrationsgränssnitt', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                      const SizedBox(height: 32),
+                      Text(tr('login.subtitle'), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      const SizedBox(height: 12),
+                      _LanguageToggle(provider: provider),
+                      const SizedBox(height: 20),
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -105,11 +108,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               TextField(
                                 controller: _urlController,
                                 style: const TextStyle(color: Colors.white, fontSize: 13),
-                                decoration: const InputDecoration(
-                                  labelText: 'Brandväggens adress',
-                                  hintText: 'https://192.168.1.1:8443',
-                                  border: OutlineInputBorder(),
-                                  prefixIcon: Icon(Icons.link, color: Colors.cyanAccent, size: 18),
+                                decoration: InputDecoration(
+                                  labelText: tr('login.url_label'),
+                                  hintText: tr('login.url_hint'),
+                                  border: const OutlineInputBorder(),
+                                  prefixIcon: const Icon(Icons.link, color: Colors.cyanAccent, size: 18),
                                   isDense: true,
                                 ),
                               ),
@@ -118,10 +121,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             TextField(
                               controller: _usernameController,
                               style: const TextStyle(color: Colors.white, fontSize: 13),
-                              decoration: const InputDecoration(
-                                labelText: 'Användarnamn',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.person, color: Colors.cyanAccent, size: 18),
+                              decoration: InputDecoration(
+                                labelText: tr('login.username_label'),
+                                border: const OutlineInputBorder(),
+                                prefixIcon: const Icon(Icons.person, color: Colors.cyanAccent, size: 18),
                                 isDense: true,
                               ),
                             ),
@@ -132,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               style: const TextStyle(color: Colors.white, fontSize: 13),
                               onSubmitted: (_) => _login(provider),
                               decoration: InputDecoration(
-                                labelText: 'Lösenord',
+                                labelText: tr('login.password_label'),
                                 border: const OutlineInputBorder(),
                                 prefixIcon: const Icon(Icons.lock, color: Colors.cyanAccent, size: 18),
                                 suffixIcon: IconButton(
@@ -149,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 icon: provider.isLoading
                                     ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                                     : const Icon(Icons.login, size: 16),
-                                label: const Text('Logga in', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                                label: Text(tr('login.submit'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                                 style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
                                 onPressed: provider.isLoading ? null : () => _login(provider),
                               ),
@@ -172,6 +175,39 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
       ),
+    );
+  }
+}
+
+/// Diskret SV/EN-växlare på inloggningsskärmen — ConfigProvider finns
+/// tillgänglig redan innan inloggning, så det här är den enda platsen en
+/// icke-svensktalande användare annars skulle fastna innan de ens kommer
+/// in i appen (den fullständiga växlaren finns annars i Settings).
+class _LanguageToggle extends StatelessWidget {
+  const _LanguageToggle({required this.provider});
+  final ConfigProvider provider;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget langButton(AppLanguage lang, String label) {
+      final active = provider.language == lang;
+      return TextButton(
+        onPressed: active ? null : () => provider.setLanguage(lang),
+        style: TextButton.styleFrom(
+          foregroundColor: active ? Colors.cyanAccent : Colors.grey,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+        ),
+        child: Text(label, style: TextStyle(fontSize: 11, fontWeight: active ? FontWeight.bold : FontWeight.normal)),
+      );
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        langButton(AppLanguage.sv, 'SV'),
+        const Text('|', style: TextStyle(color: Colors.grey, fontSize: 11)),
+        langButton(AppLanguage.en, 'EN'),
+      ],
     );
   }
 }

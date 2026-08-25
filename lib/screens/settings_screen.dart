@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
+import '../localization.dart';
 import '../providers/config_provider.dart';
 import '../models/config_model.dart';
 import '../widgets/tls_trust_dialogs.dart';
@@ -124,11 +125,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.settings, color: Colors.cyanAccent, size: 22),
-              SizedBox(width: 10),
-              Text('Systeminställningar & Management', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              const Icon(Icons.settings, color: Colors.cyanAccent, size: 22),
+              const SizedBox(width: 10),
+              Text(tr('settings.page_title'), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 14),
@@ -142,10 +143,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    children: const [
-                      Icon(Icons.security, color: Colors.cyanAccent, size: 22),
-                      SizedBox(width: 10),
-                      Text('Server-inloggning & Agent API', style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                    children: [
+                      const Icon(Icons.security, color: Colors.cyanAccent, size: 22),
+                      const SizedBox(width: 10),
+                      Text(tr('settings.login.title'), style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -154,11 +155,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TextField(
                     controller: _urlController,
                     style: const TextStyle(color: Colors.white, fontSize: 12),
-                    decoration: const InputDecoration(
-                      labelText: 'Brandväggens Agent URL (IP och Port)',
+                    decoration: InputDecoration(
+                      labelText: tr('settings.login.url_label'),
                       hintText: 'https://192.168.1.1:8443',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.link, color: Colors.cyanAccent, size: 18),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.link, color: Colors.cyanAccent, size: 18),
                       isDense: true,
                     ),
                   ),
@@ -171,11 +172,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: TextField(
                           controller: _usernameController,
                           style: const TextStyle(color: Colors.white, fontSize: 12),
-                          decoration: const InputDecoration(
-                            labelText: 'Användarnamn',
+                          decoration: InputDecoration(
+                            labelText: tr('settings.login.username_label'),
                             hintText: 'master',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.person, color: Colors.cyanAccent, size: 18),
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.person, color: Colors.cyanAccent, size: 18),
                             isDense: true,
                           ),
                         ),
@@ -187,7 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           obscureText: _obscurePassword,
                           style: const TextStyle(color: Colors.white, fontSize: 12),
                           decoration: InputDecoration(
-                            labelText: 'Lösenord',
+                            labelText: tr('settings.login.password_label'),
                             border: const OutlineInputBorder(),
                             prefixIcon: const Icon(Icons.lock, color: Colors.cyanAccent, size: 18),
                             suffixIcon: IconButton(
@@ -209,7 +210,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         icon: _isLoggingIn
                             ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                             : const Icon(Icons.login, size: 16),
-                        label: const Text('Logga in på Brandväggen', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        label: Text(tr('settings.login.submit'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.cyanAccent,
                           foregroundColor: Colors.black,
@@ -237,8 +238,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text(ok
-                                          ? 'Inloggad som ${_usernameController.text} på ${_urlController.text}!'
-                                          : 'Inloggning misslyckades på ${_urlController.text}'),
+                                          ? trp('settings.login.snackbar_success', {'user': _usernameController.text, 'url': _urlController.text})
+                                          : trp('settings.login.snackbar_failed', {'url': _urlController.text})),
                                       backgroundColor: ok ? Colors.green : Colors.red,
                                     ),
                                   );
@@ -256,8 +257,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           const SizedBox(width: 8),
                           Text(
                             provider.isAuthenticated
-                                ? 'Status: Inloggad (Token Aktiv)'
-                                : 'Status: Ej inloggad',
+                                ? tr('settings.login.status_logged_in')
+                                : tr('settings.login.status_logged_out'),
                             style: TextStyle(
                               color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
                               fontSize: 12,
@@ -274,21 +275,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   // Övriga Systeminställningar
                   ListTile(
                     dense: true,
-                    title: const Text('Safe Apply Rollback Timeout (Sekunder)', style: TextStyle(color: Colors.white, fontSize: 12)),
-                    subtitle: const Text('Standard 30 sekunder innan automatisk återställning sker om bekräftelse (Commit) uteblir.', style: TextStyle(fontSize: 11)),
+                    title: Text(tr('settings.rollback_timeout.title'), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    subtitle: Text(tr('settings.rollback_timeout.body'), style: const TextStyle(fontSize: 11)),
                     trailing: const Chip(label: Text('30s', style: TextStyle(fontSize: 11)), backgroundColor: Colors.cyanAccent),
                   ),
                   const Divider(color: Colors.white10),
                   ListTile(
                     dense: true,
-                    title: const Text('Hård WAN Management-spärr', style: TextStyle(color: Colors.white, fontSize: 12)),
-                    subtitle: const Text('AKTIV PÅ SYSTEMNIVÅ (Inkommande administration på WAN spärras alltid för säkerhet)', style: TextStyle(fontSize: 11)),
+                    title: Text(tr('settings.wan_lock.title'), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    subtitle: Text(tr('settings.wan_lock.body'), style: const TextStyle(fontSize: 11)),
                     trailing: const Icon(Icons.verified_user, color: Colors.tealAccent, size: 18),
                   ),
                 ],
               ),
             ),
           ),
+
+          const SizedBox(height: 16),
+          _buildLanguageCard(provider),
 
           if (provider.isAuthenticated) ...[
             const SizedBox(height: 16),
@@ -308,6 +312,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildFactoryResetCard(provider),
           ],
         ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageCard(ConfigProvider provider) {
+    return Card(
+      color: const Color(0xFF1E293B),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.language, color: Colors.cyanAccent, size: 22),
+                const SizedBox(width: 10),
+                Text(tr('settings.language.title'), style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(tr('settings.language.body'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 14),
+            SegmentedButton<AppLanguage>(
+              segments: [
+                ButtonSegment(value: AppLanguage.sv, label: Text(tr('settings.language.sv'))),
+                ButtonSegment(value: AppLanguage.en, label: Text(tr('settings.language.en'))),
+              ],
+              selected: {provider.language},
+              onSelectionChanged: (selection) => provider.setLanguage(selection.first),
+              style: SegmentedButton.styleFrom(
+                backgroundColor: const Color(0xFF0F172A),
+                foregroundColor: Colors.white70,
+                selectedBackgroundColor: Colors.cyanAccent,
+                selectedForegroundColor: Colors.black,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../localization.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import 'dashboard_screen.dart';
@@ -98,21 +99,21 @@ class _MainScreenState extends State<MainScreen> {
       const SettingsScreen(),
     ];
     final destinations = <NavigationRailDestination>[
-      const NavigationRailDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: Text('Dashboard')),
-      const NavigationRailDestination(icon: Icon(Icons.router_outlined), selectedIcon: Icon(Icons.router), label: Text('Interfaces')),
-      const NavigationRailDestination(icon: Icon(Icons.route_outlined), selectedIcon: Icon(Icons.route), label: Text('Routing')),
-      const NavigationRailDestination(icon: Icon(Icons.shield_outlined), selectedIcon: Icon(Icons.shield), label: Text('Policies')),
-      const NavigationRailDestination(icon: Icon(Icons.category_outlined), selectedIcon: Icon(Icons.category), label: Text('Objekt')),
-      if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.alt_route_outlined), selectedIcon: Icon(Icons.alt_route), label: Text('SNI')),
-      if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.vpn_lock_outlined), selectedIcon: Icon(Icons.vpn_lock), label: Text('VPN')),
-      if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.dns_outlined), selectedIcon: Icon(Icons.dns), label: Text('DNS')),
-      if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.devices_outlined), selectedIcon: Icon(Icons.devices), label: Text('DNS-enheter')),
-      if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.devices_other_outlined), selectedIcon: Icon(Icons.devices_other), label: Text('DHCP')),
-      const NavigationRailDestination(icon: Icon(Icons.list_alt_outlined), selectedIcon: Icon(Icons.list_alt), label: Text('Loggning')),
-      if (!isHostMode) const NavigationRailDestination(icon: Icon(Icons.gpp_maybe_outlined), selectedIcon: Icon(Icons.gpp_maybe), label: Text('IDS')),
-      const NavigationRailDestination(icon: Icon(Icons.miscellaneous_services_outlined), selectedIcon: Icon(Icons.miscellaneous_services), label: Text('Tjänster')),
-      const NavigationRailDestination(icon: Icon(Icons.build_circle_outlined), selectedIcon: Icon(Icons.build_circle), label: Text('Verktyg')),
-      const NavigationRailDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: Text('Settings')),
+      NavigationRailDestination(icon: const Icon(Icons.dashboard_outlined), selectedIcon: const Icon(Icons.dashboard), label: Text(tr('nav.dashboard'))),
+      NavigationRailDestination(icon: const Icon(Icons.router_outlined), selectedIcon: const Icon(Icons.router), label: Text(tr('nav.interfaces'))),
+      NavigationRailDestination(icon: const Icon(Icons.route_outlined), selectedIcon: const Icon(Icons.route), label: Text(tr('nav.routing'))),
+      NavigationRailDestination(icon: const Icon(Icons.shield_outlined), selectedIcon: const Icon(Icons.shield), label: Text(tr('nav.policies'))),
+      NavigationRailDestination(icon: const Icon(Icons.category_outlined), selectedIcon: const Icon(Icons.category), label: Text(tr('nav.objects'))),
+      if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.alt_route_outlined), selectedIcon: const Icon(Icons.alt_route), label: Text(tr('nav.sni'))),
+      if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.vpn_lock_outlined), selectedIcon: const Icon(Icons.vpn_lock), label: Text(tr('nav.vpn'))),
+      if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.dns_outlined), selectedIcon: const Icon(Icons.dns), label: Text(tr('nav.dns'))),
+      if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.devices_outlined), selectedIcon: const Icon(Icons.devices), label: Text(tr('nav.dns_devices'))),
+      if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.devices_other_outlined), selectedIcon: const Icon(Icons.devices_other), label: Text(tr('nav.dhcp'))),
+      NavigationRailDestination(icon: const Icon(Icons.list_alt_outlined), selectedIcon: const Icon(Icons.list_alt), label: Text(tr('nav.logging'))),
+      if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.gpp_maybe_outlined), selectedIcon: const Icon(Icons.gpp_maybe), label: Text(tr('nav.ids'))),
+      NavigationRailDestination(icon: const Icon(Icons.miscellaneous_services_outlined), selectedIcon: const Icon(Icons.miscellaneous_services), label: Text(tr('nav.services'))),
+      NavigationRailDestination(icon: const Icon(Icons.build_circle_outlined), selectedIcon: const Icon(Icons.build_circle), label: Text(tr('nav.tools'))),
+      NavigationRailDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: Text(tr('nav.settings'))),
     ];
     if (_selectedIndex >= screens.length) {
       _selectedIndex = 0;
@@ -149,7 +150,7 @@ class _MainScreenState extends State<MainScreen> {
                     icon: const Icon(Icons.menu, color: Colors.white, size: 20),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    tooltip: 'Meny',
+                    tooltip: tr('main.menu_tooltip'),
                     onPressed: () => _scaffoldKey.currentState?.openDrawer(),
                   ),
                   const SizedBox(width: 10),
@@ -162,9 +163,9 @@ class _MainScreenState extends State<MainScreen> {
                 // varandra (osynligt overflow) i stället för att synligt
                 // krympa/klippas.
                 if (!isNarrow)
-                  const Text(
-                    'SECURITY HARBOR',
-                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                  Text(
+                    tr('main.title'),
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
                   ),
                 if (!isNarrow) const SizedBox(width: 6),
                 if (!isNarrow)
@@ -188,9 +189,9 @@ class _MainScreenState extends State<MainScreen> {
                       borderRadius: BorderRadius.circular(3),
                       border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.4)),
                     ),
-                    child: const Text(
-                      'LÄGE: VÄRDDATOR',
-                      style: TextStyle(color: Colors.orangeAccent, fontSize: 9, fontWeight: FontWeight.bold),
+                    child: Text(
+                      tr('main.mode_host'),
+                      style: const TextStyle(color: Colors.orangeAccent, fontSize: 9, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -220,7 +221,9 @@ class _MainScreenState extends State<MainScreen> {
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            provider.isAuthenticated ? (isNarrow ? 'ONLINE' : 'ONLINE (${provider.api.baseUrl})') : 'EJ ANSLUTEN',
+                            provider.isAuthenticated
+                                ? (isNarrow ? tr('main.online') : trp('main.online_with_url', {'url': provider.api.baseUrl}))
+                                : tr('main.not_connected'),
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
@@ -239,7 +242,7 @@ class _MainScreenState extends State<MainScreen> {
                     icon: const Icon(Icons.refresh, size: 16, color: Colors.white54),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    tooltip: 'Uppdatera allt (hämta om status och konfiguration)',
+                    tooltip: tr('main.refresh_tooltip'),
                     onPressed: provider.isLoading ? null : () => provider.refreshAll(),
                   ),
                 if (provider.isAuthenticated) ...[
@@ -248,7 +251,7 @@ class _MainScreenState extends State<MainScreen> {
                     icon: const Icon(Icons.logout, size: 16, color: Colors.white54),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
-                    tooltip: 'Logga ut',
+                    tooltip: tr('main.logout_tooltip'),
                     onPressed: () => provider.logout(),
                   ),
                 ],
@@ -288,15 +291,15 @@ class _MainScreenState extends State<MainScreen> {
                       const SizedBox(width: 8),
                       Text(
                         _failedServices.length == 1
-                            ? 'Tjänsten "${_failedServices.first.name}" har fastnat i ett fel-läge (failed).'
-                            : '${_failedServices.length} tjänster har fastnat i ett fel-läge (failed): ${_failedServices.map((s) => s.name).join(", ")}.',
+                            ? trp('main.service_alarm_one', {'name': _failedServices.first.name})
+                            : trp('main.service_alarm_many', {'count': '${_failedServices.length}', 'names': _failedServices.map((s) => s.name).join(", ")}),
                         style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   OutlinedButton.icon(
                     icon: const Icon(Icons.build_circle_outlined, size: 14),
-                    label: const Text('Visa Tjänster', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    label: Text(tr('main.show_services'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white), padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
                     onPressed: () {
                       final idx = screens.indexWhere((w) => w is ServicesScreen);
@@ -349,7 +352,7 @@ class _MainScreenState extends State<MainScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'ÄNDRINGAR APPLICERADE PÅ BRANDVÄGGEN (SAFE APPLY): Automatisk rollback sker om ${provider.rollbackSecondsRemaining} sekunder om du inte bekräftar!',
+                          trp('main.safe_apply_banner', {'seconds': '${provider.rollbackSecondsRemaining}'}),
                           style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -362,14 +365,14 @@ class _MainScreenState extends State<MainScreen> {
                     children: [
                       ElevatedButton.icon(
                         icon: const Icon(Icons.check_circle, size: 14),
-                        label: const Text('BEKRÄFTA (COMMIT)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        label: Text(tr('main.confirm_commit'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
                         onPressed: () async {
                           final ok = await provider.confirmChanges();
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(ok ? 'Konfiguration bekräftad och committad till running.json!' : 'Misslyckades bekräfta'),
+                                content: Text(ok ? tr('main.confirm_success') : tr('main.confirm_failed')),
                                 backgroundColor: ok ? Colors.green : Colors.red,
                               ),
                             );
@@ -378,14 +381,14 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                       OutlinedButton.icon(
                         icon: const Icon(Icons.undo, size: 14),
-                        label: const Text('RULLA TILLBAKA', style: TextStyle(fontSize: 11)),
+                        label: Text(tr('main.rollback'), style: const TextStyle(fontSize: 11)),
                         style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
                         onPressed: () async {
                           await provider.rollbackChanges();
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Konfigurationen återställd till senast säkra tillstånd.'),
+                              SnackBar(
+                                content: Text(tr('main.rollback_success')),
                                 backgroundColor: Colors.orange,
                               ),
                             );
@@ -414,13 +417,13 @@ class _MainScreenState extends State<MainScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    children: const [
-                      Icon(Icons.edit_note, color: Colors.cyanAccent, size: 18),
-                      SizedBox(width: 10),
+                    children: [
+                      const Icon(Icons.edit_note, color: Colors.cyanAccent, size: 18),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Du har obekräftade ändringar redo att testas på brandväggen.',
-                          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                          tr('main.unapplied_banner'),
+                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
@@ -435,26 +438,24 @@ class _MainScreenState extends State<MainScreen> {
                       // en råkad borttagning av en regel innan Applicera tryckts.
                       OutlinedButton.icon(
                         icon: const Icon(Icons.undo, size: 14),
-                        label: const Text('ÅNGRA ÄNDRINGAR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        label: Text(tr('main.undo_changes'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
                         onPressed: () async {
                           final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (dctx) => AlertDialog(
                               backgroundColor: const Color(0xFF1E293B),
-                              title: const Text('Ångra ändringar?', style: TextStyle(color: Colors.white, fontSize: 14)),
-                              content: const Text(
-                                'Alla ändringar du gjort sedan senaste applicering kastas bort och '
-                                'konfigurationen återställs till den som just nu kör på brandväggen. '
-                                'Detta går inte att ångra.',
-                                style: TextStyle(color: Colors.white70, fontSize: 12),
+                              title: Text(tr('main.undo_dialog_title'), style: const TextStyle(color: Colors.white, fontSize: 14)),
+                              content: Text(
+                                tr('main.undo_dialog_body'),
+                                style: const TextStyle(color: Colors.white70, fontSize: 12),
                               ),
                               actions: [
-                                TextButton(onPressed: () => Navigator.pop(dctx, false), child: const Text('Avbryt')),
+                                TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('main.cancel'))),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
                                   onPressed: () => Navigator.pop(dctx, true),
-                                  child: const Text('Ångra ändringar'),
+                                  child: Text(tr('main.undo_confirm_button')),
                                 ),
                               ],
                             ),
@@ -465,8 +466,8 @@ class _MainScreenState extends State<MainScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(ok
-                                    ? 'Ändringarna återställdes till körande konfiguration.'
-                                    : (provider.errorMessage ?? 'Kunde inte återställa ändringarna.')),
+                                    ? tr('main.undo_success')
+                                    : (provider.errorMessage ?? tr('main.undo_failed_fallback'))),
                                 backgroundColor: ok ? Colors.teal : Colors.red,
                               ),
                             );
@@ -475,7 +476,7 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.play_arrow, size: 14),
-                        label: const Text('APPLICERA (SAFE APPLY)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        label: Text(tr('main.apply_safe'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
                         onPressed: () async {
                           final ok = await provider.applyChanges();
@@ -483,14 +484,14 @@ class _MainScreenState extends State<MainScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(ok
-                                    ? 'Ändringar applicerade på brandväggen! Bekräfta (Commit) inom 30s för att behålla dem.'
+                                    ? tr('main.apply_success')
                                     // Visar servers faktiska felmeddelande (t.ex. ett
                                     // valideringsfel om en policys zon inte matchar
                                     // något gränssnitt) istället för en generisk text
                                     // utan detaljer - upptäckt 2026-08-19 att den
                                     // gamla generiska texten gjorde det omöjligt att
                                     // förstå VARFÖR Apply misslyckades.
-                                    : (provider.errorMessage ?? 'Misslyckades applicera konfiguration på brandväggen')),
+                                    : (provider.errorMessage ?? tr('main.apply_failed_fallback'))),
                                 backgroundColor: ok ? Colors.teal : Colors.red,
                                 duration: Duration(seconds: ok ? 4 : 8),
                               ),
@@ -607,7 +608,7 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  const Text('SECURITY HARBOR', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                  Text(tr('main.title'), style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
                 ],
               ),
             ),

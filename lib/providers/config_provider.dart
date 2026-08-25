@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../localization.dart';
 import '../models/config_model.dart';
 import '../services/api_service.dart';
 
 enum ApplyStatus { idle, unconfirmed, confirming, error }
 
 const String _prefsUrlKey = 'firewall_url';
+const String _prefsLangKey = 'app_language';
 // Sessionens token (kortlivad, serversignerad med utgång) sparas så att en
 // sid-refresh i webb-GUI:t inte loggar ut användaren — webbläsaren laddar om
 // hela Flutter-appen vid refresh, och en token som bara låg i minnet gick då
@@ -41,6 +43,29 @@ class ConfigProvider extends ChangeNotifier {
   // sker alltid på agenten (authMiddlewareAdmin), detta är bara för UX.
   bool get isAdmin => api.role == 'admin';
 
+  // Språkval. Svenska är default tills användaren aktivt växlar (matchar
+  // appens tidigare hårdkodade beteende exakt) — se localization.dart för
+  // själva tr()-uppslagningen. Måste gå att ändra redan innan inloggning
+  // (LoginScreen), så det ligger på ConfigProvider och inte bakom auth.
+  AppLanguage language = AppLanguage.sv;
+
+  Future<void> setLanguage(AppLanguage lang) async {
+    language = lang;
+    currentLanguage = lang;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsLangKey, lang.name);
+    notifyListeners();
+  }
+
+  Future<void> _loadLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_prefsLangKey);
+    if (saved == 'en') {
+      language = AppLanguage.en;
+      currentLanguage = AppLanguage.en;
+    }
+  }
+
   // OBS: Inget hop-kodat lösenord/auto-login här. Appen distribueras
   // publikt (APK/Linux-paket på security.novabase.se) — ett hårdkodat
   // lösenord i klientkoden hade skickats ut till VARJE nedladdning,
@@ -48,7 +73,7 @@ class ConfigProvider extends ChangeNotifier {
   // lösenordet) sparas lokalt vid lyckad inloggning, se _saveUrl.
 
   ConfigProvider() {
-    _loadSavedUrl();
+    _loadLanguage().then((_) => _loadSavedUrl());
   }
 
   Future<void> _loadSavedUrl() async {
@@ -79,7 +104,7 @@ class ConfigProvider extends ChangeNotifier {
             .timeout(const Duration(seconds: 6), onTimeout: () => null);
         if (status != null) {
           isAuthenticated = true;
-          statusMessage = 'Inloggad';
+          statusMessage = tr('provider.status.logged_in');
           systemStatus = status;
           unawaited(fetchAll());
         } else {
@@ -129,19 +154,19 @@ class ConfigProvider extends ChangeNotifier {
   Future<void> login(String user, String pass) async {
     isLoading = true;
     errorMessage = null;
-    statusMessage = 'Ansluter till brandvägg...';
+    statusMessage = tr('provider.status.connecting');
     notifyListeners();
 
     final success = await api.login(user, pass);
     if (success) {
       isAuthenticated = true;
-      statusMessage = 'Inloggad';
+      statusMessage = tr('provider.status.logged_in');
       await _saveUrl(api.baseUrl);
       await _saveSession();
       await fetchAll();
     } else {
       isAuthenticated = false;
-      errorMessage = 'Inloggning misslyckades mot ${api.baseUrl}';
+      errorMessage = trp('provider.error.login_failed', {'url': api.baseUrl});
       statusMessage = null;
     }
 
@@ -183,7 +208,7 @@ class ConfigProvider extends ChangeNotifier {
   Future<void> refreshAll() async {
     if (!isAuthenticated || isLoading) return;
     isLoading = true;
-    statusMessage = 'Uppdaterar…';
+    statusMessage = tr('provider.status.updating');
     notifyListeners();
     await fetchAll();
     isLoading = false;
@@ -193,7 +218,7 @@ class ConfigProvider extends ChangeNotifier {
 
   Future<void> updateCandidate(ConfigModel newConfig) async {
     isLoading = true;
-    statusMessage = 'Sparar ändringar i kandidatkonfiguration...';
+    statusMessage = tr('provider.status.saving_candidate');
     notifyListeners();
 
     final success = await api.setCandidateConfig(newConfig);
@@ -202,7 +227,7 @@ class ConfigProvider extends ChangeNotifier {
       hasUnappliedChanges = true;
       statusMessage = null;
     } else {
-      errorMessage = 'Kunde inte spara ändring i kandidat';
+      errorMessage = tr('provider.error.save_candidate_failed');
     }
 
     isLoading = false;
@@ -218,12 +243,12 @@ class ConfigProvider extends ChangeNotifier {
   /// obekräftad ändring.)
   Future<bool> discardChanges() async {
     isLoading = true;
-    statusMessage = 'Återställer ändringar...';
+    statusMessage = tr('provider.status.discarding');
     notifyListeners();
 
     final running = await api.getRunningConfig();
     if (running == null) {
-      errorMessage = 'Kunde inte hämta körande konfiguration';
+      errorMessage = tr('provider.error.get_running_failed');
       statusMessage = null;
       isLoading = false;
       notifyListeners();
@@ -238,7 +263,7 @@ class ConfigProvider extends ChangeNotifier {
       statusMessage = null;
       errorMessage = null;
     } else {
-      errorMessage = 'Kunde inte återställa ändringar';
+      errorMessage = tr('provider.error.discard_failed');
       statusMessage = null;
     }
     isLoading = false;
@@ -249,7 +274,7 @@ class ConfigProvider extends ChangeNotifier {
   Future<bool> applyChanges() async {
     if (candidateConfig == null) return false;
     isLoading = true;
-    statusMessage = 'Applicerar nftables-regler på brandväggsservern...';
+    statusMessage = tr('provider.status.applying');
     notifyListeners();
 
     final err = await api.applyConfig();
@@ -273,7 +298,7 @@ class ConfigProvider extends ChangeNotifier {
 
   Future<bool> confirmChanges() async {
     isLoading = true;
-    statusMessage = 'Bekräftar och committar konfiguration...';
+    statusMessage = tr('provider.status.confirming');
     notifyListeners();
 
     final success = await api.confirmConfig();
@@ -287,7 +312,7 @@ class ConfigProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } else {
-      errorMessage = 'Bekräftelse misslyckades';
+      errorMessage = tr('provider.error.confirm_failed');
       statusMessage = null;
       isLoading = false;
       notifyListeners();
@@ -297,7 +322,7 @@ class ConfigProvider extends ChangeNotifier {
 
   Future<bool> rollbackChanges() async {
     isLoading = true;
-    statusMessage = 'Återställer till senast kända säkra konfiguration...';
+    statusMessage = tr('provider.status.rolling_back');
     notifyListeners();
 
     final success = await api.rollbackConfig();
