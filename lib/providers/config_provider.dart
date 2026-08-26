@@ -288,7 +288,7 @@ class ConfigProvider extends ChangeNotifier {
       hasUnappliedChanges = false;
       statusMessage = null;
       errorMessage = null;
-      _startRollbackTimer(30);
+      _startRollbackTimer(_rollbackTimeoutSeconds());
       isLoading = false;
       notifyListeners();
       return true;
@@ -339,6 +339,25 @@ class ConfigProvider extends ChangeNotifier {
     isLoading = false;
     notifyListeners();
     return success;
+  }
+
+  /// Hur många sekunder agenten faktiskt kommer att vänta innan den rullar
+  /// tillbaka. Nedräkningen var tidigare hårdkodad till 30 s och ignorerade
+  /// inställningen helt: satte man 62 s väntade agenten i 62 s medan GUI:t
+  /// räknade ned från 30 och sedan påstod att appliceringen redan var
+  /// återställd (rapporterat 2026-08-26).
+  ///
+  /// Klampningen MÅSTE spegla engine.ApplyCandidate på serversidan, annars
+  /// visar nedräkningen fortfarande fel tal för värden utanför intervallet.
+  /// Källan är candidate-configen — det är den agenten läser värdet ur när
+  /// den startar sin timer.
+  int _rollbackTimeoutSeconds() {
+    final seconds =
+        (candidateConfig ?? runningConfig)?.settings.rollbackTimeoutSec ?? 30;
+    if (seconds <= 0) return 30;
+    if (seconds < 10) return 10;
+    if (seconds > 600) return 600;
+    return seconds;
   }
 
   void _startRollbackTimer(int seconds) {
