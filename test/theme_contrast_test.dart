@@ -99,6 +99,19 @@ void main() {
             greaterThanOrEqualTo(4.5));
       });
 
+      // Primär- och sekundärknappen använder varumärkets LJUSA mint och gula
+      // med mörk text — samma uppställning som på webbplatsen. De färgerna
+      // duger inte som textfärg, men bakom text är de rätt. Att de faktiskt
+      // bär sin text måste mätas här.
+      test('varumärkesknapparna bär sin text', () {
+        expect(contrast(AppColors.onAccentBg, AppColors.accentBg),
+            greaterThanOrEqualTo(4.5),
+            reason: 'primärknapp i ${mode.name}');
+        expect(contrast(AppColors.onWarnBg, AppColors.warnBg),
+            greaterThanOrEqualTo(4.5),
+            reason: 'sekundärknapp i ${mode.name}');
+      });
+
       test('ramen syns mot ytan', () {
         expect(contrast(AppColors.border, AppColors.surface), greaterThanOrEqualTo(1.2));
       });

@@ -37,7 +37,7 @@ class SniRoutesScreen extends StatelessWidget {
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add, size: 14),
                   label: Text(tr('sni.ny_regel'), style: TextStyle(fontSize: 11)),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                   onPressed: cfg == null ? null : () => _showEditDialog(context, provider, cfg, null),
                 ),
               ],
@@ -225,7 +225,7 @@ class SniRoutesScreen extends StatelessWidget {
                       TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('sni.avbryt'), style: TextStyle(fontSize: 12))),
                       const SizedBox(width: 8),
                       ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                         child: Text(tr('sni.spara'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         onPressed: () {
                           final port = int.tryParse(portCtrl.text.trim()) ?? 0;

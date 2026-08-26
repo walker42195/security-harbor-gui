@@ -91,7 +91,7 @@ Future<bool?> showTrustNewCertificateDialog(BuildContext context, String fingerp
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('tls.avbryt'))),
         ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(tr('tls.lita_pa_anslut')),
         ),

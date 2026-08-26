@@ -620,7 +620,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                 ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                 : const Icon(Icons.save, size: 14),
             label: Text(tr('sec.spara'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
             onPressed: () => save(ids.copyWith(
               interfaceDevice: _ifaceController.text,
               autoBlockObjectId: _objectIdController.text,

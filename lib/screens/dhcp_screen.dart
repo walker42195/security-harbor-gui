@@ -306,7 +306,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                     TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('dhcp.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.warn, foregroundColor: AppColors.onStatus),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.warnBg, foregroundColor: AppColors.onWarnBg),
                       child: Text(tr('dhcp.spara_reservation'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () {
                         final newMac = macCtrl.text.trim();
@@ -522,7 +522,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
             label: Text(tr('dhcp.lagg_till_reservation'),
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.warn, foregroundColor: AppColors.onStatus),
+                backgroundColor: AppColors.warnBg, foregroundColor: AppColors.onWarnBg),
             onPressed: () => _showReservationDialog(context),
           ),
       ],

@@ -298,7 +298,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('routes.avbryt'))),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
               onPressed: () {
                 // Enkel klientvalidering — den auktoritativa kontrollen
                 // (giltig CIDR/IP, ingen krock, känt gränssnitt) görs ändå av

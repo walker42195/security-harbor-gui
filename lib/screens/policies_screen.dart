@@ -1328,7 +1328,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                       child: Text(tr('pol.ok'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                       onPressed: () {
                         if (cfg != null) {
@@ -1753,7 +1753,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                       onPressed: () => Navigator.pop(ctx, selected),
                       child: Text(tr('pol.ok'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
@@ -1823,7 +1823,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('pol.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                     child: Text(tr('pol.spara_dnat'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     onPressed: () {
                       if (cfg != null) {

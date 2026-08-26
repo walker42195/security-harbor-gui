@@ -154,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                                     : const Icon(Icons.login, size: 16),
                                 label: Text(tr('login.submit'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                                 onPressed: provider.isLoading ? null : () => _login(provider),
                               ),
                             ),

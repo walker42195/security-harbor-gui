@@ -560,7 +560,7 @@ class _MainScreenState extends State<MainScreen> {
                       ElevatedButton.icon(
                         icon: const Icon(Icons.play_arrow, size: 14),
                         label: Text(tr('main.apply_safe'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
                         onPressed: () async {
                           final ok = await provider.applyChanges();
                           if (context.mounted) {

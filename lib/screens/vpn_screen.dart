@@ -197,7 +197,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
               ElevatedButton.icon(
                 icon: const Icon(Icons.save, size: 14),
                 label: Text(tr('vpn.spara_serverinstallningar'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                 onPressed: () {
                   final port = int.tryParse(listenPortCtrl.text.trim()) ?? wg.listenPort;
                   _saveWireGuard(
@@ -502,7 +502,7 @@ PersistentKeepalive = 25
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                     onPressed: () => Navigator.pop(ctx),
                     child: Text(tr('vpn.klart_jag_har_sparat_den')),
                   ),
@@ -565,7 +565,7 @@ PersistentKeepalive = 25
               ElevatedButton.icon(
                 icon: const Icon(Icons.save, size: 14),
                 label: Text(tr('vpn.spara_serverinstallningar'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                 onPressed: () {
                   final port = int.tryParse(listenPortCtrl.text.trim()) ?? ovpn.listenPort;
                   _saveOpenVpn(
@@ -868,7 +868,7 @@ PersistentKeepalive = 25
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                     onPressed: () => Navigator.pop(ctx),
                     child: Text(tr('vpn.klart_jag_har_sparat_den')),
                   ),

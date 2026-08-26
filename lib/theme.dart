@@ -77,40 +77,61 @@ class AppColors {
 
   static bool get _d => AppTheme.isDark;
 
-  /// Sidbakgrund.
-  static Color get bg => _d ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9);
+  // Det ljusa temat följer produktens egen grafiska profil (webbplatsen):
+  // varm gräddvit botten, nästan svart text, och varumärkets mint och gult
+  // som knappfärger. Det första ljusa temat var blågrått Material och kändes
+  // som en annan produkt.
+
+  /// Sidbakgrund — varm gräddvit, inte blågrå.
+  static Color get bg => _d ? const Color(0xFF0F172A) : const Color(0xFFF2F0E9);
 
   /// Kort- och panelyta.
-  static Color get surface => _d ? const Color(0xFF1E293B) : Colors.white;
+  static Color get surface => _d ? const Color(0xFF1E293B) : const Color(0xFFFBFAF6);
 
   /// Ytan en nivå djupare (kodrutor, inbäddade listor).
-  static Color get surfaceDeep => _d ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC);
+  static Color get surfaceDeep => _d ? const Color(0xFF0F172A) : const Color(0xFFEDEBE2);
 
   /// Ramar och avdelare.
-  static Color get border => _d ? const Color(0xFF334155) : const Color(0xFFCBD5E1);
+  static Color get border => _d ? const Color(0xFF334155) : const Color(0xFFD6D3C8);
 
   /// Svag avdelare.
   static Color get divider => _d ? Colors.white10 : Colors.black12;
 
-  /// Brödtext.
-  static Color get text => _d ? Colors.white : const Color(0xFF0F172A);
+  /// Brödtext — nästan svart, som på webbplatsen.
+  static Color get text => _d ? Colors.white : const Color(0xFF1A1A1A);
 
   /// Sekundär text.
-  static Color get textMuted => _d ? Colors.white70 : const Color(0xFF475569);
+  static Color get textMuted => _d ? Colors.white70 : const Color(0xFF4A4A45);
 
   /// Svag text (platshållare, "—", överstrukna gamla värden).
   /// I ljust läge mörkare än man först tror: 0xFF94A3B8 mot vitt ger under
   /// 3:1 i kontrast och blev i praktiken oläsligt.
-  static Color get textFaint => _d ? Colors.white38 : const Color(0xFF64748B);
+  static Color get textFaint => _d ? Colors.white38 : const Color(0xFF6B6B62);
 
   /// Platshållartext i inmatningsfält.
-  static Color get hint => _d ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+  static Color get hint => _d ? const Color(0xFF64748B) : const Color(0xFF8A8A80);
 
-  /// Accent — den genomgående cyanfärgen.
-  static Color get accent => _d ? Colors.cyanAccent : const Color(0xFF0E7490);
+  /// Accent för TEXT och ikoner.
+  ///
+  /// Varumärkets mint (0xFF3DDC97) fungerar inte som textfärg — den ger runt
+  /// 1.9:1 mot gräddvitt. Här används därför en mörk variant i samma
+  /// hue-familj: det läses som samma färg, men går att läsa.
+  static Color get accent => _d ? Colors.cyanAccent : const Color(0xFF0B6E4F);
 
   /// Text ovanpå accentfärgade knappar.
   static Color get onAccent => _d ? Colors.black : Colors.white;
+
+  /// PRIMÄRKNAPPENS bakgrund — varumärkets mint.
+  ///
+  /// Egen färg skild från [accent] just för att den bär text i stället för
+  /// att VARA text: på en knapp ligger färgen bakom svart text, precis som på
+  /// webbplatsen, och då är den ljusa minten rätt.
+  static Color get accentBg => _d ? Colors.cyanAccent : const Color(0xFF3DDC97);
+  static Color get onAccentBg => Colors.black;
+
+  /// SEKUNDÄRKNAPPENS bakgrund — varumärkets gula.
+  static Color get warnBg => _d ? Colors.amberAccent : const Color(0xFFFFE500);
+  static Color get onWarnBg => Colors.black;
 
   /// Betydelsebärande statusfärger.
   ///
@@ -119,13 +140,16 @@ class AppColors {
   /// osynliga (rapporterat 2026-08-26). I ljust läge används därför mörka
   /// motsvarigheter med samma INNEBÖRD: grönt är fortfarande accept, rött
   /// deny, bärnsten varning.
-  static Color get ok => _d ? Colors.tealAccent : const Color(0xFF047857);
-  static Color get warn => _d ? Colors.amberAccent : const Color(0xFF92400E);
-  static Color get danger => _d ? Colors.redAccent : const Color(0xFFB91C1C);
+  // Skilt från [accent], som också är grön i ljust läge: "accept" och
+  // UI-accenten får inte vara samma färg — då bär färgkodningen ingen
+  // information. Ett test vaktar att de inte kollapsar.
+  static Color get ok => _d ? Colors.tealAccent : const Color(0xFF15803D);
+  static Color get warn => _d ? Colors.amberAccent : const Color(0xFF8A6A00);
+  static Color get danger => _d ? Colors.redAccent : const Color(0xFFB3261E);
 
   /// Orange — "reject" och återställningsknappen. Egen färg, inte samma som
   /// [warn]: skillnaden mellan en varning och ett aktivt avslag ska synas.
-  static Color get caution => _d ? Colors.orangeAccent : const Color(0xFFC2410C);
+  static Color get caution => _d ? Colors.orangeAccent : const Color(0xFFB4530A);
 
   /// Blått — DNAT/port forward.
   static Color get info => _d ? Colors.lightBlueAccent : const Color(0xFF1D4ED8);

@@ -472,7 +472,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ElevatedButton.icon(
               icon: const Icon(Icons.edit_calendar, size: 15),
               style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                  backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
               label: Text(tr('settings.tidszon_sok'), style: const TextStyle(fontSize: 12)),
               onPressed: () => _pickTimezone(provider, selected),
             ),
@@ -1147,7 +1147,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.refresh, size: 16),
                   label: Text(tr('settings.kontrollera'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                 ),
               ],
             ),
@@ -1433,7 +1433,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                       : const Icon(Icons.backup, size: 16),
                   label: Text(tr('settings.skapa_backup'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                   onPressed: _isCreatingBackup || _backupPassphraseController.text.isEmpty
                       ? null
                       : () async {
@@ -1848,7 +1848,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(tr('settings.avbryt'))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
             onPressed: () async {
               final err = await provider.api.resetUserPassword(user['id'], pwController.text);
               if (!dialogContext.mounted) return;

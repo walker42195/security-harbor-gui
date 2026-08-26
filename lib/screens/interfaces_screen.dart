@@ -395,7 +395,7 @@ class InterfacesScreen extends StatelessWidget {
                   trailing: ElevatedButton.icon(
                     icon: const Icon(Icons.add, size: 14),
                     label: Text(tr('iface.lagg_till'), style: TextStyle(fontSize: 11)),
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.warn, foregroundColor: AppColors.onStatus, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.warnBg, foregroundColor: AppColors.onWarnBg, padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
                     onPressed: () {
                       // Läggs till som INAKTIVERAT — användaren aktiverar och
                       // konfigurerar det själv efteråt.

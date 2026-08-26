@@ -207,7 +207,7 @@ class _DnsScreenState extends State<DnsScreen> {
           ElevatedButton.icon(
             icon: const Icon(Icons.save, size: 14),
             label: Text(tr('dns.spara'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
             onPressed: () {
               final upstream = upstreamCtrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
               _save(provider, dns.copyWith(upstreamServers: upstream, dotHostname: dotHostCtrl.text.trim()));
@@ -255,7 +255,7 @@ class _DnsScreenState extends State<DnsScreen> {
           ElevatedButton.icon(
             icon: const Icon(Icons.save, size: 14),
             label: Text(tr('dns.spara'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
             onPressed: () => _save(provider, dns.copyWith(localDomain: localDomainCtrl.text.trim())),
           ),
           const SizedBox(height: 8),

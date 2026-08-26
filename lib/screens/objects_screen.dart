@@ -60,13 +60,13 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 ElevatedButton.icon(
                   icon: const Icon(Icons.dns, size: 14),
                   label: Text(tr('objects.skapa_objekt'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accentBg, foregroundColor: AppColors.onAccentBg),
                   onPressed: () => _showAddObjectDialog(context, provider),
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.workspaces_outline, size: 14),
                   label: Text(tr('objects.skapa_grupp'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.warn, foregroundColor: AppColors.onStatus),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.warnBg, foregroundColor: AppColors.onWarnBg),
                   onPressed: () => _showAddGroupDialog(context, provider),
                 ),
                 ElevatedButton.icon(
@@ -579,7 +579,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                     TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('objects.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.warn, foregroundColor: AppColors.onStatus),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.warnBg, foregroundColor: AppColors.onWarnBg),
                       onPressed: selected.isEmpty
                           ? null
                           : () {
