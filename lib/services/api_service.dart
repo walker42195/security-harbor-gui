@@ -416,15 +416,30 @@ class ApiService {
     return [];
   }
 
-  Future<List<FirewallLogModel>> getFirewallLog() async {
+  /// Brandväggsloggen för ett tidsfönster ("15m", "6h", "2d").
+  ///
+  /// Svaret är ett objekt med `entries` och `truncated`. Äldre agenter
+  /// svarade med en bar lista — den formen hanteras fortfarande, annars
+  /// blir loggvyn tom mot en agent som inte hunnit uppdateras.
+  Future<({List<FirewallLogModel> entries, bool truncated})> getFirewallLog({String window = '15m'}) async {
     try {
-      final res = await _client.get(Uri.parse('$baseUrl/api/v1/diagnostics/firewall-log'), headers: _headers);
+      final res = await _client.get(
+        Uri.parse('$baseUrl/api/v1/diagnostics/firewall-log?window=$window'),
+        headers: _headers,
+      );
       if (res.statusCode == 200) {
-        final list = jsonDecode(res.body) as List;
-        return list.map((e) => FirewallLogModel.fromJson(e)).toList();
+        final body = jsonDecode(res.body);
+        if (body is List) {
+          return (entries: body.map((e) => FirewallLogModel.fromJson(e)).toList(), truncated: false);
+        }
+        final list = (body['entries'] as List?) ?? const [];
+        return (
+          entries: list.map((e) => FirewallLogModel.fromJson(e)).toList(),
+          truncated: body['truncated'] == true,
+        );
       }
     } catch (_) {}
-    return [];
+    return (entries: <FirewallLogModel>[], truncated: false);
   }
 
   Future<List<SecurityEventModel>> getSecurityEvents() async {

@@ -136,6 +136,14 @@ const double _resizeHandleWidth = 14;
 class _ConnectionsScreenState extends State<ConnectionsScreen> {
   Timer? _pollTimer;
   List<FirewallLogModel> _entries = [];
+  /// Hur långt bakåt loggen hämtas. Tidigare hämtades alltid de 500 senaste
+  /// raderna, vilket med brandväggens loggvolym (~680 rader/minut) motsvarade
+  /// omkring 45 sekunder — man kunde inte titta på något som hänt nyss.
+  String _window = '15m';
+  /// True när agenten klippte svaret vid sitt tak. Måste synas: annars tror
+  /// man att det inte fanns mer trafik, i stället för att man bad om för
+  /// mycket.
+  bool _truncated = false;
   bool _isLoading = false;
   int? _hoveredResizeHandle;
   int? _activeResizeIndex; // Se identisk kommentar i policies_screen.dart
@@ -196,10 +204,11 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   Future<void> _poll() async {
     final provider = Provider.of<ConfigProvider>(context, listen: false);
     setState(() => _isLoading = true);
-    final entries = await provider.api.getFirewallLog();
+    final result = await provider.api.getFirewallLog(window: _window);
     if (!mounted) return;
     setState(() {
-      _entries = entries;
+      _entries = result.entries;
+      _truncated = result.truncated;
       _isLoading = false;
     });
   }
@@ -353,6 +362,19 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             ),
             const SizedBox(height: 10),
             _buildFilterBar(),
+            if (_truncated) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.info_outline, size: 14, color: AppColors.warn),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(trp('conn.klippt', {'max': '3000'}),
+                        style: TextStyle(color: AppColors.warn, fontSize: 11)),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 10),
             Expanded(child: _buildTable(rows, nameIndex, deviceZone)),
           ],
@@ -401,6 +423,20 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             'ACCEPT': tr('conn.endast_accept'),
             'DENY': tr('conn.endast_deny'),
           }, (v) => setState(() => _actionFilter = v)),
+          // Tidsfönstret hör till HÄMTNINGEN, inte till filtreringen — därför
+          // laddas loggen om när det ändras, till skillnad från de andra
+          // fälten som bara filtrerar det som redan hämtats.
+          _buildDropdown(tr('conn.tidsfonster'), _window, {
+            '5m': '5 min',
+            '15m': '15 min',
+            '1h': '1 timme',
+            '6h': '6 timmar',
+            '24h': '24 timmar',
+            '7d': '7 dagar',
+          }, (v) {
+            setState(() => _window = v);
+            _poll();
+          }),
           _buildDropdown(tr('conn.ip_version'), _ipVersionFilter, {
             'ALL': tr('conn.alla'),
             'IPV4': tr('conn.endast_ipv4'),
