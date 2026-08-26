@@ -98,8 +98,10 @@ class AppColors {
   /// Sekundär text.
   static Color get textMuted => _d ? Colors.white70 : const Color(0xFF475569);
 
-  /// Svag text (platshållare, "—").
-  static Color get textFaint => _d ? Colors.white38 : const Color(0xFF94A3B8);
+  /// Svag text (platshållare, "—", överstrukna gamla värden).
+  /// I ljust läge mörkare än man först tror: 0xFF94A3B8 mot vitt ger under
+  /// 3:1 i kontrast och blev i praktiken oläsligt.
+  static Color get textFaint => _d ? Colors.white38 : const Color(0xFF64748B);
 
   /// Platshållartext i inmatningsfält.
   static Color get hint => _d ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
@@ -111,9 +113,26 @@ class AppColors {
   static Color get onAccent => _d ? Colors.black : Colors.white;
 
   /// Betydelsebärande statusfärger.
+  ///
+  /// Materials `*Accent`-nyanser är ljusa — de är gjorda för att lysa mot en
+  /// mörk yta. Mot vitt ger de under 2:1 i kontrast och blir närmast
+  /// osynliga (rapporterat 2026-08-26). I ljust läge används därför mörka
+  /// motsvarigheter med samma INNEBÖRD: grönt är fortfarande accept, rött
+  /// deny, bärnsten varning.
   static Color get ok => _d ? Colors.tealAccent : const Color(0xFF047857);
-  static Color get warn => _d ? Colors.amberAccent : const Color(0xFFB45309);
+  static Color get warn => _d ? Colors.amberAccent : const Color(0xFF92400E);
   static Color get danger => _d ? Colors.redAccent : const Color(0xFFB91C1C);
+
+  /// Orange — "reject" och återställningsknappen. Egen färg, inte samma som
+  /// [warn]: skillnaden mellan en varning och ett aktivt avslag ska synas.
+  static Color get caution => _d ? Colors.orangeAccent : const Color(0xFFC2410C);
+
+  /// Blått — DNAT/port forward.
+  static Color get info => _d ? Colors.lightBlueAccent : const Color(0xFF1D4ED8);
+
+  /// Text ovanpå en statusfärgad knapp. Statusfärgerna är LJUSA i mörkt läge
+  /// och MÖRKA i ljust, så förgrunden måste vända med dem.
+  static Color get onStatus => _d ? Colors.black : Colors.white;
 
   /// ThemeData för MaterialApp, så att Flutters egna widgets (dialoger,
   /// snackbars, textmarkering) följer med i temabytet.

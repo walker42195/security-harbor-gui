@@ -37,7 +37,7 @@ class SniRoutesScreen extends StatelessWidget {
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add, size: 14),
                   label: Text(tr('sni.ny_regel'), style: TextStyle(fontSize: 11)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                   onPressed: cfg == null ? null : () => _showEditDialog(context, provider, cfg, null),
                 ),
               ],
@@ -73,7 +73,7 @@ class SniRoutesScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: ExpansionTile(
         dense: true,
-        leading: Icon(Icons.alt_route, size: 18, color: r.enabled ? Colors.tealAccent : AppColors.textMuted),
+        leading: Icon(Icons.alt_route, size: 18, color: r.enabled ? AppColors.ok : AppColors.textMuted),
         title: Text('${r.name.isNotEmpty ? r.name : r.id}  ·  TCP ${r.listenPort}${r.externalIp.isNotEmpty ? " @ ${r.externalIp}" : ""}',
             style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
         subtitle: Text(trp('sni.namn_mal_count', {'n': '${r.backends.length}'}) + (r.defaultBackend != null ? trp('sni.fallback_suffix', {'target': targetLabel(r.defaultBackend!)}) : ''),
@@ -82,13 +82,13 @@ class SniRoutesScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.edit, color: Colors.cyanAccent, size: 16),
+              icon: Icon(Icons.edit, color: AppColors.accent, size: 16),
               tooltip: tr('sni.redigera'),
               onPressed: () => _showEditDialog(context, provider, cfg, idx),
             ),
             Switch(
               value: r.enabled,
-              activeThumbColor: Colors.tealAccent,
+              activeThumbColor: AppColors.ok,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               onChanged: (v) {
                 final updated = List<SNIRouteModel>.from(cfg.sniRoutes);
@@ -97,7 +97,7 @@ class SniRoutesScreen extends StatelessWidget {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.delete, color: Colors.redAccent, size: 16),
+              icon: Icon(Icons.delete, color: AppColors.danger, size: 16),
               tooltip: tr('sni.ta_bort'),
               onPressed: () {
                 final updated = List<SNIRouteModel>.from(cfg.sniRoutes)..removeAt(idx);
@@ -122,7 +122,7 @@ class SniRoutesScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Text('• (fallback / sista instans)  →  ${targetLabel(r.defaultBackend!)}',
-                        style: const TextStyle(color: Colors.amber, fontSize: 11)),
+                        style: TextStyle(color: AppColors.warn, fontSize: 11)),
                   ),
               ],
             ),
@@ -191,8 +191,8 @@ class SniRoutesScreen extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: TextButton.icon(
-                        icon: const Icon(Icons.add, size: 14, color: Colors.cyanAccent),
-                        label: Text(tr('sni.lagg_till_mal'), style: TextStyle(fontSize: 11, color: Colors.cyanAccent)),
+                        icon: Icon(Icons.add, size: 14, color: AppColors.accent),
+                        label: Text(tr('sni.lagg_till_mal'), style: TextStyle(fontSize: 11, color: AppColors.accent)),
                         onPressed: () => setState(() => backends.add(_BackendEdit())),
                       ),
                     ),
@@ -203,7 +203,7 @@ class SniRoutesScreen extends StatelessWidget {
                       children: [
                         Switch(
                           value: fallbackOn,
-                          activeThumbColor: Colors.tealAccent,
+                          activeThumbColor: AppColors.ok,
                           onChanged: (v) => setState(() => fallbackOn = v),
                         ),
                         const SizedBox(width: 6),
@@ -225,7 +225,7 @@ class SniRoutesScreen extends StatelessWidget {
                       TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('sni.avbryt'), style: TextStyle(fontSize: 12))),
                       const SizedBox(width: 8),
                       ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                         child: Text(tr('sni.spara'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                         onPressed: () {
                           final port = int.tryParse(portCtrl.text.trim()) ?? 0;
@@ -288,13 +288,13 @@ class SniRoutesScreen extends StatelessWidget {
                 ),
               ),
               if (onRemove != null)
-                IconButton(icon: Icon(Icons.close, size: 16, color: Colors.redAccent), onPressed: onRemove, tooltip: tr('sni.ta_bort_mal')),
+                IconButton(icon: Icon(Icons.close, size: 16, color: AppColors.danger), onPressed: onRemove, tooltip: tr('sni.ta_bort_mal')),
             ],
           ),
           if (b.type == 'openvpn' && (!ovpnEnabled || !ovpnTcp))
             Padding(
               padding: EdgeInsets.only(top: 6),
-              child: Text(tr('sni.obs_kraver_att_openvpn_ar_aktiverat'), style: TextStyle(color: Colors.amber, fontSize: 10)),
+              child: Text(tr('sni.obs_kraver_att_openvpn_ar_aktiverat'), style: TextStyle(color: AppColors.warn, fontSize: 10)),
             ),
           if (b.type != 'openvpn') ...[
             const SizedBox(height: 8),

@@ -76,7 +76,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.devices, color: Colors.cyanAccent, size: 22),
+                    Icon(Icons.devices, color: AppColors.accent, size: 22),
                     SizedBox(width: 10),
                     Text(tr('dns_devices.dns_enheter'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
@@ -84,7 +84,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
                 OutlinedButton.icon(
                   icon: const Icon(Icons.refresh, size: 14),
                   label: Text(tr('dns_devices.uppdatera'), style: TextStyle(fontSize: 11)),
-                  style: OutlinedButton.styleFrom(foregroundColor: Colors.cyanAccent, side: const BorderSide(color: Colors.cyanAccent)),
+                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.accent, side: BorderSide(color: AppColors.accent)),
                   onPressed: _loadLeases,
                 ),
               ],
@@ -121,7 +121,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
                 label: Text(tr('dns_devices.lagg_till_post'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.ok, foregroundColor: AppColors.onStatus),
                 onPressed: () => _showAddStaticRecordDialog(provider, dns),
               ),
             ],
@@ -143,7 +143,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.dns, size: 14, color: Colors.tealAccent),
+                      Icon(Icons.dns, size: 14, color: AppColors.ok),
                       const SizedBox(width: 10),
                       // Manuella poster visas EXAKT som angivna (inget lokalt
                       // suffix hängs på — vill man ha det skriver man hela
@@ -151,7 +151,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
                       Expanded(child: Text(rec.hostname, style: TextStyle(color: AppColors.text, fontSize: 12))),
                       Expanded(child: Text(rec.ip, style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontFamily: 'monospace'))),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+                        icon: Icon(Icons.delete_outline, size: 16, color: AppColors.danger),
                         onPressed: () {
                           final updated = dns.staticRecords.where((r) => r != rec).toList();
                           _save(provider, dns.copyWith(staticRecords: updated));
@@ -206,7 +206,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
             Padding(
               padding: EdgeInsets.symmetric(vertical: 6),
               child: Text(tr('dns_devices.automatisk_registrering_ar_avstangd_enheterna_nedan'),
-                  style: TextStyle(color: Colors.amber, fontSize: 10)),
+                  style: TextStyle(color: AppColors.warn, fontSize: 10)),
             ),
           const SizedBox(height: 6),
           if (_loadingLeases)
@@ -237,7 +237,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
                       Expanded(flex: 3, child: Text(_fqdn(l.hostname, dns.localDomain), style: TextStyle(color: AppColors.text, fontSize: 12))),
                       Expanded(flex: 2, child: Text(l.ip, style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontFamily: 'monospace'))),
                       Expanded(flex: 2, child: Text(l.interfaceDevice, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
-                      Expanded(flex: 2, child: Text(l.zone, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11))),
+                      Expanded(flex: 2, child: Text(l.zone, style: TextStyle(color: AppColors.accent, fontSize: 11))),
                     ],
                   ),
                 )),
@@ -275,7 +275,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
                   TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('dns_devices.avbryt'), style: TextStyle(fontSize: 12))),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.ok, foregroundColor: AppColors.onStatus),
                     child: Text(tr('dns_devices.lagg_till'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     onPressed: () {
                       final hostname = hostnameCtrl.text.trim();

@@ -44,7 +44,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.alt_route, color: Colors.cyanAccent, size: 20),
+                    Icon(Icons.alt_route, color: AppColors.accent, size: 20),
                     SizedBox(width: 8),
                     Text(tr('routes.statiska_rutter_routing'),
                       style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold),
@@ -52,11 +52,11 @@ class _RoutesScreenState extends State<RoutesScreen> {
                   ],
                 ),
                 OutlinedButton.icon(
-                  icon: const Icon(Icons.add, size: 16, color: Colors.cyanAccent),
+                  icon: Icon(Icons.add, size: 16, color: AppColors.accent),
                   label: Text(tr('routes.ny_rutt'), style: TextStyle(fontSize: 12, color: Colors.white)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    side: const BorderSide(color: Colors.cyanAccent),
+                    side: BorderSide(color: AppColors.accent),
                   ),
                   onPressed: cfg == null ? null : () => _showEditRouteDialog(context, provider, cfg, null),
                 ),
@@ -110,7 +110,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
           Icon(
             r.enabled ? Icons.check_circle : Icons.pause_circle_outline,
             size: 16,
-            color: r.enabled ? Colors.tealAccent : AppColors.textMuted,
+            color: r.enabled ? AppColors.ok : AppColors.textMuted,
           ),
           const SizedBox(width: 10),
           // Expanded (flex) i stället för en hård SizedBox(width: 180) —
@@ -137,27 +137,27 @@ class _RoutesScreenState extends State<RoutesScreen> {
               text: TextSpan(
                 style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                 children: [
-                  TextSpan(text: r.network, style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
+                  TextSpan(text: r.network, style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold)),
                   const TextSpan(text: '  via  '),
-                  TextSpan(text: r.gateway, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
+                  TextSpan(text: r.gateway, style: TextStyle(color: AppColors.warn, fontWeight: FontWeight.bold)),
                   if (r.interfaceDevice.isNotEmpty) TextSpan(text: '  dev ${r.interfaceDevice}', style: TextStyle(color: AppColors.textFaint)),
                 ],
               ),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.edit, size: 16, color: Colors.cyanAccent),
+            icon: Icon(Icons.edit, size: 16, color: AppColors.accent),
             tooltip: tr('routes.redigera_rutt'),
             onPressed: () => _showEditRouteDialog(context, provider, cfg, idx),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+            icon: Icon(Icons.delete_outline, size: 16, color: AppColors.danger),
             tooltip: tr('routes.ta_bort_rutt'),
             onPressed: () => _deleteRoute(context, provider, cfg, idx),
           ),
           Switch(
             value: r.enabled,
-            activeThumbColor: Colors.tealAccent,
+            activeThumbColor: AppColors.ok,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             onChanged: (val) {
               final updated = List<StaticRouteModel>.from(cfg.staticRoutes);
@@ -184,7 +184,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('routes.avbryt'))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(dctx, true),
             child: Text(tr('routes.ta_bort')),
           ),
@@ -281,7 +281,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                   children: [
                     Checkbox(
                       value: enabled,
-                      activeColor: Colors.tealAccent,
+                      activeColor: AppColors.ok,
                       checkColor: Colors.black,
                       onChanged: (v) => setState(() => enabled = v ?? true),
                     ),
@@ -290,7 +290,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                 ),
                 if (formError != null) ...[
                   const SizedBox(height: 8),
-                  Text(formError!, style: const TextStyle(color: Colors.redAccent, fontSize: 11)),
+                  Text(formError!, style: TextStyle(color: AppColors.danger, fontSize: 11)),
                 ],
               ],
             ),
@@ -298,7 +298,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('routes.avbryt'))),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
               onPressed: () {
                 // Enkel klientvalidering — den auktoritativa kontrollen
                 // (giltig CIDR/IP, ingen krock, känt gränssnitt) görs ändå av

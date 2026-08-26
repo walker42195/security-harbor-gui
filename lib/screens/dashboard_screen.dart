@@ -197,21 +197,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             // under 500px bredd, där varje kort i stället får halva bredden.
             LayoutBuilder(builder: (context, constraints) {
               final cards = [
-                _buildCompactStatCard(tr('dashboard.system'), sysName, trp('dashboard.ver', {'v': sysVersion}), Icons.dns, Colors.cyanAccent),
-                _buildCompactStatCard(tr('dashboard.uptime'), uptime, tr('dashboard.driftstatus_aktiv'), Icons.timer_outlined, Colors.tealAccent),
+                _buildCompactStatCard(tr('dashboard.system'), sysName, trp('dashboard.ver', {'v': sysVersion}), Icons.dns, AppColors.accent),
+                _buildCompactStatCard(tr('dashboard.uptime'), uptime, tr('dashboard.driftstatus_aktiv'), Icons.timer_outlined, AppColors.ok),
                 _buildCompactStatCard(
                   tr('dashboard.cpu'),
                   cpuUsage == null ? '—' : '${cpuUsage.toStringAsFixed(1)}%',
                   cpuCores == null ? '—' : trp('dashboard.karnor', {'n': '$cpuCores'}),
                   Icons.memory,
-                  Colors.amber,
+                  AppColors.warn,
                 ),
                 _buildCompactStatCard(
                   tr('dashboard.minne'),
                   memUsage == null ? '—' : '${memUsage.toStringAsFixed(1)}%',
                   (memTotalGB == null || memFreePct == null) ? '—' : trp('dashboard.ram_ledigt', {'gb': '$memTotalGB', 'pct': '$memFreePct'}),
                   Icons.pie_chart_outline,
-                  Colors.lightBlueAccent,
+                  AppColors.info,
                 ),
               ];
               if (constraints.maxWidth >= 500) {
@@ -239,13 +239,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 Row(
                   children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.tealAccent, shape: BoxShape.circle)),
+                    Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.ok, shape: BoxShape.circle)),
                     const SizedBox(width: 4),
-                    Text(tr('dashboard.in_rx'), style: TextStyle(color: Colors.tealAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                    Text(tr('dashboard.in_rx'), style: TextStyle(color: AppColors.ok, fontSize: 10, fontWeight: FontWeight.bold)),
                     const SizedBox(width: 12),
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.amberAccent, shape: BoxShape.circle)),
+                    Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.warn, shape: BoxShape.circle)),
                     const SizedBox(width: 4),
-                    Text(tr('dashboard.ut_tx'), style: TextStyle(color: Colors.amberAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                    Text(tr('dashboard.ut_tx'), style: TextStyle(color: AppColors.warn, fontSize: 10, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ],
@@ -253,7 +253,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 10),
 
             metricsList.isEmpty
-                ? const Center(child: CircularProgressIndicator(color: Colors.cyanAccent))
+                ? Center(child: CircularProgressIndicator(color: AppColors.accent))
                 : GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -295,7 +295,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Icon(
                 isVLAN ? Icons.alt_route : Icons.router,
                 size: 15,
-                color: isVLAN ? Colors.lightBlueAccent : Colors.tealAccent,
+                color: isVLAN ? AppColors.info : AppColors.ok,
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -307,14 +307,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(color: Colors.tealAccent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(3)),
-                child: Text('IN: $rxFormatted', style: const TextStyle(color: Colors.tealAccent, fontSize: 9, fontWeight: FontWeight.bold)),
+                decoration: BoxDecoration(color: AppColors.ok.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(3)),
+                child: Text('IN: $rxFormatted', style: TextStyle(color: AppColors.ok, fontSize: 9, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: BoxDecoration(color: Colors.amberAccent.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(3)),
-                child: Text('UT: $txFormatted', style: const TextStyle(color: Colors.amberAccent, fontSize: 9, fontWeight: FontWeight.bold)),
+                decoration: BoxDecoration(color: AppColors.warn.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(3)),
+                child: Text('UT: $txFormatted', style: TextStyle(color: AppColors.warn, fontSize: 9, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -433,17 +433,17 @@ class BandwidthGraphPainter extends CustomPainter {
     if (graphWidth <= 0) return;
 
     final rxPaint = Paint()
-      ..color = Colors.tealAccent
+      ..color = AppColors.ok
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
       ..isAntiAlias = true;
 
     final rxFillPaint = Paint()
-      ..color = Colors.tealAccent.withValues(alpha: 0.12)
+      ..color = AppColors.ok.withValues(alpha: 0.12)
       ..style = PaintingStyle.fill;
 
     final txPaint = Paint()
-      ..color = Colors.amberAccent
+      ..color = AppColors.warn
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
       ..isAntiAlias = true;

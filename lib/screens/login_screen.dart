@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: AppColors.bg,
       body: Center(
         child: provider.isInitializing
-            ? const CircularProgressIndicator(color: Colors.cyanAccent)
+            ? CircularProgressIndicator(color: AppColors.accent)
             : ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Padding(
@@ -85,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: Image.asset(
                               'assets/logo.png',
                               fit: BoxFit.contain,
-                              errorBuilder: (_, _, _) => const Icon(Icons.security, color: Colors.cyanAccent, size: 48),
+                              errorBuilder: (_, _, _) => Icon(Icons.security, color: AppColors.accent, size: 48),
                             ),
                           ),
                         ),
@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   labelText: tr('login.url_label'),
                                   hintText: tr('login.url_hint'),
                                   border: const OutlineInputBorder(),
-                                  prefixIcon: const Icon(Icons.link, color: Colors.cyanAccent, size: 18),
+                                  prefixIcon: Icon(Icons.link, color: AppColors.accent, size: 18),
                                   isDense: true,
                                 ),
                               ),
@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               decoration: InputDecoration(
                                 labelText: tr('login.username_label'),
                                 border: const OutlineInputBorder(),
-                                prefixIcon: const Icon(Icons.person, color: Colors.cyanAccent, size: 18),
+                                prefixIcon: Icon(Icons.person, color: AppColors.accent, size: 18),
                                 isDense: true,
                               ),
                             ),
@@ -138,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               decoration: InputDecoration(
                                 labelText: tr('login.password_label'),
                                 border: const OutlineInputBorder(),
-                                prefixIcon: const Icon(Icons.lock, color: Colors.cyanAccent, size: 18),
+                                prefixIcon: Icon(Icons.lock, color: AppColors.accent, size: 18),
                                 suffixIcon: IconButton(
                                   icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 18, color: AppColors.textMuted),
                                   onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -154,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                                     : const Icon(Icons.login, size: 16),
                                 label: Text(tr('login.submit'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                                 onPressed: provider.isLoading ? null : () => _login(provider),
                               ),
                             ),
@@ -162,9 +162,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               const SizedBox(height: 14),
                               Row(
                                 children: [
-                                  const Icon(Icons.error_outline, color: Colors.redAccent, size: 16),
+                                  Icon(Icons.error_outline, color: AppColors.danger, size: 16),
                                   const SizedBox(width: 6),
-                                  Expanded(child: Text(provider.errorMessage!, style: const TextStyle(color: Colors.redAccent, fontSize: 12))),
+                                  Expanded(child: Text(provider.errorMessage!, style: TextStyle(color: AppColors.danger, fontSize: 12))),
                                 ],
                               ),
                             ],
@@ -195,7 +195,7 @@ class _LanguageToggle extends StatelessWidget {
       return TextButton(
         onPressed: active ? null : () => provider.setLanguage(lang),
         style: TextButton.styleFrom(
-          foregroundColor: active ? Colors.cyanAccent : AppColors.textMuted,
+          foregroundColor: active ? AppColors.accent : AppColors.textMuted,
           padding: const EdgeInsets.symmetric(horizontal: 8),
         ),
         child: Text(label, style: TextStyle(fontSize: 11, fontWeight: active ? FontWeight.bold : FontWeight.normal)),

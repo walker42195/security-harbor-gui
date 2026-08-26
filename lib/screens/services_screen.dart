@@ -56,12 +56,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
   Color _statusColor(ServiceStatusModel s) {
     switch (s.active) {
       case 'active':
-        return Colors.tealAccent;
+        return AppColors.ok;
       case 'activating':
       case 'reloading':
-        return Colors.amber;
+        return AppColors.warn;
       case 'failed':
-        return Colors.redAccent;
+        return AppColors.danger;
       case 'inactive':
         return AppColors.textMuted;
       default:
@@ -117,7 +117,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('services.avbryt'))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(dctx, true),
             child: Text(tr('services.starta_om')),
           ),
@@ -178,13 +178,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.miscellaneous_services, color: Colors.cyanAccent, size: 20),
+                    Icon(Icons.miscellaneous_services, color: AppColors.accent, size: 20),
                     const SizedBox(width: 8),
                     Text(tr('services.tjanster'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 IconButton(
-                  icon: Icon(Icons.refresh, size: 18, color: _loading ? AppColors.textFaint : Colors.tealAccent),
+                  icon: Icon(Icons.refresh, size: 18, color: _loading ? AppColors.textFaint : AppColors.ok),
                   tooltip: tr('services.uppdatera_status'),
                   onPressed: _loading ? null : _poll,
                 ),
@@ -203,7 +203,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
             child: _services.isEmpty
                 ? Center(
                     child: _loading
-                        ? const CircularProgressIndicator(color: Colors.cyanAccent)
+                        ? CircularProgressIndicator(color: AppColors.accent)
                         : Text(tr('services.kunde_inte_hamta_tjanststatus'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                   )
                 : ListView.builder(
@@ -224,7 +224,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border.all(color: s.active == 'failed' ? Colors.redAccent.withValues(alpha: 0.5) : AppColors.border),
+        border: Border.all(color: s.active == 'failed' ? AppColors.danger.withValues(alpha: 0.5) : AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Wrap(
@@ -293,12 +293,12 @@ class _ServicesScreenState extends State<ServicesScreen> {
           Text(s.unit, style: TextStyle(color: AppColors.textFaint, fontSize: 10, fontFamily: 'monospace')),
           OutlinedButton.icon(
             icon: restarting
-                ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amberAccent))
-                : const Icon(Icons.restart_alt, size: 14, color: Colors.amberAccent),
+                ? SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warn))
+                : Icon(Icons.restart_alt, size: 14, color: AppColors.warn),
             label: Text(restarting ? 'Startar om...' : 'Starta om', style: const TextStyle(fontSize: 11, color: Colors.white)),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              side: const BorderSide(color: Colors.amberAccent),
+              side: BorderSide(color: AppColors.warn),
             ),
             onPressed: restarting ? null : () => _restart(context, provider, s),
           ),

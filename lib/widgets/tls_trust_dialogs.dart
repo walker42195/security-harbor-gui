@@ -44,9 +44,9 @@ Future<void> showTlsProbeFailedDialog(BuildContext context, String error) {
       backgroundColor: AppColors.surface,
       title: Row(
         children: [
-          Icon(Icons.error_outline, color: Colors.redAccent),
+          Icon(Icons.error_outline, color: AppColors.danger),
           SizedBox(width: 8),
-          Text(tr('tls.kunde_inte_kontrollera_certifikatet'), style: TextStyle(color: Colors.redAccent, fontSize: 15)),
+          Text(tr('tls.kunde_inte_kontrollera_certifikatet'), style: TextStyle(color: AppColors.danger, fontSize: 15)),
         ],
       ),
       content: Column(
@@ -58,7 +58,7 @@ Future<void> showTlsProbeFailedDialog(BuildContext context, String error) {
             style: TextStyle(color: AppColors.text, fontSize: 12),
           ),
           const SizedBox(height: 8),
-          SelectableText(error, style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontFamily: 'monospace')),
+          SelectableText(error, style: TextStyle(color: AppColors.warn, fontSize: 11, fontFamily: 'monospace')),
         ],
       ),
       actions: [
@@ -83,7 +83,7 @@ Future<bool?> showTrustNewCertificateDialog(BuildContext context, String fingerp
         children: [
           Text(tr('tls.brandvaggens_certifikat'), style: TextStyle(color: AppColors.text, fontSize: 12)),
           const SizedBox(height: 8),
-          SelectableText(fingerprint, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11, fontFamily: 'monospace')),
+          SelectableText(fingerprint, style: TextStyle(color: AppColors.accent, fontSize: 11, fontFamily: 'monospace')),
           const SizedBox(height: 12),
           Text(tr('tls.lita_pa_detta_certifikat'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
         ],
@@ -91,7 +91,7 @@ Future<bool?> showTrustNewCertificateDialog(BuildContext context, String fingerp
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('tls.avbryt'))),
         ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(tr('tls.lita_pa_anslut')),
         ),
@@ -111,9 +111,9 @@ Future<bool?> showCertificateMismatchDialog(BuildContext context, String expecte
       backgroundColor: AppColors.surface,
       title: Row(
         children: [
-          Icon(Icons.warning_amber, color: Colors.redAccent),
+          Icon(Icons.warning_amber, color: AppColors.danger),
           SizedBox(width: 8),
-          Text(tr('tls.certifikatet_har_andrats'), style: TextStyle(color: Colors.redAccent, fontSize: 15)),
+          Text(tr('tls.certifikatet_har_andrats'), style: TextStyle(color: AppColors.danger, fontSize: 15)),
         ],
       ),
       content: Column(
@@ -126,13 +126,13 @@ Future<bool?> showCertificateMismatchDialog(BuildContext context, String expecte
           SelectableText(expected, style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontFamily: 'monospace')),
           const SizedBox(height: 8),
           Text(tr('tls.faktiskt'), style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
-          SelectableText(actual, style: const TextStyle(color: Colors.redAccent, fontSize: 11, fontFamily: 'monospace')),
+          SelectableText(actual, style: TextStyle(color: AppColors.danger, fontSize: 11, fontFamily: 'monospace')),
         ],
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('tls.avbryt'))),
         ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.black),
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: AppColors.onStatus),
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(tr('tls.anslut_anda')),
         ),

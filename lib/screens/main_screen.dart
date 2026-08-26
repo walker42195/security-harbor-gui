@@ -159,7 +159,7 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                   const SizedBox(width: 10),
                 ] else ...[
-                  const Icon(Icons.shield, color: Colors.cyanAccent, size: 18),
+                  Icon(Icons.shield, color: AppColors.accent, size: 18),
                   const SizedBox(width: 8),
                 ],
                 // Flexible+ellipsis i stället för en obegränsad Text: på en
@@ -176,12 +176,12 @@ class _MainScreenState extends State<MainScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.cyanAccent.withValues(alpha: 0.15),
+                      color: AppColors.accent.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(3),
                     ),
                     child: Text(
                       'FIREWALL OS ${provider.systemStatus?['version'] ?? '—'}',
-                      style: const TextStyle(color: Colors.cyanAccent, fontSize: 9, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.accent, fontSize: 9, fontWeight: FontWeight.bold),
                     ),
                   ),
                 if (!isNarrow && isHostMode) ...[
@@ -189,13 +189,13 @@ class _MainScreenState extends State<MainScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.orangeAccent.withValues(alpha: 0.15),
+                      color: AppColors.caution.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(3),
-                      border: Border.all(color: Colors.orangeAccent.withValues(alpha: 0.4)),
+                      border: Border.all(color: AppColors.caution.withValues(alpha: 0.4)),
                     ),
                     child: Text(
                       tr('main.mode_host'),
-                      style: const TextStyle(color: Colors.orangeAccent, fontSize: 9, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.caution, fontSize: 9, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -209,7 +209,7 @@ class _MainScreenState extends State<MainScreen> {
                     decoration: BoxDecoration(
                       color: AppColors.bg,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: provider.isAuthenticated ? Colors.tealAccent.withValues(alpha: 0.4) : Colors.amber.withValues(alpha: 0.4)),
+                      border: Border.all(color: provider.isAuthenticated ? AppColors.ok.withValues(alpha: 0.4) : AppColors.warn.withValues(alpha: 0.4)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -219,7 +219,7 @@ class _MainScreenState extends State<MainScreen> {
                           height: 7,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
+                            color: provider.isAuthenticated ? AppColors.ok : AppColors.warn,
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -230,7 +230,7 @@ class _MainScreenState extends State<MainScreen> {
                                 : tr('main.not_connected'),
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
+                              color: provider.isAuthenticated ? AppColors.ok : AppColors.warn,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
@@ -273,7 +273,7 @@ class _MainScreenState extends State<MainScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.public, size: 11, color: Colors.cyanAccent),
+                          Icon(Icons.public, size: 11, color: AppColors.accent),
                           const SizedBox(width: 5),
                           Text(
                             isNarrow ? wan : '${tr('main.wan_ip')} $wan',
@@ -333,7 +333,7 @@ class _MainScreenState extends State<MainScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 18),
+                  Icon(Icons.warning_amber_rounded, color: AppColors.warn, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -360,7 +360,7 @@ class _MainScreenState extends State<MainScreen> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error, color: Colors.redAccent, size: 18),
+                      Icon(Icons.error, color: AppColors.danger, size: 18),
                       const SizedBox(width: 8),
                       Text(
                         _failedServices.length == 1
@@ -421,7 +421,7 @@ class _MainScreenState extends State<MainScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.timer, color: Colors.amberAccent, size: 18),
+                      Icon(Icons.timer, color: AppColors.warn, size: 18),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -439,7 +439,7 @@ class _MainScreenState extends State<MainScreen> {
                       ElevatedButton.icon(
                         icon: const Icon(Icons.check_circle, size: 14),
                         label: Text(tr('main.confirm_commit'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.ok, foregroundColor: AppColors.onStatus, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
                         onPressed: () async {
                           final ok = await provider.confirmChanges();
                           if (context.mounted) {
@@ -480,8 +480,8 @@ class _MainScreenState extends State<MainScreen> {
             Container(
               color: AppColors.surface,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.cyanAccent, width: 1)),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.accent, width: 1)),
               ),
               // Se kommentaren på Safe Apply-bannern ovan — samma
               // Column(text ovanför, Wrap(knappar) under) i stället för allt
@@ -491,7 +491,7 @@ class _MainScreenState extends State<MainScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.edit_note, color: Colors.cyanAccent, size: 18),
+                      Icon(Icons.edit_note, color: AppColors.accent, size: 18),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -526,7 +526,7 @@ class _MainScreenState extends State<MainScreen> {
                               actions: [
                                 TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('main.cancel'))),
                                 ElevatedButton(
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
                                   onPressed: () => Navigator.pop(dctx, true),
                                   child: Text(tr('main.undo_confirm_button')),
                                 ),
@@ -554,13 +554,13 @@ class _MainScreenState extends State<MainScreen> {
                       OutlinedButton.icon(
                         icon: const Icon(Icons.difference_outlined, size: 14),
                         label: Text(tr('main.show_changes'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        style: OutlinedButton.styleFrom(foregroundColor: Colors.cyanAccent, side: const BorderSide(color: Colors.cyanAccent), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        style: OutlinedButton.styleFrom(foregroundColor: AppColors.accent, side: BorderSide(color: AppColors.accent), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
                         onPressed: () => _showPendingChanges(context, provider),
                       ),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.play_arrow, size: 14),
                         label: Text(tr('main.apply_safe'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
                         onPressed: () async {
                           final ok = await provider.applyChanges();
                           if (context.mounted) {
@@ -626,8 +626,8 @@ class _MainScreenState extends State<MainScreen> {
                             onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
                             labelType: NavigationRailLabelType.all,
                             minWidth: 56,
-                            selectedIconTheme: const IconThemeData(color: Colors.cyanAccent, size: 18),
-                            selectedLabelTextStyle: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 9),
+                            selectedIconTheme: IconThemeData(color: AppColors.accent, size: 18),
+                            selectedLabelTextStyle: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 9),
                             unselectedIconTheme: IconThemeData(color: AppColors.textMuted, size: 18),
                             unselectedLabelTextStyle: TextStyle(color: AppColors.textMuted, fontSize: 9),
                             leading: Padding(
@@ -641,7 +641,7 @@ class _MainScreenState extends State<MainScreen> {
                                       width: 24,
                                       height: 24,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => const Icon(Icons.shield, color: Colors.cyanAccent, size: 22),
+                                      errorBuilder: (_, _, _) => Icon(Icons.shield, color: AppColors.accent, size: 22),
                                     ),
                                   ),
                                 ],
@@ -687,7 +687,7 @@ class _MainScreenState extends State<MainScreen> {
                       width: 28,
                       height: 28,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const Icon(Icons.shield, color: Colors.cyanAccent, size: 26),
+                      errorBuilder: (_, _, _) => Icon(Icons.shield, color: AppColors.accent, size: 26),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -706,12 +706,12 @@ class _MainScreenState extends State<MainScreen> {
                   return ListTile(
                     leading: selected ? dest.selectedIcon : dest.icon,
                     title: DefaultTextStyle.merge(
-                      style: TextStyle(color: selected ? Colors.cyanAccent : AppColors.text, fontWeight: selected ? FontWeight.bold : FontWeight.normal, fontSize: 13),
+                      style: TextStyle(color: selected ? AppColors.accent : AppColors.text, fontWeight: selected ? FontWeight.bold : FontWeight.normal, fontSize: 13),
                       child: dest.label,
                     ),
-                    iconColor: selected ? Colors.cyanAccent : AppColors.textMuted,
+                    iconColor: selected ? AppColors.accent : AppColors.textMuted,
                     selected: selected,
-                    selectedTileColor: Colors.cyanAccent.withValues(alpha: 0.08),
+                    selectedTileColor: AppColors.accent.withValues(alpha: 0.08),
                     onTap: () {
                       setState(() => _selectedIndex = idx);
                       Navigator.pop(context);
@@ -759,7 +759,7 @@ void _showPendingChanges(BuildContext context, ConfigProvider provider) {
       backgroundColor: AppColors.surface,
       title: Row(
         children: [
-          const Icon(Icons.difference_outlined, size: 18, color: Colors.cyanAccent),
+          Icon(Icons.difference_outlined, size: 18, color: AppColors.accent),
           const SizedBox(width: 8),
           Expanded(
             child: Text(tr('main.changes_title'),
@@ -794,11 +794,11 @@ void _showPendingChanges(BuildContext context, ConfigProvider provider) {
                     const SizedBox(height: 14),
                     Row(
                       children: [
-                        const Icon(Icons.info_outline, size: 13, color: Colors.amberAccent),
+                        Icon(Icons.info_outline, size: 13, color: AppColors.warn),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(tr('main.changes_apply_hint'),
-                              style: const TextStyle(color: Colors.amberAccent, fontSize: 11)),
+                              style: TextStyle(color: AppColors.warn, fontSize: 11)),
                         ),
                       ],
                     ),
@@ -825,9 +825,9 @@ Map<String, List<ConfigChange>> _groupBySection(List<ConfigChange> changes) {
 
 Widget _changeRow(ConfigChange c) {
   final (color, label) = switch (c.kind) {
-    ChangeKind.added => (Colors.tealAccent, tr('main.change_added')),
-    ChangeKind.removed => (Colors.redAccent, tr('main.change_removed')),
-    ChangeKind.modified => (Colors.amberAccent, tr('main.change_modified')),
+    ChangeKind.added => (AppColors.ok, tr('main.change_added')),
+    ChangeKind.removed => (AppColors.danger, tr('main.change_removed')),
+    ChangeKind.modified => (AppColors.warn, tr('main.change_modified')),
   };
 
   return Padding(
@@ -860,7 +860,7 @@ Widget _changeRow(ConfigChange c) {
                 if (c.field.isNotEmpty)
                   TextSpan(
                       text: '${c.item.isEmpty ? '' : ' · '}${fieldLabels[c.field] ?? c.field}',
-                      style: const TextStyle(color: Colors.cyanAccent, fontSize: 11.5)),
+                      style: TextStyle(color: AppColors.accent, fontSize: 11.5)),
               ])),
               if (c.kind == ChangeKind.modified)
                 Padding(

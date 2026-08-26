@@ -95,7 +95,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
             child: Row(
               children: [
-                const Icon(Icons.vpn_lock, color: Colors.cyanAccent, size: 22),
+                Icon(Icons.vpn_lock, color: AppColors.accent, size: 22),
                 const SizedBox(width: 10),
                 Text(tr('vpn.vpn'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
               ],
@@ -105,8 +105,8 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
           TabBar(
             controller: _tabController,
             isScrollable: true,
-            indicatorColor: Colors.cyanAccent,
-            labelColor: Colors.cyanAccent,
+            indicatorColor: AppColors.accent,
+            labelColor: AppColors.accent,
             unselectedLabelColor: AppColors.textMuted,
             labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             tabs: const [
@@ -172,10 +172,10 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
                 children: [
                   Switch(
                     value: wg.enabled,
-                    activeThumbColor: Colors.tealAccent,
+                    activeThumbColor: AppColors.ok,
                     onChanged: (v) => _saveWireGuard(provider, wg.copyWith(enabled: v)),
                   ),
-                  Text(wg.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: wg.enabled ? Colors.tealAccent : AppColors.textMuted, fontSize: 11)),
+                  Text(wg.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: wg.enabled ? AppColors.ok : AppColors.textMuted, fontSize: 11)),
                 ],
               ),
             ],
@@ -197,7 +197,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
               ElevatedButton.icon(
                 icon: const Icon(Icons.save, size: 14),
                 label: Text(tr('vpn.spara_serverinstallningar'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                 onPressed: () {
                   final port = int.tryParse(listenPortCtrl.text.trim()) ?? wg.listenPort;
                   _saveWireGuard(
@@ -208,7 +208,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
               ),
               const SizedBox(width: 14),
               if (_loadingServerInfo)
-                const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent))
+                SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent))
               else if (serverPubKey.isNotEmpty)
                 Expanded(
                   child: Row(
@@ -229,7 +229,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
           ),
           const SizedBox(height: 6),
           Text(tr('vpn.kom_ihag_att_applicera_bekrafta_andringarna'),
-            style: TextStyle(color: Colors.amberAccent, fontSize: 10),
+            style: TextStyle(color: AppColors.warn, fontSize: 10),
           ),
         ],
       ),
@@ -278,7 +278,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
                 label: Text(tr('vpn.lagg_till_klient'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.ok, foregroundColor: AppColors.onStatus),
                 onPressed: () => _showAddPeerFlow(provider, wg),
               ),
             ],
@@ -307,7 +307,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
       ),
       child: Row(
         children: [
-          Icon(peer.enabled ? Icons.person : Icons.person_off, size: 16, color: peer.enabled ? Colors.tealAccent : AppColors.textMuted),
+          Icon(peer.enabled ? Icons.person : Icons.person_off, size: 16, color: peer.enabled ? AppColors.ok : AppColors.textMuted),
           const SizedBox(width: 10),
           Expanded(
             flex: 2,
@@ -323,14 +323,14 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
           ),
           Switch(
             value: peer.enabled,
-            activeThumbColor: Colors.tealAccent,
+            activeThumbColor: AppColors.ok,
             onChanged: (v) {
               final updated = wg.peers.map((p) => p.id == peer.id ? WireGuardPeerModel(id: p.id, name: p.name, publicKey: p.publicKey, allowedIps: p.allowedIps, enabled: v) : p).toList();
               _saveWireGuard(provider, wg.copyWith(peers: updated));
             },
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
+            icon: Icon(Icons.delete_outline, size: 16, color: AppColors.danger),
             tooltip: tr('vpn.ta_bort_klient'),
             onPressed: () {
               final updated = wg.peers.where((p) => p.id != peer.id).toList();
@@ -369,7 +369,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
                   TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('vpn.avbryt'), style: TextStyle(color: AppColors.textMuted))),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.ok, foregroundColor: AppColors.onStatus),
                     onPressed: () => Navigator.pop(ctx, true),
                     child: Text(tr('vpn.generera_nyckelpar_lagg_till')),
                   ),
@@ -451,7 +451,7 @@ PersistentKeepalive = 25
             children: [
               Row(
                 children: [
-                  const Icon(Icons.warning_amber, color: Colors.amberAccent, size: 18),
+                  Icon(Icons.warning_amber, color: AppColors.warn, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(trp('vpn.client_config_for', {'name': peer.name}), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
@@ -460,7 +460,7 @@ PersistentKeepalive = 25
               ),
               const SizedBox(height: 6),
               Text(tr('vpn.detta_visas_bara_en_gang_den'),
-                style: TextStyle(color: Colors.amberAccent, fontSize: 11),
+                style: TextStyle(color: AppColors.warn, fontSize: 11),
               ),
               const SizedBox(height: 14),
               Center(
@@ -479,15 +479,15 @@ PersistentKeepalive = 25
                   border: Border.all(color: AppColors.border),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: SelectableText(clientConfig, style: const TextStyle(color: Colors.greenAccent, fontSize: 11, fontFamily: 'monospace')),
+                child: SelectableText(clientConfig, style: TextStyle(color: AppColors.ok, fontSize: 11, fontFamily: 'monospace')),
               ),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton.icon(
-                    icon: const Icon(Icons.copy, size: 14, color: Colors.cyanAccent),
-                    label: Text(tr('vpn.kopiera'), style: TextStyle(color: Colors.cyanAccent)),
+                    icon: Icon(Icons.copy, size: 14, color: AppColors.accent),
+                    label: Text(tr('vpn.kopiera'), style: TextStyle(color: AppColors.accent)),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: clientConfig));
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -496,13 +496,13 @@ PersistentKeepalive = 25
                     },
                   ),
                   TextButton.icon(
-                    icon: const Icon(Icons.save_alt, size: 14, color: Colors.cyanAccent),
-                    label: Text(tr('vpn.spara_till_fil'), style: const TextStyle(color: Colors.cyanAccent)),
+                    icon: Icon(Icons.save_alt, size: 14, color: AppColors.accent),
+                    label: Text(tr('vpn.spara_till_fil'), style: TextStyle(color: AppColors.accent)),
                     onPressed: () => _saveClientConfig('${_safeFileName(peer.name)}.conf', clientConfig),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                     onPressed: () => Navigator.pop(ctx),
                     child: Text(tr('vpn.klart_jag_har_sparat_den')),
                   ),
@@ -538,10 +538,10 @@ PersistentKeepalive = 25
                 children: [
                   Switch(
                     value: ovpn.enabled,
-                    activeThumbColor: Colors.tealAccent,
+                    activeThumbColor: AppColors.ok,
                     onChanged: (v) => _saveOpenVpn(provider, ovpn.copyWith(enabled: v)),
                   ),
-                  Text(ovpn.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: ovpn.enabled ? Colors.tealAccent : AppColors.textMuted, fontSize: 11)),
+                  Text(ovpn.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: ovpn.enabled ? AppColors.ok : AppColors.textMuted, fontSize: 11)),
                 ],
               ),
             ],
@@ -565,7 +565,7 @@ PersistentKeepalive = 25
               ElevatedButton.icon(
                 icon: const Icon(Icons.save, size: 14),
                 label: Text(tr('vpn.spara_serverinstallningar'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                 onPressed: () {
                   final port = int.tryParse(listenPortCtrl.text.trim()) ?? ovpn.listenPort;
                   _saveOpenVpn(
@@ -578,9 +578,9 @@ PersistentKeepalive = 25
               if (_openVpnCaCertPem != null && _openVpnCaCertPem!.isNotEmpty)
                 Row(
                   children: [
-                    Icon(Icons.verified_user, size: 13, color: Colors.tealAccent),
+                    Icon(Icons.verified_user, size: 13, color: AppColors.ok),
                     SizedBox(width: 6),
-                    Text(tr('vpn.ca_certifikat_genererat_och_redo_att'), style: TextStyle(color: Colors.tealAccent, fontSize: 10)),
+                    Text(tr('vpn.ca_certifikat_genererat_och_redo_att'), style: TextStyle(color: AppColors.ok, fontSize: 10)),
                   ],
                 )
               else
@@ -589,7 +589,7 @@ PersistentKeepalive = 25
           ),
           const SizedBox(height: 6),
           Text(tr('vpn.kom_ihag_att_applicera_bekrafta_andringarna_2'),
-            style: TextStyle(color: Colors.amberAccent, fontSize: 10),
+            style: TextStyle(color: AppColors.warn, fontSize: 10),
           ),
         ],
       ),
@@ -640,7 +640,7 @@ PersistentKeepalive = 25
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
                 label: Text(tr('vpn.utfarda_klientcertifikat'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.ok, foregroundColor: AppColors.onStatus),
                 onPressed: () => _showAddOpenVpnClientFlow(provider, ovpn),
               ),
             ],
@@ -670,7 +670,7 @@ PersistentKeepalive = 25
       ),
       child: Row(
         children: [
-          Icon(client.revoked ? Icons.block : (active ? Icons.person : Icons.person_off), size: 16, color: client.revoked ? Colors.redAccent : (active ? Colors.tealAccent : AppColors.textMuted)),
+          Icon(client.revoked ? Icons.block : (active ? Icons.person : Icons.person_off), size: 16, color: client.revoked ? AppColors.danger : (active ? AppColors.ok : AppColors.textMuted)),
           const SizedBox(width: 10),
           Expanded(
             flex: 2,
@@ -680,7 +680,7 @@ PersistentKeepalive = 25
             flex: 2,
             child: Text(
               client.revoked ? tr('vpn.sparrad') : (client.enabled ? tr('vpn.aktiv') : tr('vpn.inaktiverad')),
-              style: TextStyle(color: client.revoked ? Colors.redAccent : AppColors.textMuted, fontSize: 11),
+              style: TextStyle(color: client.revoked ? AppColors.danger : AppColors.textMuted, fontSize: 11),
             ),
           ),
           Expanded(
@@ -690,14 +690,14 @@ PersistentKeepalive = 25
           if (!client.revoked)
             Switch(
               value: client.enabled,
-              activeThumbColor: Colors.tealAccent,
+              activeThumbColor: AppColors.ok,
               onChanged: (v) {
                 final updated = ovpn.clients.map((c) => c.id == client.id ? c.copyWith(enabled: v) : c).toList();
                 _saveOpenVpn(provider, ovpn.copyWith(clients: updated));
               },
             ),
           IconButton(
-            icon: Icon(client.revoked ? Icons.delete_forever : Icons.block, size: 16, color: Colors.redAccent),
+            icon: Icon(client.revoked ? Icons.delete_forever : Icons.block, size: 16, color: AppColors.danger),
             tooltip: client.revoked ? tr('vpn.ta_bort_permanent') : tr('vpn.sparra_certifikat'),
             onPressed: () {
               if (client.revoked) {
@@ -738,7 +738,7 @@ PersistentKeepalive = 25
                   TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('vpn.avbryt'), style: TextStyle(color: AppColors.textMuted))),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.ok, foregroundColor: AppColors.onStatus),
                     onPressed: () => Navigator.pop(ctx, true),
                     child: Text(tr('vpn.signera_med_ca_lagg_till')),
                   ),
@@ -822,7 +822,7 @@ PersistentKeepalive = 25
             children: [
               Row(
                 children: [
-                  const Icon(Icons.warning_amber, color: Colors.amberAccent, size: 18),
+                  Icon(Icons.warning_amber, color: AppColors.warn, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(trp('vpn.client_profile_for', {'name': client.name}), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
@@ -831,7 +831,7 @@ PersistentKeepalive = 25
               ),
               const SizedBox(height: 6),
               Text(tr('vpn.detta_ar_en_komplett_ovpn_fil'),
-                style: TextStyle(color: Colors.amberAccent, fontSize: 11),
+                style: TextStyle(color: AppColors.warn, fontSize: 11),
               ),
               const SizedBox(height: 14),
               Container(
@@ -844,7 +844,7 @@ PersistentKeepalive = 25
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: SingleChildScrollView(
-                  child: SelectableText(ovpnConfig, style: const TextStyle(color: Colors.greenAccent, fontSize: 10, fontFamily: 'monospace')),
+                  child: SelectableText(ovpnConfig, style: TextStyle(color: AppColors.ok, fontSize: 10, fontFamily: 'monospace')),
                 ),
               ),
               const SizedBox(height: 12),
@@ -852,8 +852,8 @@ PersistentKeepalive = 25
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton.icon(
-                    icon: const Icon(Icons.copy, size: 14, color: Colors.cyanAccent),
-                    label: Text(tr('vpn.kopiera'), style: TextStyle(color: Colors.cyanAccent)),
+                    icon: Icon(Icons.copy, size: 14, color: AppColors.accent),
+                    label: Text(tr('vpn.kopiera'), style: TextStyle(color: AppColors.accent)),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: ovpnConfig));
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -862,13 +862,13 @@ PersistentKeepalive = 25
                     },
                   ),
                   TextButton.icon(
-                    icon: const Icon(Icons.save_alt, size: 14, color: Colors.cyanAccent),
-                    label: Text(tr('vpn.spara_ovpn'), style: const TextStyle(color: Colors.cyanAccent)),
+                    icon: Icon(Icons.save_alt, size: 14, color: AppColors.accent),
+                    label: Text(tr('vpn.spara_ovpn'), style: TextStyle(color: AppColors.accent)),
                     onPressed: () => _saveClientConfig('${_safeFileName(client.name)}.ovpn', ovpnConfig),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                     onPressed: () => Navigator.pop(ctx),
                     child: Text(tr('vpn.klart_jag_har_sparat_den')),
                   ),

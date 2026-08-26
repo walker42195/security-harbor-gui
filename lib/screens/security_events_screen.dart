@@ -105,11 +105,11 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
   Color _severityColor(int severity) {
     switch (severity) {
       case 1:
-        return Colors.redAccent;
+        return AppColors.danger;
       case 2:
-        return Colors.orangeAccent;
+        return AppColors.caution;
       default:
-        return Colors.amberAccent;
+        return AppColors.warn;
     }
   }
 
@@ -127,14 +127,14 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.gpp_maybe_outlined, color: Colors.redAccent, size: 22),
+                Icon(Icons.gpp_maybe_outlined, color: AppColors.danger, size: 22),
                 const SizedBox(width: 10),
                 Text(tr('sec.sakerhetshandelser_ids'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 IconButton(
                   icon: _loading
-                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent))
-                      : const Icon(Icons.refresh, size: 18, color: Colors.cyanAccent),
+                      ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent))
+                      : Icon(Icons.refresh, size: 18, color: AppColors.accent),
                   onPressed: _loading ? null : _poll,
                 ),
               ],
@@ -178,9 +178,9 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                               InkWell(
                                 onTap: () => _showIdsInfo(context),
                                 borderRadius: BorderRadius.circular(12),
-                                child: const Padding(
+                                child: Padding(
                                   padding: EdgeInsets.all(2),
-                                  child: Icon(Icons.help_outline, size: 18, color: Colors.cyanAccent),
+                                  child: Icon(Icons.help_outline, size: 18, color: AppColors.accent),
                                 ),
                               ),
                             ],
@@ -367,7 +367,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.info_outline, size: 14, color: Colors.cyanAccent),
+                      Icon(Icons.info_outline, size: 14, color: AppColors.accent),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -384,8 +384,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton.icon(
-                    icon: const Icon(Icons.open_in_new, size: 14, color: Colors.cyanAccent),
-                    label: Text(tr('sec.sok_signaturen_pa_suricata_io'), style: TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+                    icon: Icon(Icons.open_in_new, size: 14, color: AppColors.accent),
+                    label: Text(tr('sec.sok_signaturen_pa_suricata_io'), style: TextStyle(color: AppColors.accent, fontSize: 11)),
                     onPressed: _openSuricata,
                   ),
                 ),
@@ -415,7 +415,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
         );
     Widget head(String s) => Padding(
           padding: const EdgeInsets.only(bottom: 6, top: 2),
-          child: Text(s, style: const TextStyle(color: Colors.cyanAccent, fontSize: 13, fontWeight: FontWeight.bold)),
+          child: Text(s, style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.bold)),
         );
 
     showDialog(
@@ -433,7 +433,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.shield_outlined, color: Colors.cyanAccent, size: 20),
+                    Icon(Icons.shield_outlined, color: AppColors.accent, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(tr('sec.vad_ar_ids_och_vad_betyder'),
@@ -465,10 +465,10 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.open_in_new, size: 14, color: Colors.cyanAccent),
+                              Icon(Icons.open_in_new, size: 14, color: AppColors.accent),
                               SizedBox(width: 6),
                               Text(tr('sec.las_mer_pa_suricata_io'),
-                                  style: TextStyle(color: Colors.cyanAccent, fontSize: 12, decoration: TextDecoration.underline)),
+                                  style: TextStyle(color: AppColors.accent, fontSize: 12, decoration: TextDecoration.underline)),
                             ],
                           ),
                         ),
@@ -524,13 +524,13 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.radar, color: Colors.redAccent, size: 16),
+              Icon(Icons.radar, color: AppColors.danger, size: 16),
               const SizedBox(width: 8),
               Text(tr('sec.ids_installningar'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
               const Spacer(),
               Switch(
                 value: ids.enabled,
-                activeThumbColor: Colors.tealAccent,
+                activeThumbColor: AppColors.ok,
                 onChanged: selectedIface == null && !ids.enabled
                     ? null
                     : (v) => save(ids.copyWith(enabled: v, interfaceDevice: _ifaceController.text)),
@@ -559,7 +559,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
             children: [
               Switch(
                 value: ids.autoBlock,
-                activeThumbColor: Colors.orangeAccent,
+                activeThumbColor: AppColors.caution,
                 onChanged: (v) => save(ids.copyWith(autoBlock: v, autoBlockObjectId: _objectIdController.text, autoBlockSeverity: _autoBlockSeverity)),
               ),
               const SizedBox(width: 6),
@@ -620,7 +620,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                 ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                 : const Icon(Icons.save, size: 14),
             label: Text(tr('sec.spara'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
             onPressed: () => save(ids.copyWith(
               interfaceDevice: _ifaceController.text,
               autoBlockObjectId: _objectIdController.text,

@@ -74,7 +74,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.build_circle_outlined, color: Colors.cyanAccent, size: 22),
+                    Icon(Icons.build_circle_outlined, color: AppColors.accent, size: 22),
                     SizedBox(width: 10),
                     Text(tr('tools.natverksdiagnostik_verktyg'),
                       style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold),
@@ -90,9 +90,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.terminal, size: 13, color: Colors.cyanAccent),
+                      Icon(Icons.terminal, size: 13, color: AppColors.accent),
                       SizedBox(width: 6),
-                      Text(tr('tools.kors_direkt_fran_brandvaggen_inte_fran'), style: TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+                      Text(tr('tools.kors_direkt_fran_brandvaggen_inte_fran'), style: TextStyle(color: AppColors.accent, fontSize: 11)),
                     ],
                   ),
                 ),
@@ -136,8 +136,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             : const Icon(Icons.download, size: 14),
                         label: Text(tr('tools.kor_ping'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.cyanAccent,
-                          foregroundColor: Colors.black,
+                          backgroundColor: AppColors.accent,
+                          foregroundColor: AppColors.onStatus,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
                         onPressed: _anyLoading ? null : () => _runPing(provider),
@@ -149,7 +149,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             : const Icon(Icons.alt_route, size: 14),
                         label: Text(tr('tools.kor_traceroute'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.lightBlueAccent,
+                          backgroundColor: AppColors.info,
                           foregroundColor: AppColors.text,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
@@ -192,7 +192,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.radar, color: Colors.tealAccent, size: 16),
+                      Icon(Icons.radar, color: AppColors.ok, size: 16),
                       SizedBox(width: 8),
                       Text(tr('tools.nmap_portskanning'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
@@ -216,15 +216,15 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         : const Icon(Icons.radar, size: 14),
                     label: Text(tr('tools.kor_nmap'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.tealAccent,
-                      foregroundColor: Colors.black,
+                      backgroundColor: AppColors.ok,
+                      foregroundColor: AppColors.onStatus,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     ),
                     onPressed: _anyLoading || (!_nmapSyn && !_nmapFullTcp && !_nmapUdp && !_nmapOsDetect) ? null : () => _runNmap(provider),
                   ),
                   const SizedBox(height: 4),
                   Text(tr('tools.full_tcp_scan_och_udp_scan'),
-                    style: TextStyle(color: Colors.amberAccent, fontSize: 10),
+                    style: TextStyle(color: AppColors.warn, fontSize: 10),
                   ),
                 ],
               ),
@@ -245,7 +245,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.travel_explore, size: 15, color: Colors.cyanAccent),
+                      Icon(Icons.travel_explore, size: 15, color: AppColors.accent),
                       SizedBox(width: 6),
                       Text(tr('tools.dns_uppslag_dig'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
@@ -304,8 +304,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                             : const Icon(Icons.travel_explore, size: 14),
                         label: Text(tr('tools.kor_dig'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.cyanAccent,
-                          foregroundColor: Colors.black,
+                          backgroundColor: AppColors.accent,
+                          foregroundColor: AppColors.onStatus,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
                         onPressed: _anyLoading ? null : () => _runDig(provider),
@@ -328,7 +328,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.table_rows_outlined, size: 15, color: Colors.cyanAccent),
+                  Icon(Icons.table_rows_outlined, size: 15, color: AppColors.accent),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(tr('tools.arp_tabell_ip_mac_for_enheter'),
@@ -341,8 +341,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         : const Icon(Icons.table_chart, size: 14),
                     label: Text(tr('tools.visa_arp_tabell'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.cyanAccent,
-                      foregroundColor: Colors.black,
+                      backgroundColor: AppColors.accent,
+                      foregroundColor: AppColors.onStatus,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     ),
                     onPressed: _anyLoading ? null : () => _runArp(provider),
@@ -366,7 +366,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.podcasts, color: Colors.orangeAccent, size: 16),
+                      Icon(Icons.podcasts, color: AppColors.caution, size: 16),
                       SizedBox(width: 8),
                       Text(tr('tools.paketfangst_tcpdump'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
@@ -440,8 +440,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         : const Icon(Icons.podcasts, size: 14),
                     label: Text(tr('tools.starta_fangst'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orangeAccent,
-                      foregroundColor: Colors.black,
+                      backgroundColor: AppColors.caution,
+                      foregroundColor: AppColors.onStatus,
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     ),
                     onPressed: _anyLoading || _tcpdumpInterface == null ? null : () => _runTcpdump(provider),
@@ -477,7 +477,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       Row(
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.copy, size: 14, color: Colors.cyanAccent),
+                            icon: Icon(Icons.copy, size: 14, color: AppColors.accent),
                             tooltip: tr('tools.kopiera_utdata'),
                             onPressed: _output.isEmpty
                                 ? null
@@ -489,7 +489,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                                   },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_sweep, size: 16, color: Colors.redAccent),
+                            icon: Icon(Icons.delete_sweep, size: 16, color: AppColors.danger),
                             tooltip: tr('tools.rensa_konsol'),
                             onPressed: () => setState(() => _output = ''),
                           ),
@@ -512,7 +512,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         _output.isEmpty
                             ? tr('tools.placeholder_output')
                             : _output,
-                        style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Colors.greenAccent, height: 1.4),
+                        style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: AppColors.ok, height: 1.4),
                       ),
                     ),
                   ),
@@ -527,7 +527,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
 
   Widget _buildPresetChip(String label, String value) {
     return ActionChip(
-      label: Text(label, style: const TextStyle(fontSize: 10, color: Colors.cyanAccent)),
+      label: Text(label, style: TextStyle(fontSize: 10, color: AppColors.accent)),
       backgroundColor: AppColors.bg,
       side: BorderSide(color: AppColors.border),
       padding: EdgeInsets.zero,
@@ -657,7 +657,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Checkbox(value: value, activeColor: Colors.tealAccent, onChanged: (v) => onChanged(v ?? false)),
+          Checkbox(value: value, activeColor: AppColors.ok, onChanged: (v) => onChanged(v ?? false)),
           Text(label, style: TextStyle(color: AppColors.text, fontSize: 11)),
           const SizedBox(width: 10),
         ],

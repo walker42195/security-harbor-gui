@@ -22,7 +22,7 @@ Widget dialogSection({required String title, required List<Widget> children}) {
             color: AppColors.surface,
             border: Border(bottom: BorderSide(color: AppColors.border)),
           ),
-          child: Text(title, style: const TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+          child: Text(title, style: TextStyle(color: AppColors.ok, fontSize: 11, fontWeight: FontWeight.bold)),
         ),
         Padding(
           padding: const EdgeInsets.all(12),

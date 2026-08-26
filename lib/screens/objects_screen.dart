@@ -52,7 +52,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.category, color: Colors.cyanAccent, size: 22),
+                    Icon(Icons.category, color: AppColors.accent, size: 22),
                     SizedBox(width: 10),
                     Text(tr('objects.objekt_grupper'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
@@ -60,19 +60,19 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 ElevatedButton.icon(
                   icon: const Icon(Icons.dns, size: 14),
                   label: Text(tr('objects.skapa_objekt'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                   onPressed: () => _showAddObjectDialog(context, provider),
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.workspaces_outline, size: 14),
                   label: Text(tr('objects.skapa_grupp'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.warn, foregroundColor: AppColors.onStatus),
                   onPressed: () => _showAddGroupDialog(context, provider),
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.shield, size: 14),
                   label: Text(tr('objects.hot_lista_geoip'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.ok, foregroundColor: AppColors.onStatus),
                   onPressed: () => _showAddThreatFeedDialog(context, provider),
                 ),
               ],
@@ -139,9 +139,9 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
           label: Text('$label ($count)',
               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: selected ? Colors.cyanAccent : AppColors.surface,
+            backgroundColor: selected ? AppColors.accent : AppColors.surface,
             foregroundColor: selected ? Colors.black : AppColors.textMuted,
-            side: BorderSide(color: selected ? Colors.cyanAccent : AppColors.border),
+            side: BorderSide(color: selected ? AppColors.accent : AppColors.border),
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
@@ -217,7 +217,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ListTile(
-              leading: Icon(src != null ? Icons.shield : Icons.category, color: src != null ? Colors.tealAccent : Colors.cyanAccent),
+              leading: Icon(src != null ? Icons.shield : Icons.category, color: src != null ? AppColors.ok : AppColors.accent),
               title: Text(obj.name, style: TextStyle(color: AppColors.text, fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: src != null
                   ? Row(
@@ -227,7 +227,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                           onTap: () => _showValuesDialog(context, obj),
                           child: Text(
                             '${obj.values.length} poster',
-                            style: const TextStyle(fontSize: 11, color: Colors.cyanAccent, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                            style: TextStyle(fontSize: 11, color: AppColors.accent, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
                           ),
                         ),
                         Text(trp('objects.automatisk_kalla', {'kind': _kindLabel(src.kind)}), style: const TextStyle(fontSize: 11)),
@@ -244,17 +244,17 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 children: [
                   if (src != null)
                     refreshing
-                        ? const Padding(
+                        ? Padding(
                             padding: EdgeInsets.symmetric(horizontal: 8),
-                            child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.tealAccent)),
+                            child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.ok)),
                           )
                         : IconButton(
-                            icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
+                            icon: Icon(Icons.refresh, size: 18, color: AppColors.ok),
                             tooltip: tr('objects.uppdatera_nu'),
                             onPressed: () => _refreshSource(provider, obj),
                           ),
                   IconButton(
-                    icon: const Icon(Icons.edit, size: 18, color: Colors.cyanAccent),
+                    icon: Icon(Icons.edit, size: 18, color: AppColors.accent),
                     tooltip: tr('objects.redigera'),
                     onPressed: () => src != null
                         ? _showAddThreatFeedDialog(context, provider, existing: obj)
@@ -263,7 +263,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                             : _showAddObjectDialog(context, provider, existing: obj),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                    icon: Icon(Icons.delete_outline, size: 18, color: AppColors.danger),
                     tooltip: tr('objects.ta_bort'),
                     onPressed: () => _deleteObject(context, provider, obj),
                   ),
@@ -277,9 +277,9 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                   spacing: 14,
                   runSpacing: 4,
                   children: [
-                    _statusChip(Icons.update, src.lastUpdated.isEmpty ? tr('objects.aldrig_uppdaterad') : trp('objects.uppdaterad_colon', {'time': _shortTime(src.lastUpdated)}), src.lastError.isNotEmpty ? Colors.amberAccent : AppColors.textMuted),
+                    _statusChip(Icons.update, src.lastUpdated.isEmpty ? tr('objects.aldrig_uppdaterad') : trp('objects.uppdaterad_colon', {'time': _shortTime(src.lastUpdated)}), src.lastError.isNotEmpty ? AppColors.warn : AppColors.textMuted),
                     _statusChip(Icons.timer, trp('objects.var_x_timme', {'hours': '${src.refreshHours}'}), AppColors.textMuted),
-                    if (src.lastError.isNotEmpty) _statusChip(Icons.error_outline, trp('objects.fel_colon', {'err': src.lastError}), Colors.redAccent),
+                    if (src.lastError.isNotEmpty) _statusChip(Icons.error_outline, trp('objects.fel_colon', {'err': src.lastError}), AppColors.danger),
                   ],
                 ),
               ),
@@ -387,7 +387,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('objects.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.black),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: AppColors.onStatus),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(tr('objects.ta_bort'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           ),
@@ -523,7 +523,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                   dialogField(nameCtrl, tr('objects.gruppnamn')),
                 ]),
                 const SizedBox(height: 12),
-                Text(tr('objects.medlemmar'), style: TextStyle(color: Colors.cyanAccent, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                Text(tr('objects.medlemmar'), style: TextStyle(color: AppColors.accent, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                 const SizedBox(height: 4),
                 if (candidates.isEmpty)
                   Padding(
@@ -552,7 +552,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                             dense: true,
                             contentPadding: EdgeInsets.zero,
                             controlAffinity: ListTileControlAffinity.leading,
-                            activeColor: Colors.amberAccent,
+                            activeColor: AppColors.warn,
                             checkColor: Colors.black,
                             value: selected.contains(o.id),
                             title: Text(o.name, style: TextStyle(color: AppColors.text, fontSize: 12)),
@@ -579,7 +579,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                     TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('objects.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.warn, foregroundColor: AppColors.onStatus),
                       onPressed: selected.isEmpty
                           ? null
                           : () {
@@ -661,7 +661,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 ]),
                 const SizedBox(height: 6),
                 Text(tr('objects.listan_hamtas_automatiskt_av_brandvaggen_enligt'),
-                  style: TextStyle(color: Colors.amberAccent, fontSize: 10),
+                  style: TextStyle(color: AppColors.warn, fontSize: 10),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -670,7 +670,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                     TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('objects.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.ok, foregroundColor: AppColors.onStatus),
                       child: Text(existing != null ? 'Spara & hämta nu' : 'Skapa & hämta nu', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () async {
                         final cfg = provider.candidateConfig ?? provider.runningConfig;

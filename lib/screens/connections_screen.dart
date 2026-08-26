@@ -335,7 +335,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.list_alt, color: Colors.cyanAccent, size: 22),
+                    Icon(Icons.list_alt, color: AppColors.accent, size: 22),
                     SizedBox(width: 10),
                     Text(tr('conn.anslutningar_loggning'),
                       style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold),
@@ -344,7 +344,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                     // liten ikon inne i filterfältet: hjälpen behövs INNAN
                     // man vet att fältet finns, inte efter.
                     IconButton(
-                      icon: const Icon(Icons.help_outline, size: 17, color: Colors.cyanAccent),
+                      icon: Icon(Icons.help_outline, size: 17, color: AppColors.accent),
                       tooltip: tr('conn.filter_hjalp_titel'),
                       splashRadius: 16,
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -356,29 +356,29 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                 Row(
                   children: [
                     if (_isLoading && !_paused)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.only(right: 10),
-                        child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent)),
+                        child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent)),
                       ),
                     Text(trp('conn.rader_count', {'n': '${rows.length}'}), style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                     const SizedBox(width: 10),
                     // Dölj/visa DefaultDeny-raderna.
                     TextButton.icon(
-                      icon: Icon(_hideDefaultDeny ? Icons.visibility_off : Icons.visibility, size: 15, color: _hideDefaultDeny ? Colors.orangeAccent : AppColors.textMuted),
+                      icon: Icon(_hideDefaultDeny ? Icons.visibility_off : Icons.visibility, size: 15, color: _hideDefaultDeny ? AppColors.caution : AppColors.textMuted),
                       label: Text(_hideDefaultDeny ? tr('conn.defaultdeny_dold') : tr('conn.dolj_defaultdeny'),
-                          style: TextStyle(fontSize: 11, color: _hideDefaultDeny ? Colors.orangeAccent : AppColors.textMuted)),
+                          style: TextStyle(fontSize: 11, color: _hideDefaultDeny ? AppColors.caution : AppColors.textMuted)),
                       onPressed: () => setState(() => _hideDefaultDeny = !_hideDefaultDeny),
                     ),
                     const SizedBox(width: 4),
                     // Pausa/återuppta den automatiska uppdateringen.
                     TextButton.icon(
-                      icon: Icon(_paused ? Icons.play_arrow : Icons.pause, size: 16, color: _paused ? Colors.tealAccent : Colors.amberAccent),
+                      icon: Icon(_paused ? Icons.play_arrow : Icons.pause, size: 16, color: _paused ? AppColors.ok : AppColors.warn),
                       label: Text(_paused ? tr('conn.pausad') : tr('conn.pausa'),
-                          style: TextStyle(fontSize: 11, color: _paused ? Colors.tealAccent : Colors.amberAccent)),
+                          style: TextStyle(fontSize: 11, color: _paused ? AppColors.ok : AppColors.warn)),
                       onPressed: () => setState(() => _paused = !_paused),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.refresh, size: 18, color: Colors.cyanAccent),
+                      icon: Icon(Icons.refresh, size: 18, color: AppColors.accent),
                       tooltip: tr('conn.uppdatera_nu'),
                       onPressed: _poll,
                     ),
@@ -478,7 +478,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             style: TextStyle(fontSize: 12, color: AppColors.text, fontFamily: 'monospace'),
             decoration: InputDecoration(
               isDense: true,
-              prefixIcon: Icon(Icons.filter_alt, size: 16, color: hasError ? Colors.orangeAccent : Colors.cyanAccent),
+              prefixIcon: Icon(Icons.filter_alt, size: 16, color: hasError ? AppColors.caution : AppColors.accent),
               prefixIconConstraints: const BoxConstraints(minWidth: 34),
               labelText: tr('conn.filter_uttryck'),
               labelStyle: TextStyle(fontSize: 11, color: AppColors.textMuted),
@@ -487,7 +487,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
               border: const OutlineInputBorder(),
               enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: hasError ? Colors.orangeAccent : AppColors.border),
+                borderSide: BorderSide(color: hasError ? AppColors.caution : AppColors.border),
               ),
               suffixIcon: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -514,7 +514,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         if (hasError)
           Padding(
             padding: const EdgeInsets.only(top: 4, left: 4),
-            child: Text(_exprError!, style: const TextStyle(fontSize: 11, color: Colors.orangeAccent)),
+            child: Text(_exprError!, style: TextStyle(fontSize: 11, color: AppColors.caution)),
           ),
       ],
     );
@@ -545,7 +545,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         backgroundColor: AppColors.surface,
         title: Row(
           children: [
-            const Icon(Icons.filter_alt, size: 18, color: Colors.cyanAccent),
+            Icon(Icons.filter_alt, size: 18, color: AppColors.accent),
             const SizedBox(width: 8),
             Expanded(
               child: Text(tr('conn.filter_hjalp_titel'),
@@ -575,8 +575,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                           width: 280,
                           child: SelectableText(
                             expr,
-                            style: const TextStyle(
-                                color: Colors.cyanAccent, fontSize: 11.5, fontFamily: 'monospace'),
+                            style: TextStyle(
+                                color: AppColors.accent, fontSize: 11.5, fontFamily: 'monospace'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -601,13 +601,13 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.cyanAccent.withValues(alpha: 0.08),
+                    color: AppColors.accent.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.mouse, size: 15, color: Colors.cyanAccent),
+                      Icon(Icons.mouse, size: 15, color: AppColors.accent),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(tr('conn.filter_hjalp_tips'),
@@ -669,7 +669,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       items.add(PopupMenuItem<VoidCallback>(
         enabled: false,
         height: 26,
-        child: Text(t.label, style: const TextStyle(fontSize: 11, color: Colors.cyanAccent)),
+        child: Text(t.label, style: TextStyle(fontSize: 11, color: AppColors.accent)),
       ));
       for (final action in t.actions) {
         items.add(PopupMenuItem<VoidCallback>(
@@ -829,7 +829,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             child: SizedBox(
               width: (hovered || active) ? 3 : 2,
               height: double.infinity,
-              child: ColoredBox(color: (hovered || active) ? Colors.cyanAccent : AppColors.textFaint),
+              child: ColoredBox(color: (hovered || active) ? AppColors.accent : AppColors.textFaint),
             ),
           ),
         ),
@@ -860,12 +860,12 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: (r.accepted ? Colors.tealAccent : Colors.redAccent).withValues(alpha: 0.15),
+          color: (r.accepted ? AppColors.ok : AppColors.danger).withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(3),
         ),
         child: Text(
           r.accepted ? 'ACCEPT' : 'DENY',
-          style: TextStyle(color: r.accepted ? Colors.tealAccent : Colors.redAccent, fontSize: 9, fontWeight: FontWeight.bold),
+          style: TextStyle(color: r.accepted ? AppColors.ok : AppColors.danger, fontSize: 9, fontWeight: FontWeight.bold),
         ),
       ),
         [_FilterTarget(action.toUpperCase(), _simpleActions('action', action))],
@@ -877,7 +877,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
           Icon(
             direction == 'IN' ? Icons.arrow_downward : (direction == 'OUT' ? Icons.arrow_upward : Icons.swap_horiz),
             size: 12,
-            color: direction == 'IN' ? Colors.amber : (direction == 'OUT' ? Colors.cyanAccent : AppColors.textMuted),
+            color: direction == 'IN' ? AppColors.warn : (direction == 'OUT' ? AppColors.accent : AppColors.textMuted),
           ),
           const SizedBox(width: 4),
           Text(

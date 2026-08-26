@@ -119,7 +119,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
             child: SizedBox(
               width: (hovered || active) ? 3 : 2,
               height: double.infinity,
-              child: ColoredBox(color: (hovered || active) ? Colors.cyanAccent : AppColors.textFaint),
+              child: ColoredBox(color: (hovered || active) ? AppColors.accent : AppColors.textFaint),
             ),
           ),
         ),
@@ -170,7 +170,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.shield_outlined, color: Colors.cyanAccent, size: 20),
+                    Icon(Icons.shield_outlined, color: AppColors.accent, size: 20),
                     SizedBox(width: 8),
                     Text(tr('pol.firewall_policies_rules'),
                       style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold),
@@ -178,11 +178,11 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   ],
                 ),
                 OutlinedButton.icon(
-                  icon: const Icon(Icons.add, size: 16, color: Colors.cyanAccent),
+                  icon: Icon(Icons.add, size: 16, color: AppColors.accent),
                   label: Text(tr('pol.ny_policy'), style: TextStyle(fontSize: 12, color: Colors.white)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    side: const BorderSide(color: Colors.cyanAccent),
+                    side: BorderSide(color: AppColors.accent),
                   ),
                   onPressed: () => _showEditPolicyDialog(context, provider, cfg, null),
                 ),
@@ -192,16 +192,16 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 // för att erbjuda en åtgärd som ändå aldrig får effekt.
                 if (!(cfg?.settings.isHostMode ?? false))
                   OutlinedButton.icon(
-                    icon: const Icon(Icons.input, size: 16, color: Colors.lightBlueAccent),
+                    icon: Icon(Icons.input, size: 16, color: AppColors.info),
                     label: Text(tr('pol.port_forwarding_dnat'), style: TextStyle(fontSize: 12, color: Colors.white)),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      side: const BorderSide(color: Colors.lightBlueAccent),
+                      side: BorderSide(color: AppColors.info),
                     ),
                     onPressed: () => _showAddDNATDialog(context, provider),
                   ),
                 IconButton(
-                  icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
+                  icon: Icon(Icons.refresh, size: 18, color: AppColors.ok),
                   tooltip: tr('pol.uppdatera_traffraknare_hit_counters'),
                   onPressed: _loadHitCounts,
                 ),
@@ -315,12 +315,12 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 ? tr('pol.reject_short')
                 : tr('pol.deny');
     final actionColor = isDNAT
-        ? Colors.lightBlueAccent
+        ? AppColors.info
         : isAllow
-            ? Colors.tealAccent
+            ? AppColors.ok
             : isReject
-                ? Colors.orangeAccent
-                : Colors.redAccent;
+                ? AppColors.caution
+                : AppColors.danger;
 
     final cells = <Widget>[
       // Radnumret är också draghandtaget. Handtaget ligger HÄR och inte på
@@ -372,7 +372,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (pol.protected) ...[
-              const Icon(Icons.lock, size: 11, color: Colors.amber),
+              Icon(Icons.lock, size: 11, color: AppColors.warn),
               const SizedBox(width: 4),
             ],
             Flexible(
@@ -390,7 +390,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           ],
         ),
       ),
-      Text(pol.service, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+      Text(pol.service, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.accent, fontSize: 11)),
       _truncatedCell(_zoneOrObjLabel(cfg, pol.sourceZone, pol.sourceObj),
           object: _objectFor(cfg, pol.sourceObj)),
       _truncatedCell(isDNAT && pol.nat != null
@@ -400,7 +400,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           // innan regeln gjordes till en local-regel.
           : (pol.local ? 'SELF' : _zoneOrObjLabel(cfg, pol.destZone, pol.destObj)),
           object: (isDNAT && pol.nat != null) || pol.local ? null : _objectFor(cfg, pol.destObj)),
-      Text(isDNAT && pol.nat != null ? 'tcp:${pol.nat!.externalPort}' : _getPortForService(pol.service), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.amber, fontSize: 11)),
+      Text(isDNAT && pol.nat != null ? 'tcp:${pol.nat!.externalPort}' : _getPortForService(pol.service), overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.warn, fontSize: 11)),
       Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -420,7 +420,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           ),
           const SizedBox(width: 4),
           IconButton(
-            icon: const Icon(Icons.edit, size: 14, color: Colors.cyanAccent),
+            icon: Icon(Icons.edit, size: 14, color: AppColors.accent),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             tooltip: tr('pol.redigera_policy_properties'),
@@ -428,7 +428,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: Icon(Icons.delete_outline, size: 14, color: pol.protected ? AppColors.textFaint : Colors.redAccent),
+            icon: Icon(Icons.delete_outline, size: 14, color: pol.protected ? AppColors.textFaint : AppColors.danger),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             tooltip: pol.protected ? tr('pol.skyddad_policy_kan_inte_tas_bort') : tr('pol.ta_bort_policy'),
@@ -437,7 +437,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           const SizedBox(width: 8),
           Switch(
             value: pol.enabled,
-            activeThumbColor: Colors.tealAccent,
+            activeThumbColor: AppColors.ok,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             onChanged: pol.protected && pol.enabled
                 ? null
@@ -483,7 +483,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     required String? hitKey,
     required String tooltip,
   }) {
-    const denyColor = Colors.redAccent;
+    final denyColor = AppColors.danger;
     final nameTooltip = hitKey == null
         ? tr('pol.loggas_inte_tyst_drop')
         : trp('pol.hit_count', {'packets': '${_hitCountFor(hitKey).$1}', 'bytes': '${_hitCountFor(hitKey).$2}'});
@@ -506,10 +506,10 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(color: AppColors.text, fontSize: 11, fontWeight: FontWeight.w600)),
       ),
-      Text(tr('pol.any'), overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+      Text(tr('pol.any'), overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.accent, fontSize: 11)),
       _truncatedCell(from),
       _truncatedCell(to),
-      Text(tr('pol.any_2'), overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.amber, fontSize: 11)),
+      Text(tr('pol.any_2'), overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.warn, fontSize: 11)),
       Tooltip(
         message: tooltip,
         child: Row(
@@ -569,7 +569,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     final label = Text(
       text,
       style: TextStyle(
-        color: object != null ? Colors.cyanAccent : AppColors.textMuted,
+        color: object != null ? AppColors.accent : AppColors.textMuted,
         fontSize: 11,
         decoration: object != null ? TextDecoration.underline : null,
         decorationStyle: TextDecorationStyle.dotted,
@@ -624,7 +624,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         title: Row(
           children: [
             Icon(object.type == 'group' ? Icons.folder_open : Icons.category,
-                size: 18, color: Colors.cyanAccent),
+                size: 18, color: AppColors.accent),
             const SizedBox(width: 8),
             Expanded(
               child: Text(object.name,
@@ -633,11 +633,11 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.cyanAccent.withValues(alpha: 0.15),
+                color: AppColors.accent.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(3),
               ),
               child: Text(object.type.toUpperCase(),
-                  style: const TextStyle(color: Colors.cyanAccent, fontSize: 9, fontWeight: FontWeight.bold)),
+                  style: TextStyle(color: AppColors.accent, fontSize: 9, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -674,7 +674,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         Padding(
           padding: EdgeInsets.only(left: depth * 14.0, bottom: 4),
           child: Text(tr('pol.cyklisk_grupp'),
-              style: const TextStyle(color: Colors.orangeAccent, fontSize: 11)),
+              style: TextStyle(color: AppColors.caution, fontSize: 11)),
         ),
       ];
     }
@@ -698,10 +698,10 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           child: Row(
             children: [
               Icon(member.type == 'group' ? Icons.folder_open : Icons.subdirectory_arrow_right,
-                  size: 13, color: Colors.cyanAccent),
+                  size: 13, color: AppColors.accent),
               const SizedBox(width: 6),
               Text(member.name,
-                  style: const TextStyle(color: Colors.cyanAccent, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: AppColors.accent, fontSize: 11.5, fontWeight: FontWeight.w600)),
               const SizedBox(width: 6),
               Text(member.type,
                   style: TextStyle(color: AppColors.textFaint, fontSize: 10)),
@@ -789,7 +789,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         backgroundColor: AppColors.surface,
         title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
+            Icon(Icons.warning_amber_rounded, color: AppColors.warn, size: 20),
             SizedBox(width: 8),
             Text(tr('pol.ar_du_saker'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
           ],
@@ -801,7 +801,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('pol.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(tr('pol.ja_jag_ar_saker'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           ),
@@ -851,7 +851,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         backgroundColor: AppColors.surface,
         title: Row(
           children: [
-            Icon(Icons.lock, color: Colors.amber, size: 20),
+            Icon(Icons.lock, color: AppColors.warn, size: 20),
             SizedBox(width: 8),
             Text(tr('pol.skyddad_policy'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
           ],
@@ -896,7 +896,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           actions: [
             TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('pol.avbryt'))),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
               onPressed: () => Navigator.pop(dctx, true),
               child: Text(tr('pol.ta_bort')),
             ),
@@ -1059,7 +1059,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                       children: [
                         Checkbox(
                           value: enabled,
-                          activeColor: Colors.tealAccent,
+                          activeColor: AppColors.ok,
                           checkColor: Colors.black,
                           onChanged: (pol?.protected ?? false)
                               ? null
@@ -1079,7 +1079,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           const SizedBox(width: 6),
                           Tooltip(
                             message: tr('pol.protected_policy_disable_tooltip'),
-                            child: const Icon(Icons.lock, size: 14, color: Colors.amber),
+                            child: Icon(Icons.lock, size: 14, color: AppColors.warn),
                           ),
                         ],
                       ],
@@ -1110,8 +1110,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                         dropdownColor: AppColors.surface,
                         style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold),
                         items: [
-                          DropdownMenuItem(value: 'accept', child: Text(tr('pol.allowed'), style: TextStyle(color: Colors.tealAccent))),
-                          DropdownMenuItem(value: 'drop', child: Text(tr('pol.denied_drop'), style: TextStyle(color: Colors.redAccent))),
+                          DropdownMenuItem(value: 'accept', child: Text(tr('pol.allowed'), style: TextStyle(color: AppColors.ok))),
+                          DropdownMenuItem(value: 'drop', child: Text(tr('pol.denied_drop'), style: TextStyle(color: AppColors.danger))),
                           // Reject fanns redan i backend-datamodellen men
                           // genererade tidigare ingen regel alls; sedan
                           // 2026-08-20 renderas den som ett riktigt
@@ -1119,8 +1119,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           // den kan erbjudas här. Skillnad mot Drop:
                           // avsändaren får ett tydligt avslag direkt i
                           // stället för att vänta ut en timeout.
-                          DropdownMenuItem(value: 'reject', child: Text(tr('pol.denied_reject'), style: TextStyle(color: Colors.orangeAccent))),
-                          DropdownMenuItem(value: 'dnat', child: Text(tr('pol.dnat_port_forward'), style: TextStyle(color: Colors.lightBlueAccent))),
+                          DropdownMenuItem(value: 'reject', child: Text(tr('pol.denied_reject'), style: TextStyle(color: AppColors.caution))),
+                          DropdownMenuItem(value: 'dnat', child: Text(tr('pol.dnat_port_forward'), style: TextStyle(color: AppColors.info))),
                         ],
                         onChanged: (v) => setState(() => action = v ?? 'accept'),
                       ),
@@ -1175,7 +1175,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                       children: [
                         Checkbox(
                           value: local,
-                          activeColor: Colors.tealAccent,
+                          activeColor: AppColors.ok,
                           checkColor: Colors.black,
                           onChanged: (v) => setState(() => local = v ?? false),
                         ),
@@ -1199,7 +1199,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(tr('pol.port_forwarding_dnat_parametrar'), style: TextStyle(color: Colors.lightBlueAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                          Text(tr('pol.port_forwarding_dnat_parametrar'), style: TextStyle(color: AppColors.info, fontSize: 11, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 6),
                           Row(
                             children: [
@@ -1232,7 +1232,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                       DropdownMenuItem(value: 'DNS', child: Text(tr('pol.dns_udp_53'))),
                       DropdownMenuItem(value: 'RDP', child: Text(tr('pol.rdp_tcp_3389'))),
                       DropdownMenuItem(value: 'ICMP', child: Text(tr('pol.icmp_ping'))),
-                      DropdownMenuItem(value: 'CUSTOM', child: Text(tr('pol.anpassad_port_protokoll_skriv_sjalv_t'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold))),
+                      DropdownMenuItem(value: 'CUSTOM', child: Text(tr('pol.anpassad_port_protokoll_skriv_sjalv_t'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold))),
                     ],
                     onChanged: (v) {
                       if (v != null) {
@@ -1246,7 +1246,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     },
                   ),
                   const SizedBox(height: 12),
-                  Text(tr('pol.anpassat_portnummer_eller_protokoll_skriv_in'), style: TextStyle(color: Colors.cyanAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text(tr('pol.anpassat_portnummer_eller_protokoll_skriv_in'), style: TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   SizedBox(
                     height: 36,
@@ -1278,13 +1278,13 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     children: [
                       Switch(
                         value: scheduleEnabled,
-                        activeThumbColor: Colors.tealAccent,
+                        activeThumbColor: AppColors.ok,
                         onChanged: (v) => setState(() => scheduleEnabled = v),
                       ),
                       const SizedBox(width: 6),
                       Text(
                         scheduleEnabled ? tr('pol.schedule_active_note') : tr('pol.schedule_always_active'),
-                        style: TextStyle(color: scheduleEnabled ? Colors.tealAccent : AppColors.textMuted, fontSize: 11),
+                        style: TextStyle(color: scheduleEnabled ? AppColors.ok : AppColors.textMuted, fontSize: 11),
                       ),
                     ],
                   ),
@@ -1299,8 +1299,8 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           FilterChip(
                             label: Text(_dayLabel(day), style: const TextStyle(fontSize: 11)),
                             selected: scheduleDays.contains(day),
-                            selectedColor: Colors.tealAccent.withValues(alpha: 0.3),
-                            checkmarkColor: Colors.tealAccent,
+                            selectedColor: AppColors.ok.withValues(alpha: 0.3),
+                            checkmarkColor: AppColors.ok,
                             onSelected: (sel) => setState(() {
                               if (sel) {
                                 scheduleDays.add(day);
@@ -1328,7 +1328,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                       child: Text(tr('pol.ok'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                       onPressed: () {
                         if (cfg != null) {
@@ -1518,11 +1518,11 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.border : Colors.transparent,
-          border: Border(bottom: BorderSide(color: isSelected ? Colors.cyanAccent : Colors.transparent, width: 2)),
+          border: Border(bottom: BorderSide(color: isSelected ? AppColors.accent : Colors.transparent, width: 2)),
         ),
         child: Text(
           label,
-          style: TextStyle(color: isSelected ? Colors.cyanAccent : AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.bold),
+          style: TextStyle(color: isSelected ? AppColors.accent : AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -1563,12 +1563,12 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 2),
                         child: Row(
                           children: [
-                            const Icon(Icons.computer, size: 14, color: Colors.cyanAccent),
+                            Icon(Icons.computer, size: 14, color: AppColors.accent),
                             const SizedBox(width: 6),
                             Expanded(child: Text(item, style: TextStyle(color: AppColors.text, fontSize: 11))),
                             GestureDetector(
                               onTap: () => onRemove(item),
-                              child: const Icon(Icons.close, size: 14, color: Colors.redAccent),
+                              child: Icon(Icons.close, size: 14, color: AppColors.danger),
                             ),
                           ],
                         ),
@@ -1683,7 +1683,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                                 dense: true,
                                 visualDensity: VisualDensity.compact,
                                 title: Text(item, style: TextStyle(color: AppColors.text, fontSize: 11)),
-                                trailing: const Icon(Icons.add, size: 14, color: Colors.cyanAccent),
+                                trailing: Icon(Icons.add, size: 14, color: AppColors.accent),
                                 onTap: () {
                                   if (!selected.contains(item)) {
                                     setState(() => selected.add(item));
@@ -1739,9 +1739,9 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                       return ListTile(
                         dense: true,
                         visualDensity: VisualDensity.compact,
-                        title: Text(item, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+                        title: Text(item, style: TextStyle(color: AppColors.accent, fontSize: 11)),
                         trailing: IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, size: 14, color: Colors.redAccent),
+                          icon: Icon(Icons.remove_circle_outline, size: 14, color: AppColors.danger),
                           onPressed: () => setState(() => selected.removeAt(idx)),
                         ),
                       );
@@ -1753,7 +1753,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                       onPressed: () => Navigator.pop(ctx, selected),
                       child: Text(tr('pol.ok'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
@@ -1823,7 +1823,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('pol.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                     child: Text(tr('pol.spara_dnat'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     onPressed: () {
                       if (cfg != null) {

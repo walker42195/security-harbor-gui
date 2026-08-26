@@ -266,7 +266,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.push_pin, size: 18, color: Colors.amberAccent),
+                    Icon(Icons.push_pin, size: 18, color: AppColors.warn),
                     const SizedBox(width: 8),
                     Text(mac.isEmpty ? tr('dhcp.ny_dhcp_reservation') : tr('dhcp.reservera_ip_till_mac'),
                         style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
@@ -306,7 +306,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                     TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('dhcp.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.warn, foregroundColor: AppColors.onStatus),
                       child: Text(tr('dhcp.spara_reservation'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () {
                         final newMac = macCtrl.text.trim();
@@ -420,7 +420,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                             fontSize: 11),
                       )),
                       DataCell(SelectableText(e.res.ip,
-                          style: const TextStyle(color: Colors.cyanAccent, fontSize: 11))),
+                          style: TextStyle(color: AppColors.accent, fontSize: 11))),
                       DataCell(SelectableText(e.res.mac,
                           style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                       DataCell(Text(e.device,
@@ -428,7 +428,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                       DataCell(active
                           ? Tooltip(
                               message: tr('dhcp.aktiv_lease_finns'),
-                              child: const Icon(Icons.check_circle, size: 15, color: Colors.greenAccent))
+                              child: Icon(Icons.check_circle, size: 15, color: AppColors.ok))
                           : Tooltip(
                               message: tr('dhcp.ingen_aktiv_lease'),
                               child: Icon(Icons.remove_circle_outline, size: 15, color: AppColors.textFaint))),
@@ -436,7 +436,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit, size: 15, color: Colors.cyanAccent),
+                            icon: Icon(Icons.edit, size: 15, color: AppColors.accent),
                             tooltip: tr('dhcp.redigera'),
                             onPressed: () => _showReservationDialog(
                               context,
@@ -448,7 +448,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 15, color: Colors.redAccent),
+                            icon: Icon(Icons.delete_outline, size: 15, color: AppColors.danger),
                             tooltip: tr('dhcp.ta_bort'),
                             onPressed: () => _deleteReservation(e.device, e.res),
                           ),
@@ -501,9 +501,9 @@ class _DhcpScreenState extends State<DhcpScreen> {
         label: Text('$label ($count)',
             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
         style: ElevatedButton.styleFrom(
-          backgroundColor: selected ? Colors.cyanAccent : AppColors.surface,
+          backgroundColor: selected ? AppColors.accent : AppColors.surface,
           foregroundColor: selected ? Colors.black : AppColors.textMuted,
-          side: BorderSide(color: selected ? Colors.cyanAccent : AppColors.border),
+          side: BorderSide(color: selected ? AppColors.accent : AppColors.border),
           elevation: 0,
         ),
         onPressed: selected ? null : () => setState(() => _view = view),
@@ -522,7 +522,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
             label: Text(tr('dhcp.lagg_till_reservation'),
                 style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
+                backgroundColor: AppColors.warn, foregroundColor: AppColors.onStatus),
             onPressed: () => _showReservationDialog(context),
           ),
       ],
@@ -542,14 +542,14 @@ class _DhcpScreenState extends State<DhcpScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.devices_other, color: Colors.cyanAccent, size: 22),
+                Icon(Icons.devices_other, color: AppColors.accent, size: 22),
                 const SizedBox(width: 10),
                 Text(tr('dhcp.dhcp_klienter'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 IconButton(
                   icon: _loading
-                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent))
-                      : const Icon(Icons.refresh, size: 18, color: Colors.cyanAccent),
+                      ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent))
+                      : Icon(Icons.refresh, size: 18, color: AppColors.accent),
                   onPressed: _loading ? null : _poll,
                 ),
               ],
@@ -673,16 +673,16 @@ class _DhcpScreenState extends State<DhcpScreen> {
                                 .map((l) => DataRow(cells: [
                                       DataCell(Text(l.hostname.isEmpty ? '(okänt)' : l.hostname,
                                           style: TextStyle(color: l.hostname.isEmpty ? AppColors.textFaint : AppColors.text, fontSize: 11))),
-                                      DataCell(SelectableText(l.ip, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11))),
+                                      DataCell(SelectableText(l.ip, style: TextStyle(color: AppColors.accent, fontSize: 11))),
                                       DataCell(SelectableText(l.mac, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                                       DataCell(Text(l.interfaceDevice, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
-                                      DataCell(Text(l.zone, style: const TextStyle(color: Colors.amberAccent, fontSize: 11))),
+                                      DataCell(Text(l.zone, style: TextStyle(color: AppColors.warn, fontSize: 11))),
                                       DataCell(Text(_fmtTime(l.startTs), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                                       DataCell(Text(_expiry(l.expireTs), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                                       DataCell(_isReserved(l.mac)
-                                          ? const Tooltip(message: 'Redan reserverad', child: Icon(Icons.check_circle, size: 16, color: Colors.greenAccent))
+                                          ? Tooltip(message: 'Redan reserverad', child: Icon(Icons.check_circle, size: 16, color: AppColors.ok))
                                           : IconButton(
-                                              icon: const Icon(Icons.push_pin_outlined, size: 16, color: Colors.amberAccent),
+                                              icon: Icon(Icons.push_pin_outlined, size: 16, color: AppColors.warn),
                                               tooltip: tr('dhcp.reservera_denna_ip_till_mac_adressen'),
                                               onPressed: () => _showReservationDialog(context, hostname: l.hostname, mac: l.mac, ip: l.ip, device: l.interfaceDevice),
                                             )),

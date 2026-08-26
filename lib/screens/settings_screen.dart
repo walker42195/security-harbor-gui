@@ -151,7 +151,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.settings, color: Colors.cyanAccent, size: 22),
+              Icon(Icons.settings, color: AppColors.accent, size: 22),
               const SizedBox(width: 10),
               Text(tr('settings.page_title'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
             ],
@@ -212,9 +212,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.security, color: Colors.cyanAccent, size: 22),
+                        Icon(Icons.security, color: AppColors.accent, size: 22),
                         const SizedBox(width: 10),
-                        Text(tr('settings.login.title'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text(tr('settings.login.title'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -227,7 +227,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         labelText: tr('settings.login.url_label'),
                         hintText: tr('settings.https_192_168_1_1_8443'),
                         border: const OutlineInputBorder(),
-                        prefixIcon: const Icon(Icons.link, color: Colors.cyanAccent, size: 18),
+                        prefixIcon: Icon(Icons.link, color: AppColors.accent, size: 18),
                         isDense: true,
                       ),
                     ),
@@ -244,7 +244,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               labelText: tr('settings.login.username_label'),
                               hintText: tr('settings.master'),
                               border: const OutlineInputBorder(),
-                              prefixIcon: const Icon(Icons.person, color: Colors.cyanAccent, size: 18),
+                              prefixIcon: Icon(Icons.person, color: AppColors.accent, size: 18),
                               isDense: true,
                             ),
                           ),
@@ -258,7 +258,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             decoration: InputDecoration(
                               labelText: tr('settings.login.password_label'),
                               border: const OutlineInputBorder(),
-                              prefixIcon: const Icon(Icons.lock, color: Colors.cyanAccent, size: 18),
+                              prefixIcon: Icon(Icons.lock, color: AppColors.accent, size: 18),
                               suffixIcon: IconButton(
                                 icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 18, color: AppColors.textMuted),
                                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -280,8 +280,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               : const Icon(Icons.login, size: 16),
                           label: Text(tr('settings.login.submit'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.cyanAccent,
-                            foregroundColor: Colors.black,
+                            backgroundColor: AppColors.accent,
+                            foregroundColor: AppColors.onStatus,
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           ),
                           onPressed: _isLoggingIn
@@ -319,7 +319,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             Icon(
                               provider.isAuthenticated ? Icons.check_circle : Icons.error_outline,
-                              color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
+                              color: provider.isAuthenticated ? AppColors.ok : AppColors.warn,
                               size: 18,
                             ),
                             const SizedBox(width: 8),
@@ -328,7 +328,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ? tr('settings.login.status_logged_in')
                                   : tr('settings.login.status_logged_out'),
                               style: TextStyle(
-                                color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
+                                color: provider.isAuthenticated ? AppColors.ok : AppColors.warn,
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -374,7 +374,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.save, size: 18, color: Colors.cyanAccent),
+                                    icon: Icon(Icons.save, size: 18, color: AppColors.accent),
                                     tooltip: tr('settings.rollback_timeout.save'),
                                     onPressed: _rollbackTimeoutDirty(provider) ? () => _saveRollbackTimeout(provider) : null,
                                   ),
@@ -383,7 +383,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             )
                           : Text(
                               '${(provider.runningConfig ?? provider.candidateConfig)?.settings.rollbackTimeoutSec ?? 30} s',
-                              style: const TextStyle(color: Colors.cyanAccent, fontSize: 13, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                     ),
                     Divider(color: AppColors.divider),
@@ -391,7 +391,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       dense: true,
                       title: Text(tr('settings.wan_lock.title'), style: TextStyle(color: AppColors.text, fontSize: 12)),
                       subtitle: Text(tr('settings.wan_lock.body'), style: TextStyle(fontSize: 11)),
-                      trailing: const Icon(Icons.verified_user, color: Colors.tealAccent, size: 18),
+                      trailing: Icon(Icons.verified_user, color: AppColors.ok, size: 18),
                     ),
                   ],
                 ),
@@ -431,10 +431,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.schedule, color: Colors.cyanAccent, size: 22),
+                Icon(Icons.schedule, color: AppColors.accent, size: 22),
                 const SizedBox(width: 10),
                 Text(tr('settings.tidszon'),
-                    style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                    style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
             const SizedBox(height: 6),
@@ -459,11 +459,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.info_outline, size: 14, color: Colors.amberAccent),
+                  Icon(Icons.info_outline, size: 14, color: AppColors.warn),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(tr('settings.tidszon_avvikelse'),
-                        style: const TextStyle(color: Colors.amberAccent, fontSize: 11)),
+                        style: TextStyle(color: AppColors.warn, fontSize: 11)),
                   ),
                 ],
               ),
@@ -472,7 +472,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ElevatedButton.icon(
               icon: const Icon(Icons.edit_calendar, size: 15),
               style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                  backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
               label: Text(tr('settings.tidszon_sok'), style: const TextStyle(fontSize: 12)),
               onPressed: () => _pickTimezone(provider, selected),
             ),
@@ -555,10 +555,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 leading: Icon(
                                     isCurrent ? Icons.radio_button_checked : Icons.radio_button_off,
                                     size: 15,
-                                    color: isCurrent ? Colors.cyanAccent : AppColors.textMuted),
+                                    color: isCurrent ? AppColors.accent : AppColors.textMuted),
                                 title: Text(zone,
                                     style: TextStyle(
-                                        color: isCurrent ? Colors.cyanAccent : AppColors.text,
+                                        color: isCurrent ? AppColors.accent : AppColors.text,
                                         fontSize: 12)),
                                 onTap: () => Navigator.of(ctx).pop(zone),
                               );
@@ -596,9 +596,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.language, color: Colors.cyanAccent, size: 22),
+                Icon(Icons.language, color: AppColors.accent, size: 22),
                 const SizedBox(width: 10),
-                Text(tr('settings.language.title'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.language.title'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
             const SizedBox(height: 8),
@@ -614,7 +614,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: SegmentedButton.styleFrom(
                 backgroundColor: AppColors.bg,
                 foregroundColor: AppColors.textMuted,
-                selectedBackgroundColor: Colors.cyanAccent,
+                selectedBackgroundColor: AppColors.accent,
                 selectedForegroundColor: Colors.black,
               ),
             ),
@@ -634,9 +634,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.password, color: Colors.cyanAccent, size: 22),
+                Icon(Icons.password, color: AppColors.accent, size: 22),
                 SizedBox(width: 10),
-                Text(tr('settings.byt_eget_losenord'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.byt_eget_losenord'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
             const SizedBox(height: 16),
@@ -676,8 +676,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : const Icon(Icons.save, size: 16),
               label: Text(tr('settings.byt_losenord'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.cyanAccent,
-                foregroundColor: Colors.black,
+                backgroundColor: AppColors.accent,
+                foregroundColor: AppColors.onStatus,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
               onPressed: _isChangingPassword
@@ -733,13 +733,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.forward_to_inbox, color: Colors.cyanAccent, size: 22),
+                Icon(Icons.forward_to_inbox, color: AppColors.accent, size: 22),
                 const SizedBox(width: 10),
-                Text(tr('settings.centraliserad_syslog'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.centraliserad_syslog'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
                 const Spacer(),
                 Switch(
                   value: syslog.enabled,
-                  activeThumbColor: Colors.tealAccent,
+                  activeThumbColor: AppColors.ok,
                   onChanged: (v) => save(syslog.copyWith(
                     enabled: v,
                     host: _syslogHostController.text.trim(),
@@ -802,8 +802,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   : const Icon(Icons.save, size: 16),
               label: Text(tr('settings.spara'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.cyanAccent,
-                foregroundColor: Colors.black,
+                backgroundColor: AppColors.accent,
+                foregroundColor: AppColors.onStatus,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
               onPressed: () => save(syslog.copyWith(
@@ -1087,7 +1087,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('settings.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.caution, foregroundColor: AppColors.onStatus),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(tr('settings.fortsatt'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           ),
@@ -1112,7 +1112,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Expanded(
             child: Text(
               trp('settings.now_latest', {'current': current, 'latest': available != null ? trp('settings.latest_suffix', {'available': available}) : ''}),
-              style: TextStyle(color: updateAvailable ? Colors.orangeAccent : AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: updateAvailable ? AppColors.caution : AppColors.textMuted, fontSize: 12),
             ),
           ),
           ?action,
@@ -1137,9 +1137,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.system_update_alt, color: Colors.cyanAccent, size: 20),
+                Icon(Icons.system_update_alt, color: AppColors.accent, size: 20),
                 const SizedBox(width: 8),
-                Text(tr('settings.uppdateringar'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.uppdateringar'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
                 const Spacer(),
                 ElevatedButton.icon(
                   onPressed: _checkingUpdate ? null : () => _checkForUpdates(provider),
@@ -1147,7 +1147,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.refresh, size: 16),
                   label: Text(tr('settings.kontrollera'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                 ),
               ],
             ),
@@ -1187,11 +1187,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.upgrade, size: 16),
                     label: Text(tr('settings.uppgradera'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.caution, foregroundColor: AppColors.onStatus),
                   ),
                   if (_fwVerified) ...[
                     const SizedBox(width: 8),
-                    const Icon(Icons.verified, color: Colors.tealAccent, size: 18),
+                    Icon(Icons.verified, color: AppColors.ok, size: 18),
                   ],
                 ],
               ),
@@ -1222,11 +1222,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onPressed: _desktopVerified ? () => _applyDesktopUpdate() : null,
                     icon: const Icon(Icons.upgrade, size: 16),
                     label: Text(tr('settings.uppgradera'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.caution, foregroundColor: AppColors.onStatus),
                   ),
                   if (_desktopVerified) ...[
                     const SizedBox(width: 8),
-                    const Icon(Icons.verified, color: Colors.tealAccent, size: 18),
+                    Icon(Icons.verified, color: AppColors.ok, size: 18),
                   ],
                 ],
               ),
@@ -1234,9 +1234,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Divider(color: AppColors.textFaint, height: 24),
             Row(
               children: [
-                const Icon(Icons.history, color: Colors.cyanAccent, size: 18),
+                Icon(Icons.history, color: AppColors.accent, size: 18),
                 const SizedBox(width: 8),
-                Text(tr('settings.tidigare_versioner'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(tr('settings.tidigare_versioner'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 13)),
                 const Spacer(),
                 IconButton(
                   icon: _loadingRetainedVersions
@@ -1277,7 +1277,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       if (isCurrent)
-                        Text(tr('settings.kors_nu'), style: TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold))
+                        Text(tr('settings.kors_nu'), style: TextStyle(color: AppColors.ok, fontSize: 11, fontWeight: FontWeight.bold))
                       else
                         OutlinedButton.icon(
                           onPressed: _rollbackInProgress ? null : () => _rollbackToVersion(provider, version),
@@ -1285,7 +1285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
                               : const Icon(Icons.restore, size: 14),
                           label: Text(tr('settings.aterstall'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                          style: OutlinedButton.styleFrom(foregroundColor: Colors.orangeAccent, side: const BorderSide(color: Colors.orangeAccent)),
+                          style: OutlinedButton.styleFrom(foregroundColor: AppColors.caution, side: BorderSide(color: AppColors.caution)),
                         ),
                     ],
                   ),
@@ -1293,7 +1293,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }),
             if (_updateMessage != null) ...[
               const SizedBox(height: 10),
-              Text(_updateMessage!, style: const TextStyle(color: Colors.amberAccent, fontSize: 11)),
+              Text(_updateMessage!, style: TextStyle(color: AppColors.warn, fontSize: 11)),
             ],
           ],
         ),
@@ -1316,14 +1316,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.history_toggle_off, color: Colors.cyanAccent, size: 22),
+                Icon(Icons.history_toggle_off, color: AppColors.accent, size: 22),
                 const SizedBox(width: 10),
                 Text(tr('settings.config_history.title'),
                     style: TextStyle(color: AppColors.text, fontSize: 15, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 if (_currentConfigRevision != null)
                   Text(trp('settings.config_history.current_revision', {'revision': '$_currentConfigRevision'}),
-                      style: const TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                      style: TextStyle(color: AppColors.ok, fontSize: 11, fontWeight: FontWeight.bold)),
                 IconButton(
                   icon: _loadingConfigHistory
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
@@ -1370,7 +1370,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         label: Text(tr('settings.config_history.load'),
                             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.orangeAccent, side: const BorderSide(color: Colors.orangeAccent)),
+                            foregroundColor: AppColors.caution, side: BorderSide(color: AppColors.caution)),
                       ),
                     ],
                   ),
@@ -1392,9 +1392,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.backup_outlined, color: Colors.cyanAccent, size: 22),
+                Icon(Icons.backup_outlined, color: AppColors.accent, size: 22),
                 SizedBox(width: 10),
-                Text(tr('settings.backup_aterstallning'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.backup_aterstallning'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
             const SizedBox(height: 6),
@@ -1433,7 +1433,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                       : const Icon(Icons.backup, size: 16),
                   label: Text(tr('settings.skapa_backup'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
                   onPressed: _isCreatingBackup || _backupPassphraseController.text.isEmpty
                       ? null
                       : () async {
@@ -1466,7 +1466,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: SingleChildScrollView(
-                  child: SelectableText(_backupResultController.text, style: const TextStyle(fontFamily: 'monospace', fontSize: 10, color: Colors.greenAccent)),
+                  child: SelectableText(_backupResultController.text, style: TextStyle(fontFamily: 'monospace', fontSize: 10, color: AppColors.ok)),
                 ),
               ),
               Align(
@@ -1475,14 +1475,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton.icon(
-                      icon: const Icon(Icons.save_alt, size: 14, color: Colors.cyanAccent),
+                      icon: Icon(Icons.save_alt, size: 14, color: AppColors.accent),
                       label: Text(tr('settings.spara_till_fil'),
-                          style: const TextStyle(fontSize: 11, color: Colors.cyanAccent)),
+                          style: TextStyle(fontSize: 11, color: AppColors.accent)),
                       onPressed: _saveBackupToFile,
                     ),
                     TextButton.icon(
-                      icon: const Icon(Icons.copy, size: 14, color: Colors.cyanAccent),
-                      label: Text(tr('settings.kopiera'), style: TextStyle(fontSize: 11, color: Colors.cyanAccent)),
+                      icon: Icon(Icons.copy, size: 14, color: AppColors.accent),
+                      label: Text(tr('settings.kopiera'), style: TextStyle(fontSize: 11, color: AppColors.accent)),
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: _backupResultController.text));
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -1498,7 +1498,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(tr('settings.aterstall_fran_backup'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text(tr('settings.brandvaggen_startar_om_automatiskt_vid_lyckad'),
-              style: TextStyle(color: Colors.amberAccent, fontSize: 11),
+              style: TextStyle(color: AppColors.warn, fontSize: 11),
             ),
             const SizedBox(height: 8),
             Align(
@@ -1507,8 +1507,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 icon: const Icon(Icons.folder_open, size: 14),
                 label: Text(tr('settings.las_fran_fil'), style: const TextStyle(fontSize: 11)),
                 style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.cyanAccent,
-                    side: const BorderSide(color: Colors.cyanAccent)),
+                    foregroundColor: AppColors.accent,
+                    side: BorderSide(color: AppColors.accent)),
                 onPressed: _loadBackupFromFile,
               ),
             ),
@@ -1538,7 +1538,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
                       : const Icon(Icons.restore, size: 16),
                   label: Text(tr('settings.aterstall'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, foregroundColor: Colors.black),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.caution, foregroundColor: AppColors.onStatus),
                   onPressed: _isRestoring || _restoreB64Controller.text.isEmpty || _restorePassphraseController.text.isEmpty
                       ? null
                       : () async {
@@ -1645,7 +1645,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildFactoryResetCard(ConfigProvider provider) {
     return Card(
       color: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4), side: const BorderSide(color: Colors.redAccent, width: 1)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4), side: BorderSide(color: AppColors.danger, width: 1)),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -1653,9 +1653,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.warning_amber, color: Colors.redAccent, size: 22),
+                Icon(Icons.warning_amber, color: AppColors.danger, size: 22),
                 SizedBox(width: 10),
-                Text(tr('settings.fabriksaterstallning'), style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.fabriksaterstallning'), style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.bold, fontSize: 15)),
               ],
             ),
             const SizedBox(height: 6),
@@ -1674,7 +1674,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Checkbox(
                   value: _factoryResetConfirmed,
-                  activeColor: Colors.redAccent,
+                  activeColor: AppColors.danger,
                   onChanged: (v) => setState(() => _factoryResetConfirmed = v ?? false),
                 ),
                 Expanded(
@@ -1688,7 +1688,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.delete_forever, size: 16),
               label: Text(tr('settings.fabriksaterstall_brandvaggen'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
               onPressed: !_factoryResetConfirmed || _factoryResetPasswordController.text.isEmpty || _isFactoryResetting
                   ? null
                   : () async {
@@ -1720,14 +1720,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.group, color: Colors.cyanAccent, size: 22),
+                Icon(Icons.group, color: AppColors.accent, size: 22),
                 const SizedBox(width: 10),
-                Text(tr('settings.anvandare'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(tr('settings.anvandare'), style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
                 const Spacer(),
                 IconButton(
                   icon: _loadingUsers
-                      ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent))
-                      : const Icon(Icons.refresh, size: 18, color: Colors.cyanAccent),
+                      ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent))
+                      : Icon(Icons.refresh, size: 18, color: AppColors.accent),
                   onPressed: _loadingUsers ? null : _loadUsers,
                 ),
               ],
@@ -1738,19 +1738,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             else
               ..._users.map((u) => ListTile(
                     dense: true,
-                    leading: Icon(u['role'] == 'admin' ? Icons.admin_panel_settings : Icons.visibility, color: Colors.cyanAccent, size: 18),
+                    leading: Icon(u['role'] == 'admin' ? Icons.admin_panel_settings : Icons.visibility, color: AppColors.accent, size: 18),
                     title: Text(u['username'] ?? '', style: TextStyle(color: AppColors.text, fontSize: 12)),
                     subtitle: Text(u['role'] ?? '', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.lock_reset, size: 16, color: Colors.amber),
+                          icon: Icon(Icons.lock_reset, size: 16, color: AppColors.warn),
                           tooltip: tr('settings.aterstall_losenord'),
                           onPressed: () => _showResetPasswordDialog(provider, u),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete, size: 16, color: Colors.redAccent),
+                          icon: Icon(Icons.delete, size: 16, color: AppColors.danger),
                           tooltip: tr('settings.ta_bort_anvandare'),
                           onPressed: () async {
                             final err = await provider.api.deleteUser(u['id']);
@@ -1806,8 +1806,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               icon: const Icon(Icons.person_add, size: 16),
               label: Text(tr('settings.skapa_anvandare'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.cyanAccent,
-                foregroundColor: Colors.black,
+                backgroundColor: AppColors.accent,
+                foregroundColor: AppColors.onStatus,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
               onPressed: () async {
@@ -1848,7 +1848,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(tr('settings.avbryt'))),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
             onPressed: () async {
               final err = await provider.api.resetUserPassword(user['id'], pwController.text);
               if (!dialogContext.mounted) return;

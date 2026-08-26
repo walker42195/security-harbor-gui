@@ -102,7 +102,7 @@ class _DnsScreenState extends State<DnsScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.dns, color: Colors.cyanAccent, size: 22),
+                Icon(Icons.dns, color: AppColors.accent, size: 22),
                 SizedBox(width: 10),
                 Text(tr('dns.dns_dns_filtrering'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
               ],
@@ -141,10 +141,10 @@ class _DnsScreenState extends State<DnsScreen> {
                 children: [
                   Switch(
                     value: dns.enabled,
-                    activeThumbColor: Colors.tealAccent,
+                    activeThumbColor: AppColors.ok,
                     onChanged: (v) => _save(provider, dns.copyWith(enabled: v)),
                   ),
-                  Text(dns.enabled ? tr('dns.aktiverad') : tr('dns.inaktiverad'), style: TextStyle(color: dns.enabled ? Colors.tealAccent : AppColors.textMuted, fontSize: 11)),
+                  Text(dns.enabled ? tr('dns.aktiverad') : tr('dns.inaktiverad'), style: TextStyle(color: dns.enabled ? AppColors.ok : AppColors.textMuted, fontSize: 11)),
                 ],
               ),
             ],
@@ -161,7 +161,7 @@ class _DnsScreenState extends State<DnsScreen> {
                   child: RadioListTile<bool>(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
-                    activeColor: Colors.tealAccent,
+                    activeColor: AppColors.ok,
                     title: Text(tr('dns.vidarebefordra_till_upstream_servrar'), style: TextStyle(color: AppColors.text, fontSize: 12)),
                     value: false,
                   ),
@@ -170,7 +170,7 @@ class _DnsScreenState extends State<DnsScreen> {
                   child: RadioListTile<bool>(
                     dense: true,
                     contentPadding: EdgeInsets.zero,
-                    activeColor: Colors.tealAccent,
+                    activeColor: AppColors.ok,
                     title: Text(tr('dns.sla_upp_sjalv_mot_rot_servrarna'), style: TextStyle(color: AppColors.text, fontSize: 12)),
                     value: true,
                   ),
@@ -186,7 +186,7 @@ class _DnsScreenState extends State<DnsScreen> {
               children: [
                 Switch(
                   value: dns.dotEnabled,
-                  activeThumbColor: Colors.tealAccent,
+                  activeThumbColor: AppColors.ok,
                   onChanged: (v) => _save(provider, dns.copyWith(dotEnabled: v)),
                 ),
                 const SizedBox(width: 6),
@@ -207,7 +207,7 @@ class _DnsScreenState extends State<DnsScreen> {
           ElevatedButton.icon(
             icon: const Icon(Icons.save, size: 14),
             label: Text(tr('dns.spara'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
             onPressed: () {
               final upstream = upstreamCtrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
               _save(provider, dns.copyWith(upstreamServers: upstream, dotHostname: dotHostCtrl.text.trim()));
@@ -215,7 +215,7 @@ class _DnsScreenState extends State<DnsScreen> {
           ),
           const SizedBox(height: 6),
           Text(tr('dns.kom_ihag_att_applicera_bekrafta_andringarna'),
-            style: TextStyle(color: Colors.amberAccent, fontSize: 10),
+            style: TextStyle(color: AppColors.warn, fontSize: 10),
           ),
         ],
       ),
@@ -240,7 +240,7 @@ class _DnsScreenState extends State<DnsScreen> {
             children: [
               Switch(
                 value: dns.dhcpHostnameRegistration,
-                activeThumbColor: Colors.tealAccent,
+                activeThumbColor: AppColors.ok,
                 onChanged: (v) => _save(provider, dns.copyWith(dhcpHostnameRegistration: v)),
               ),
               const SizedBox(width: 6),
@@ -255,13 +255,13 @@ class _DnsScreenState extends State<DnsScreen> {
           ElevatedButton.icon(
             icon: const Icon(Icons.save, size: 14),
             label: Text(tr('dns.spara'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: AppColors.onStatus),
             onPressed: () => _save(provider, dns.copyWith(localDomain: localDomainCtrl.text.trim())),
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.devices, color: Colors.cyanAccent, size: 16),
+              Icon(Icons.devices, color: AppColors.accent, size: 16),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -294,7 +294,7 @@ class _DnsScreenState extends State<DnsScreen> {
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
                 label: Text(tr('dns.lagg_till_blocklista'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.ok, foregroundColor: AppColors.onStatus),
                 onPressed: () => _showAddBlocklistDialog(provider, dns),
               ),
             ],
@@ -331,7 +331,7 @@ class _DnsScreenState extends State<DnsScreen> {
         children: [
           Row(
             children: [
-              Icon(src.enabled ? Icons.block : Icons.block_outlined, size: 16, color: src.enabled ? Colors.tealAccent : AppColors.textMuted),
+              Icon(src.enabled ? Icons.block : Icons.block_outlined, size: 16, color: src.enabled ? AppColors.ok : AppColors.textMuted),
               const SizedBox(width: 10),
               Expanded(
                 flex: 2,
@@ -343,29 +343,29 @@ class _DnsScreenState extends State<DnsScreen> {
               ),
               TextButton(
                 onPressed: () => _viewDomains(provider, src),
-                child: Text('${src.entryCount} domäner', style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
+                child: Text('${src.entryCount} domäner', style: TextStyle(color: AppColors.accent, fontSize: 11)),
               ),
               if (refreshing)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.tealAccent)),
+                  child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.ok)),
                 )
               else
                 IconButton(
-                  icon: const Icon(Icons.refresh, size: 18, color: Colors.tealAccent),
+                  icon: Icon(Icons.refresh, size: 18, color: AppColors.ok),
                   tooltip: tr('dns.uppdatera_nu'),
                   onPressed: () => _refreshBlocklist(provider, dns, src),
                 ),
               Switch(
                 value: src.enabled,
-                activeThumbColor: Colors.tealAccent,
+                activeThumbColor: AppColors.ok,
                 onChanged: (v) {
                   final updated = dns.blocklists.map((b) => b.id == src.id ? b.copyWith(enabled: v) : b).toList();
                   _save(provider, dns.copyWith(blocklists: updated));
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                icon: Icon(Icons.delete_outline, size: 18, color: AppColors.danger),
                 tooltip: tr('dns.ta_bort'),
                 onPressed: () {
                   final updated = dns.blocklists.where((b) => b.id != src.id).toList();
@@ -381,7 +381,7 @@ class _DnsScreenState extends State<DnsScreen> {
                 spacing: 14,
                 children: [
                   Text(src.lastUpdated.isEmpty ? 'Aldrig uppdaterad' : 'Uppdaterad: ${_shortTime(src.lastUpdated)}', style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
-                  if (src.lastError.isNotEmpty) Text('Fel: ${src.lastError}', style: const TextStyle(color: Colors.redAccent, fontSize: 10)),
+                  if (src.lastError.isNotEmpty) Text('Fel: ${src.lastError}', style: TextStyle(color: AppColors.danger, fontSize: 10)),
                 ],
               ),
             ),
@@ -437,7 +437,7 @@ class _DnsScreenState extends State<DnsScreen> {
                 _labeledField(tr('dns.uppdateringsintervall_label'), refreshHoursCtrl, hint: '24'),
                 const SizedBox(height: 6),
                 Text(tr('dns.listan_hamtas_automatiskt_enligt_intervallet_ovan'),
-                  style: TextStyle(color: Colors.amberAccent, fontSize: 10),
+                  style: TextStyle(color: AppColors.warn, fontSize: 10),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -446,7 +446,7 @@ class _DnsScreenState extends State<DnsScreen> {
                     TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('dns.avbryt'), style: TextStyle(fontSize: 12))),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.ok, foregroundColor: AppColors.onStatus),
                       child: Text(tr('dns.skapa_hamta_nu'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       onPressed: () async {
                         final newSrc = DNSBlocklistSourceModel(
