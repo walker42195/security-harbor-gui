@@ -29,8 +29,13 @@ class _DhcpScreenState extends State<DhcpScreen> {
   final _search = TextEditingController();
   String _ifaceFilter = 'ALL';
 
-  int _sortCol = 0; // 0=namn,1=ip,2=mac,3=iface,4=zon,5=utgår
+  int _sortCol = 0; // 0=namn,1=ip,2=mac,3=iface,4=zon,5=fick lease,6=utgår
   bool _sortAsc = true;
+  // Reservationerna har EGEN sorteringsstate: kolumnerna är inte desamma som
+  // utlåningarnas (ingen zon, inga tider), så ett delat kolumnindex hade
+  // betytt olika saker i de två vyerna.
+  int _resSortCol = 1; // 0=namn,1=ip,2=mac,3=gränssnitt,4=status
+  bool _resSortAsc = true;
 
   @override
   void initState() {
@@ -144,6 +149,20 @@ class _DhcpScreenState extends State<DhcpScreen> {
           _sortAsc = true;
         }
       });
+
+  void _onResSort(int col) => setState(() {
+        if (_resSortCol == col) {
+          _resSortAsc = !_resSortAsc;
+        } else {
+          _resSortCol = col;
+          _resSortAsc = true;
+        }
+      });
+
+  /// Har reservationen en aktiv utlåning? Delas mellan statuskolumnen och
+  /// sorteringen på den, så de inte kan komma isär.
+  bool _reservationHasLease(DHCPReservationModel res) => _leases.any(
+      (l) => l.mac.trim().toLowerCase() == res.mac.trim().toLowerCase());
 
   // --- Statiska reservationer (bor i varje interfaces DHCP-scope) ---
 
@@ -374,23 +393,24 @@ class _DhcpScreenState extends State<DhcpScreen> {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
+                  sortColumnIndex: _resSortCol,
+                  sortAscending: _resSortAsc,
                   headingRowHeight: 36,
                   dataRowMinHeight: 32,
                   dataRowMaxHeight: 32,
                   columns: [
-                    DataColumn(label: Text(tr('dhcp.namn'), style: _hStyle)),
-                    DataColumn(label: Text(tr('dhcp.ip_adress'), style: _hStyle)),
-                    DataColumn(label: Text(tr('dhcp.mac_adress'), style: _hStyle)),
-                    DataColumn(label: Text(tr('dhcp.granssnitt'), style: _hStyle)),
-                    DataColumn(label: Text(tr('dhcp.status'), style: _hStyle)),
+                    DataColumn(label: Text(tr('dhcp.namn'), style: _hStyle), onSort: (i, _) => _onResSort(0)),
+                    DataColumn(label: Text(tr('dhcp.ip_adress'), style: _hStyle), onSort: (i, _) => _onResSort(1)),
+                    DataColumn(label: Text(tr('dhcp.mac_adress'), style: _hStyle), onSort: (i, _) => _onResSort(2)),
+                    DataColumn(label: Text(tr('dhcp.granssnitt'), style: _hStyle), onSort: (i, _) => _onResSort(3)),
+                    DataColumn(label: Text(tr('dhcp.status'), style: _hStyle), onSort: (i, _) => _onResSort(4)),
                     DataColumn(label: Text(tr('dhcp.atgarder'), style: _hStyle)),
                   ],
                   rows: reservations.map((e) {
                     // Har enheten en aktiv utlåning syns det direkt — en
                     // reservation som ingen klient hämtat är oftast ett
                     // tecken på fel MAC.
-                    final active = _leases.any((l) =>
-                        l.mac.trim().toLowerCase() == e.res.mac.trim().toLowerCase());
+                    final active = _reservationHasLease(e.res);
                     return DataRow(cells: [
                       DataCell(Text(
                         e.res.hostname.isEmpty ? tr('dhcp.namnlos') : e.res.hostname,
@@ -460,14 +480,15 @@ class _DhcpScreenState extends State<DhcpScreen> {
   /// så man inte behöver lära sig två filter.
   List<({String device, DHCPReservationModel res})> get _visibleReservations {
     final q = _search.text.trim().toLowerCase();
-    if (q.isEmpty) return _allReservations();
-    return _allReservations()
+    final rows = _allReservations()
         .where((e) =>
+            q.isEmpty ||
             e.res.hostname.toLowerCase().contains(q) ||
             e.res.ip.toLowerCase().contains(q) ||
             e.res.mac.toLowerCase().contains(q) ||
             e.device.toLowerCase().contains(q))
         .toList();
+    return sortReservations(rows, _resSortCol, _resSortAsc, _reservationHasLease);
   }
 
   /// Växling mellan utlåningar och reservationer.
@@ -696,3 +717,62 @@ const _hStyle = TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeig
 
 /// Vilken av DHCP-sidans två listor som visas.
 enum _DhcpView { leases, reservations }
+
+/// Sorterar reservationslistan. Toppnivåfunktion, inte en metod, så att
+/// ordningen går att testa utan att bygga upp en hel skärm.
+///
+/// [hasLease] skickas in i stället för att slås upp här: samma predikat
+/// används av statuskolumnen, och de två får inte kunna komma isär.
+List<({String device, DHCPReservationModel res})> sortReservations(
+  List<({String device, DHCPReservationModel res})> rows,
+  int col,
+  bool ascending,
+  bool Function(DHCPReservationModel) hasLease,
+) {
+  int cmp(({String device, DHCPReservationModel res}) a,
+      ({String device, DHCPReservationModel res}) b) {
+    int c;
+    switch (col) {
+      case 1:
+        // Numeriskt, så .2 hamnar före .10 — en ren textjämförelse hade gett
+        // .10 före .2, vilket är oläsbart i en adresslista.
+        c = ipSortKey(a.res.ip).compareTo(ipSortKey(b.res.ip));
+        break;
+      case 2:
+        c = a.res.mac.toLowerCase().compareTo(b.res.mac.toLowerCase());
+        break;
+      case 3:
+        c = a.device.toLowerCase().compareTo(b.device.toLowerCase());
+        break;
+      case 4:
+        // Utan aktiv utlåning först vid stigande sortering: det är de raderna
+        // som behöver uppmärksamhet (oftast en felskriven MAC).
+        c = (hasLease(a.res) ? 1 : 0).compareTo(hasLease(b.res) ? 1 : 0);
+        break;
+      default:
+        c = a.res.hostname.toLowerCase().compareTo(b.res.hostname.toLowerCase());
+    }
+    // Lika värden faller tillbaka på IP, så ordningen inte hoppar runt mellan
+    // omritningar när flera rader delar sorteringsnyckel.
+    if (c == 0) c = ipSortKey(a.res.ip).compareTo(ipSortKey(b.res.ip));
+    return ascending ? c : -c;
+  }
+
+  final sorted = List<({String device, DHCPReservationModel res})>.from(rows);
+  sorted.sort(cmp);
+  return sorted;
+}
+
+/// Sorteringsnyckel för en IPv4-adress. 0 för allt som inte är giltig IPv4,
+/// så sorteringen inte kraschar på en tom eller felskriven adress.
+int ipSortKey(String ip) {
+  final parts = ip.split('.');
+  if (parts.length != 4) return 0;
+  var key = 0;
+  for (final p in parts) {
+    final v = int.tryParse(p);
+    if (v == null || v < 0 || v > 255) return 0;
+    key = (key << 8) | v;
+  }
+  return key;
+}
