@@ -148,8 +148,8 @@ void _diffList(List<ConfigChange> out, String section, List before, List after) 
       section: section,
       item: '',
       kind: ChangeKind.modified,
-      before: _render(before),
-      after: _render(after),
+      before: _renderList(before),
+      after: _renderList(after),
     ));
     return;
   }
@@ -295,10 +295,25 @@ String _summary(Map<String, dynamic> item) {
   return parts.join(', ');
 }
 
+/// Hur många element som skrivs ut innan en lista sammanfattas i stället.
+///
+/// En hot-lista kan ha över hundratusen poster (AbuseIPDB: 126 616). Att
+/// rendera dem som en sammanfogad sträng i en Text-widget låser GUI:t — och
+/// säger ingenting. Antalet är det man faktiskt vill veta.
+const int _maxRenderedListItems = 12;
+
+String _renderList(dynamic value) {
+  if (value is! List) return _render(value);
+  if (value.length <= _maxRenderedListItems) return _render(value);
+  final sample = value.take(3).map(_render).join(', ');
+  return '${value.length} poster ($sample, …)';
+}
+
 String _render(dynamic value) {
   if (value == null) return '';
   if (value is List) {
     if (value.isEmpty) return '[]';
+    if (value.length > _maxRenderedListItems) return _renderList(value);
     return value.map(_render).join(', ');
   }
   if (value is Map) {

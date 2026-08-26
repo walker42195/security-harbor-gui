@@ -162,4 +162,36 @@ void main() {
     ]);
     expect(diffConfigs(a, b).first.item, 'Gästnät');
   });
+
+  // En hot-lista kan ha över hundratusen poster. Renderas de som en
+  // sammanfogad sträng låser sig "Visa ändringar" — och siffran är ändå det
+  // enda intressanta (AbuseIPDB-listan, 2026-08-26).
+  test('långa värdelistor sammanfattas i stället för att skrivas ut', () {
+    final small = cfg(interfaces: [
+      {'id': 'lan0', 'device': 'ens19', 'name': 'LAN', 'dns_servers': ['10.0.0.1']},
+    ]);
+    final huge = cfg(interfaces: [
+      {
+        'id': 'lan0', 'device': 'ens19', 'name': 'LAN',
+        'dns_servers': List.generate(126616, (i) => '10.0.${i ~/ 256}.${i % 256}'),
+      },
+    ]);
+
+    final changes = diffConfigs(small, huge);
+    expect(changes, hasLength(1));
+    final after = changes.first.after!;
+    expect(after, contains('126616 poster'));
+    expect(after.length, lessThan(200),
+        reason: 'utskriften måste vara kort, annars låser dialogen sig');
+  });
+
+  test('korta listor skrivs fortfarande ut i sin helhet', () {
+    final a = cfg(interfaces: [
+      {'id': 'lan0', 'device': 'ens19', 'name': 'LAN', 'dns_servers': ['10.0.0.1']},
+    ]);
+    final b = cfg(interfaces: [
+      {'id': 'lan0', 'device': 'ens19', 'name': 'LAN', 'dns_servers': ['10.0.0.1', '1.1.1.1']},
+    ]);
+    expect(diffConfigs(a, b).first.after, '10.0.0.1, 1.1.1.1');
+  });
 }
