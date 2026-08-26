@@ -136,10 +136,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Här, inte i build(): körs när beroendena är klara, men inte vid varje
+    // omritning.
+    _loadTimezones(Provider.of<ConfigProvider>(context, listen: false));
+  }
+
+  @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ConfigProvider>(context);
     _syncRollbackTimeoutField(provider);
-    _loadTimezones(provider);
 
     return Container(
       color: AppColors.bg,
@@ -401,8 +408,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             );
   }
 
+  /// Sätts när hämtningen STARTAT, inte när den lyckats.
+  ///
+  /// Vakten var tidigare `_timezones.isNotEmpty`, och anropet låg i build().
+  /// Två fel i ett: ett nätanrop hör inte hemma i build() över huvud taget,
+  /// och eftersom vakten först stängs när svaret KOMMIT hann varje
+  /// ombyggnad under svarstiden starta ännu en förfrågan. En misslyckad
+  /// hämtning (äldre agent utan endpointen, tappad session) lämnade dessutom
+  /// listan tom, så varje efterföljande ombyggnad försökte igen — och
+  /// setState i slutet av hämtningen utlöste nästa ombyggnad.
+  bool _timezonesRequested = false;
+
   Future<void> _loadTimezones(ConfigProvider provider) async {
-    if (_timezones.isNotEmpty || !provider.isAuthenticated || !provider.isAdmin) return;
+    if (_timezonesRequested || !provider.isAuthenticated || !provider.isAdmin) return;
+    _timezonesRequested = true;
     final result = await provider.api.getTimezones();
     if (!mounted) return;
     setState(() {
