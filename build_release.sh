@@ -19,6 +19,10 @@ SIGN_KEY="${SIGN_KEY:-$HOME/.config/security-harbor/release-signing.key}"
 AGENT_DIR="${AGENT_DIR:-../security-harbor-agent}"
 RELEASE_BASE="${RELEASE_BASE:-https://github.com/walker42195/security-harbor-gui/releases/download/v$VERSION}"
 
+# Versionskonstanten i koden GENERERAS ur pubspec — den får aldrig kunna
+# glida isär från releasens version (se sync_app_version.sh).
+./sync_app_version.sh
+
 echo "=== 1. Bygger desktop-appen (flutter build linux --release), v$VERSION ==="
 flutter build linux --release
 

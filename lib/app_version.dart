@@ -1,5 +1,7 @@
-/// Desktop-appens version. Hålls i synk med `version:` i pubspec.yaml och
-/// bumpas vid varje desktop-release (gui-repots build_release.sh signerar och
-/// publicerar en matchande GitHub Release). Agenten och webb-GUI:t versioneras
-/// separat (se agentens VERSION-fil).
-const String kGuiVersion = '2.2.0';
+/// Desktop- och webb-GUI:ts version.
+///
+/// GENERERAD AV sync_app_version.sh UR pubspec.yaml - redigera inte för hand.
+/// Bumpa `version:` i pubspec.yaml i stället; build_release.sh regenererar
+/// den här filen vid varje release. Agenten versioneras separat (VERSION-filen
+/// i agent-repot).
+const String kGuiVersion = '2.3.2';
