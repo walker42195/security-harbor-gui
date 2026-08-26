@@ -19,6 +19,10 @@ class DhcpScreen extends StatefulWidget {
 
 class _DhcpScreenState extends State<DhcpScreen> {
   List<DhcpLeaseModel> _leases = [];
+  /// Vilken lista som visas. Reservationer och utlåningar är två olika saker
+  /// — det man konfigurerar respektive det som faktiskt delats ut — och att
+  /// visa båda samtidigt gjorde sidan rörig.
+  _DhcpView _view = _DhcpView.leases;
   bool _loading = false;
   Timer? _pollTimer;
 
@@ -205,7 +209,16 @@ class _DhcpScreenState extends State<DhcpScreen> {
     setState(() {});
   }
 
-  void _showReservationDialog(BuildContext context, {String hostname = '', String mac = '', String ip = '', String device = ''}) {
+  /// [original] anges när en BEFINTLIG reservation redigeras. Utan den kan
+  /// man bara ändra fält som inte är en del av identiteten: byter man MAC
+  /// eller flyttar reservationen till ett annat gränssnitt skulle den gamla
+  /// annars ligga kvar som en dubblett.
+  void _showReservationDialog(BuildContext context,
+      {String hostname = '',
+      String mac = '',
+      String ip = '',
+      String device = '',
+      ({String device, DHCPReservationModel res})? original}) {
     final hostCtrl = TextEditingController(text: hostname);
     final macCtrl = TextEditingController(text: mac);
     final ipCtrl = TextEditingController(text: ip);
@@ -282,6 +295,18 @@ class _DhcpScreenState extends State<DhcpScreen> {
                           ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content: Text(tr('dhcp.mac_och_ip_maste_anges'))));
                           return;
                         }
+                        // Redigering som byter gränssnitt: ta bort posten på
+                        // det gamla kortet först, annars blir den kvar där.
+                        if (original != null && original.device != selectedDevice) {
+                          _deleteReservation(original.device, original.res);
+                        } else if (original != null) {
+                          final remaining = _dhcpInterfaces()
+                              .where((i) => i.device == original.device)
+                              .expand((i) => i.dhcp!.reservations)
+                              .where((r) => r.mac.trim().toLowerCase() != original.res.mac.trim().toLowerCase())
+                              .toList();
+                          _writeReservations(original.device, remaining);
+                        }
                         final ifaceMatch = _dhcpInterfaces().where((i) => i.device == selectedDevice);
                         final current = ifaceMatch.isNotEmpty ? List<DHCPReservationModel>.from(ifaceMatch.first.dhcp!.reservations) : <DHCPReservationModel>[];
                         // Ersätt ev. befintlig reservation för samma MAC.
@@ -328,10 +353,14 @@ class _DhcpScreenState extends State<DhcpScreen> {
     );
   }
 
-  Widget _buildReservationsCard(BuildContext context) {
-    final reservations = _allReservations();
+  /// Reservationerna som en kolumnlista, i samma form som utlåningarna.
+  /// Låg tidigare som en Wrap av "chips" där varje post klämde in namn, IP,
+  /// MAC och gränssnitt på två rader — omöjligt att jämföra poster med
+  /// varandra, vilket är hela poängen med en lista.
+  Widget _buildReservationsTable(BuildContext context) {
+    final reservations = _visibleReservations;
     return Container(
-      padding: const EdgeInsets.all(12),
+      width: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
         border: Border.all(color: const Color(0xFF334155)),
@@ -340,74 +369,141 @@ class _DhcpScreenState extends State<DhcpScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.push_pin, size: 16, color: Colors.amberAccent),
-                  const SizedBox(width: 8),
-                  Text(tr('dhcp.statiska_reservationer'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 8),
-                  Text('(${reservations.length})', style: const TextStyle(color: Colors.white54, fontSize: 11)),
-                ],
+          Flexible(
+            child: SingleChildScrollView(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  headingRowHeight: 36,
+                  dataRowMinHeight: 32,
+                  dataRowMaxHeight: 32,
+                  columns: [
+                    DataColumn(label: Text(tr('dhcp.namn'), style: _hStyle)),
+                    DataColumn(label: Text(tr('dhcp.ip_adress'), style: _hStyle)),
+                    DataColumn(label: Text(tr('dhcp.mac_adress'), style: _hStyle)),
+                    DataColumn(label: Text(tr('dhcp.granssnitt'), style: _hStyle)),
+                    DataColumn(label: Text(tr('dhcp.status'), style: _hStyle)),
+                    DataColumn(label: Text(tr('dhcp.atgarder'), style: _hStyle)),
+                  ],
+                  rows: reservations.map((e) {
+                    // Har enheten en aktiv utlåning syns det direkt — en
+                    // reservation som ingen klient hämtat är oftast ett
+                    // tecken på fel MAC.
+                    final active = _leases.any((l) =>
+                        l.mac.trim().toLowerCase() == e.res.mac.trim().toLowerCase());
+                    return DataRow(cells: [
+                      DataCell(Text(
+                        e.res.hostname.isEmpty ? tr('dhcp.namnlos') : e.res.hostname,
+                        style: TextStyle(
+                            color: e.res.hostname.isEmpty ? Colors.white38 : Colors.white,
+                            fontSize: 11),
+                      )),
+                      DataCell(SelectableText(e.res.ip,
+                          style: const TextStyle(color: Colors.cyanAccent, fontSize: 11))),
+                      DataCell(SelectableText(e.res.mac,
+                          style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                      DataCell(Text(e.device,
+                          style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                      DataCell(active
+                          ? Tooltip(
+                              message: tr('dhcp.aktiv_lease_finns'),
+                              child: const Icon(Icons.check_circle, size: 15, color: Colors.greenAccent))
+                          : Tooltip(
+                              message: tr('dhcp.ingen_aktiv_lease'),
+                              child: const Icon(Icons.remove_circle_outline, size: 15, color: Colors.white24))),
+                      DataCell(Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 15, color: Colors.cyanAccent),
+                            tooltip: tr('dhcp.redigera'),
+                            onPressed: () => _showReservationDialog(
+                              context,
+                              hostname: e.res.hostname,
+                              mac: e.res.mac,
+                              ip: e.res.ip,
+                              device: e.device,
+                              original: e,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, size: 15, color: Colors.redAccent),
+                            tooltip: tr('dhcp.ta_bort'),
+                            onPressed: () => _deleteReservation(e.device, e.res),
+                          ),
+                        ],
+                      )),
+                    ]);
+                  }).toList(),
+                ),
               ),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.add, size: 14),
-                label: Text(tr('dhcp.lagg_till_reservation'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
-                onPressed: () => _showReservationDialog(context),
-              ),
-            ],
+            ),
           ),
-          if (reservations.isEmpty)
+          if (_allReservations().isEmpty)
             Padding(
-              padding: EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.all(20),
               child: Text(tr('dhcp.inga_reservationer_lagg_till_manuellt_eller'),
-                  style: TextStyle(color: Colors.white38, fontSize: 11)),
+                  style: const TextStyle(color: Colors.white38, fontSize: 12)),
             )
-          else
+          else if (reservations.isEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: reservations.map((e) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
-                      border: Border.all(color: const Color(0xFF334155)),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(e.res.hostname.isEmpty ? '(namnlös)' : e.res.hostname,
-                                style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                            Text('${e.res.ip}  ·  ${e.res.mac}  ·  ${e.device}',
-                                style: const TextStyle(color: Colors.white54, fontSize: 10)),
-                          ],
-                        ),
-                        const SizedBox(width: 8),
-                        InkWell(
-                          onTap: () => _deleteReservation(e.device, e.res),
-                          child: const Icon(Icons.close, size: 14, color: Colors.redAccent),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
+              padding: const EdgeInsets.all(20),
+              child: Text(tr('dhcp.inga_reservationer_matchar_filtret'),
+                  style: const TextStyle(color: Colors.white38, fontSize: 12)),
             ),
         ],
       ),
+    );
+  }
+
+  /// Reservationer efter sökfiltret — samma sökfält som utlåningarna använder,
+  /// så man inte behöver lära sig två filter.
+  List<({String device, DHCPReservationModel res})> get _visibleReservations {
+    final q = _search.text.trim().toLowerCase();
+    if (q.isEmpty) return _allReservations();
+    return _allReservations()
+        .where((e) =>
+            e.res.hostname.toLowerCase().contains(q) ||
+            e.res.ip.toLowerCase().contains(q) ||
+            e.res.mac.toLowerCase().contains(q) ||
+            e.device.toLowerCase().contains(q))
+        .toList();
+  }
+
+  /// Växling mellan utlåningar och reservationer.
+  Widget _buildViewToggle(BuildContext context) {
+    Widget button(_DhcpView view, IconData icon, String label, int count) {
+      final selected = _view == view;
+      return ElevatedButton.icon(
+        icon: Icon(icon, size: 15),
+        label: Text('$label ($count)',
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: selected ? Colors.cyanAccent : const Color(0xFF1E293B),
+          foregroundColor: selected ? Colors.black : Colors.white70,
+          side: BorderSide(color: selected ? Colors.cyanAccent : const Color(0xFF334155)),
+          elevation: 0,
+        ),
+        onPressed: selected ? null : () => setState(() => _view = view),
+      );
+    }
+
+    return Row(
+      children: [
+        button(_DhcpView.leases, Icons.dns_outlined, tr('dhcp.leasade_adresser'), _leases.length),
+        const SizedBox(width: 8),
+        button(_DhcpView.reservations, Icons.push_pin, tr('dhcp.statiska_reservationer'), _allReservations().length),
+        const Spacer(),
+        if (_view == _DhcpView.reservations)
+          ElevatedButton.icon(
+            icon: const Icon(Icons.add, size: 14),
+            label: Text(tr('dhcp.lagg_till_reservation'),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amberAccent, foregroundColor: Colors.black),
+            onPressed: () => _showReservationDialog(context),
+          ),
+      ],
     );
   }
 
@@ -442,8 +538,8 @@ class _DhcpScreenState extends State<DhcpScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Statiska reservationer (MAC -> IP)
-            _buildReservationsCard(context),
+            // Utlåningar eller reservationer — en i taget.
+            _buildViewToggle(context),
             const SizedBox(height: 12),
 
             // Filterrad
@@ -515,6 +611,9 @@ class _DhcpScreenState extends State<DhcpScreen> {
             ),
             const SizedBox(height: 12),
 
+            if (_view == _DhcpView.reservations)
+              Expanded(child: _buildReservationsTable(context))
+            else
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -594,3 +693,6 @@ class _DhcpScreenState extends State<DhcpScreen> {
 }
 
 const _hStyle = TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold);
+
+/// Vilken av DHCP-sidans två listor som visas.
+enum _DhcpView { leases, reservations }

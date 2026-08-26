@@ -367,6 +367,15 @@ const Map<String, String> _sv = {
 
   // --- connections_screen.dart ---
   'conn.anslutningar_loggning': 'Anslutningar & Loggning',
+  'dhcp.leasade_adresser': 'Leasade adresser',
+  'dhcp.status': 'Status',
+  'dhcp.atgarder': 'Åtgärder',
+  'dhcp.redigera': 'Redigera',
+  'dhcp.ta_bort': 'Ta bort',
+  'dhcp.namnlos': '(namnlös)',
+  'dhcp.aktiv_lease_finns': 'Enheten har en aktiv utlåning',
+  'dhcp.ingen_aktiv_lease': 'Ingen aktiv utlåning — kontrollera MAC-adressen',
+  'dhcp.inga_reservationer_matchar_filtret': 'Inga reservationer matchar filtret',
   'settings.tidszon': 'Tidszon på servern',
   'settings.tidszon_body': 'Styr serverns egna tidsstämplar, bland annat i trafikloggen. Ändringen träder i kraft vid nästa Applicera.',
   'settings.tidszon_nuvarande': 'På servern nu',
@@ -1244,6 +1253,15 @@ const Map<String, String> _en = {
 
   // --- connections_screen.dart ---
   'conn.anslutningar_loggning': 'Connections & Logging',
+  'dhcp.leasade_adresser': 'Leased addresses',
+  'dhcp.status': 'Status',
+  'dhcp.atgarder': 'Actions',
+  'dhcp.redigera': 'Edit',
+  'dhcp.ta_bort': 'Delete',
+  'dhcp.namnlos': '(unnamed)',
+  'dhcp.aktiv_lease_finns': 'The device has an active lease',
+  'dhcp.ingen_aktiv_lease': 'No active lease — check the MAC address',
+  'dhcp.inga_reservationer_matchar_filtret': 'No reservations match the filter',
   'settings.tidszon': 'Server time zone',
   'settings.tidszon_body': "Controls the server's own timestamps, including those in the traffic log. Takes effect on the next Apply.",
   'settings.tidszon_nuvarande': 'On the server now',
