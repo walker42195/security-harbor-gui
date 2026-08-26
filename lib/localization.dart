@@ -370,18 +370,26 @@ const Map<String, String> _sv = {
   'conn.rensa_filter': 'Rensa filter',
   'conn.filter_uttryck': 'Filter',
   'conn.filter_hint': 'src:10.0.0.5 and not port:53',
-  'conn.filter_hjalp_titel': 'Filteruttryck',
-  'conn.filter_hjalp': 'Skriv som i Check Point:\n\n'
-      '  src:10.0.0.5            från en värd\n'
-      '  dst:8.8.8.8             till en värd\n'
-      '  ip:10.9.9.0/24          nät, käll- eller mål\n'
-      '  port:53   dport:443     portar (exakt tal)\n'
-      '  proto:tcp   action:deny\n'
-      '  rule:"LAN till WAN"     regelnamn med blanksteg\n'
-      '  10.0.0.5                fritext över alla fält\n\n'
-      'Operatorer: and, or, not (även &&, ||, !, -).\n'
-      'Utelämnad operator betyder and. Parenteser stöds.\n\n'
-      'Högerklicka på en rad för att bygga filtret.',
+  'conn.filter_hjalp_titel': 'Så här skriver du filter',
+  'conn.filter_hjalp_intro': 'Skriv i filterfältet överst. Ett filter är en eller flera termer på formen fält:värde.',
+  'conn.filter_hjalp_exempel': 'Exempel',
+  'conn.filter_hjalp_falt': 'Fält som går att använda',
+  'conn.filter_hjalp_operatorer': 'Operatorer',
+  'conn.filter_hjalp_op_text': 'and, or, not — även &&, ||, ! och - som prefix.\n'
+      'Skriver du ingen operator mellan två termer betyder det and.\n'
+      'Parenteser stöds: not (dport:80 or dport:443)\n'
+      'Stora eller små bokstäver spelar ingen roll.',
+  'conn.filter_hjalp_falt_text': 'src, dst, ip — adress eller objektnamn (ip = både källa och mål)\n'
+      'sport, dport, port — portnummer (matchas exakt)\n'
+      'proto, action, rule, mac, in, out, iface, dir\n'
+      'Svenska namn fungerar också: källa, mål, regel, protokoll, riktning.',
+  'conn.filter_hjalp_tips': 'Tips: högerklicka på en rad i loggen för att bygga filtret — som källa, som mål, inkludera eller exkludera.',
+  'conn.filter_ex_1': 'All trafik från en värd',
+  'conn.filter_ex_2': 'Ett helt nät (CIDR fungerar)',
+  'conn.filter_ex_3': 'Allt utom DNS',
+  'conn.filter_ex_4': 'Nekad trafik, utan DefaultDeny-bruset',
+  'conn.filter_ex_5': 'Ett nät, utom en enskild värd',
+  'conn.filter_ex_6': 'Fritext — söker i alla fält',
   'conn.som_kalla': 'Som källa',
   'conn.som_mal': 'Som mål',
   'conn.inkludera': 'Inkludera',
@@ -1222,18 +1230,26 @@ const Map<String, String> _en = {
   'conn.rensa_filter': 'Clear filter',
   'conn.filter_uttryck': 'Filter',
   'conn.filter_hint': 'src:10.0.0.5 and not port:53',
-  'conn.filter_hjalp_titel': 'Filter expression',
-  'conn.filter_hjalp': 'Write it like in Check Point:\n\n'
-      '  src:10.0.0.5            from a host\n'
-      '  dst:8.8.8.8             to a host\n'
-      '  ip:10.9.9.0/24          network, source or destination\n'
-      '  port:53   dport:443     ports (exact number)\n'
-      '  proto:tcp   action:deny\n'
-      '  rule:"LAN to WAN"       rule names with spaces\n'
-      '  10.0.0.5                free text across all fields\n\n'
-      'Operators: and, or, not (also &&, ||, !, -).\n'
-      'An omitted operator means and. Parentheses are supported.\n\n'
-      'Right-click a row to build the filter.',
+  'conn.filter_hjalp_titel': 'How to write filters',
+  'conn.filter_hjalp_intro': 'Type in the filter field at the top. A filter is one or more terms of the form field:value.',
+  'conn.filter_hjalp_exempel': 'Examples',
+  'conn.filter_hjalp_falt': 'Available fields',
+  'conn.filter_hjalp_operatorer': 'Operators',
+  'conn.filter_hjalp_op_text': 'and, or, not — also &&, ||, ! and - as a prefix.\n'
+      'Omitting the operator between two terms means and.\n'
+      'Parentheses are supported: not (dport:80 or dport:443)\n'
+      'Upper or lower case makes no difference.',
+  'conn.filter_hjalp_falt_text': 'src, dst, ip — address or object name (ip = both source and destination)\n'
+      'sport, dport, port — port numbers (matched exactly)\n'
+      'proto, action, rule, mac, in, out, iface, dir\n'
+      'Swedish names also work: källa, mål, regel, protokoll, riktning.',
+  'conn.filter_hjalp_tips': 'Tip: right-click a row in the log to build the filter — as source, as destination, include or exclude.',
+  'conn.filter_ex_1': 'All traffic from a host',
+  'conn.filter_ex_2': 'An entire network (CIDR works)',
+  'conn.filter_ex_3': 'Everything except DNS',
+  'conn.filter_ex_4': 'Denied traffic, without the DefaultDeny noise',
+  'conn.filter_ex_5': 'A network, except one host',
+  'conn.filter_ex_6': 'Free text — searches all fields',
   'conn.som_kalla': 'As source',
   'conn.som_mal': 'As destination',
   'conn.inkludera': 'Include',

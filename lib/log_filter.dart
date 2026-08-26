@@ -21,6 +21,20 @@
 /// fältnamn eller värden.
 library;
 
+/// Uttrycken som visas i hjälpdialogen i loggvyn.
+///
+/// De ligger HÄR, bredvid motorn, i stället för i skärmkoden — så att ett
+/// test kan parsa varje exempel. Dokumentation som visar syntax användaren
+/// inte kan skriva är värre än ingen dokumentation alls.
+const List<String> filterHelpExamples = [
+  'src:10.0.0.5',
+  'ip:10.9.9.0/24',
+  'not port:53',
+  'action:deny and not rule:DefaultDeny',
+  'src:10.9.9.0/24 and not src:10.9.9.100',
+  '10.0.0.5',
+];
+
 /// Fälten ett filter kan fråga på. Nycklarna är de kanoniska namnen; kartan
 /// [fieldAliases] mappar det användaren skriver till dem.
 ///

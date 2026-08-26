@@ -338,6 +338,17 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                     Text(tr('conn.anslutningar_loggning'),
                       style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
+                    // Frågetecknet ligger i sidhuvudet och inte bara som en
+                    // liten ikon inne i filterfältet: hjälpen behövs INNAN
+                    // man vet att fältet finns, inte efter.
+                    IconButton(
+                      icon: const Icon(Icons.help_outline, size: 17, color: Colors.cyanAccent),
+                      tooltip: tr('conn.filter_hjalp_titel'),
+                      splashRadius: 16,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      padding: EdgeInsets.zero,
+                      onPressed: _showFilterHelp,
+                    ),
                   ],
                 ),
                 Row(
@@ -507,16 +518,104 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     );
   }
 
+  /// Kort instruktion för filterfältet. Exemplen ligger i två kolumner —
+  /// uttrycket och vad det betyder — eftersom det är så man lär sig syntaxen:
+  /// genom att se ett riktigt uttryck bredvid sin egen fråga.
   void _showFilterHelp() {
+    // Uttrycken kommer från filtermotorn (log_filter.dart) och testas där;
+    // här paras de bara ihop med sin förklaring.
+    const descriptionKeys = [
+      'conn.filter_ex_1',
+      'conn.filter_ex_2',
+      'conn.filter_ex_3',
+      'conn.filter_ex_4',
+      'conn.filter_ex_5',
+      'conn.filter_ex_6',
+    ];
+    final examples = [
+      for (var i = 0; i < filterHelpExamples.length; i++)
+        (filterHelpExamples[i], descriptionKeys[i]),
+    ];
+
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: Text(tr('conn.filter_hjalp_titel'), style: const TextStyle(color: Colors.white, fontSize: 14)),
-        content: SingleChildScrollView(
-          child: SelectableText(
-            tr('conn.filter_hjalp'),
-            style: const TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'monospace'),
+        title: Row(
+          children: [
+            const Icon(Icons.filter_alt, size: 18, color: Colors.cyanAccent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(tr('conn.filter_hjalp_titel'),
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 560,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(tr('conn.filter_hjalp_intro'),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                const SizedBox(height: 14),
+                _helpHeading(tr('conn.filter_hjalp_exempel')),
+                const SizedBox(height: 6),
+                for (final (expr, descKey) in examples)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 280,
+                          child: SelectableText(
+                            expr,
+                            style: const TextStyle(
+                                color: Colors.cyanAccent, fontSize: 11.5, fontFamily: 'monospace'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(tr(descKey),
+                              style: const TextStyle(color: Colors.white60, fontSize: 11.5)),
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 10),
+                _helpHeading(tr('conn.filter_hjalp_operatorer')),
+                const SizedBox(height: 4),
+                Text(tr('conn.filter_hjalp_op_text'),
+                    style: const TextStyle(color: Colors.white60, fontSize: 11.5, height: 1.5)),
+                const SizedBox(height: 12),
+                _helpHeading(tr('conn.filter_hjalp_falt')),
+                const SizedBox(height: 4),
+                Text(tr('conn.filter_hjalp_falt_text'),
+                    style: const TextStyle(color: Colors.white60, fontSize: 11.5, height: 1.5)),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.cyanAccent.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.mouse, size: 15, color: Colors.cyanAccent),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(tr('conn.filter_hjalp_tips'),
+                            style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -525,6 +624,12 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       ),
     );
   }
+
+  static Widget _helpHeading(String text) => Text(
+        text.toUpperCase(),
+        style: const TextStyle(
+            color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.6),
+      );
 
   /// Lägger till en term i filteruttrycket. Termer AND:as ihop — det är vad
   /// man vill när man klickar sig fram till ett filter: varje klick smalnar

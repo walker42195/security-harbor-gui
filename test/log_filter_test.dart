@@ -221,4 +221,24 @@ void main() {
       expect(match(expr, row(dport: '53')), isTrue);
     });
   });
+
+  group('hjälpdialogens exempel', () {
+    // Dokumentation som visar syntax användaren inte kan skriva är värre än
+    // ingen dokumentation alls. Varje exempel i hjälpen måste gå att tolka.
+    test('varje exempel går att tolka', () {
+      for (final expr in filterHelpExamples) {
+        expect(() => LogFilter.parse(expr), returnsNormally, reason: expr);
+      }
+    });
+
+    test('exemplen gör det de utger sig för', () {
+      expect(match('src:10.0.0.5', row(src: '10.0.0.5')), isTrue);
+      expect(match('ip:10.9.9.0/24', row()), isTrue);
+      expect(match('not port:53', row()), isFalse);
+      expect(match('action:deny and not rule:DefaultDeny',
+          row(action: 'deny', rule: 'Blockera IoT')), isTrue);
+      expect(match('src:10.9.9.0/24 and not src:10.9.9.100', row()), isFalse);
+      expect(match('10.0.0.5', row(src: '10.0.0.5')), isTrue);
+    });
+  });
 }
