@@ -368,6 +368,27 @@ const Map<String, String> _sv = {
   // --- connections_screen.dart ---
   'conn.anslutningar_loggning': 'Anslutningar & Loggning',
   'conn.rensa_filter': 'Rensa filter',
+  'conn.filter_uttryck': 'Filter',
+  'conn.filter_hint': 'src:10.0.0.5 and not port:53',
+  'conn.filter_hjalp_titel': 'Filteruttryck',
+  'conn.filter_hjalp': 'Skriv som i Check Point:\n\n'
+      '  src:10.0.0.5            från en värd\n'
+      '  dst:8.8.8.8             till en värd\n'
+      '  ip:10.9.9.0/24          nät, käll- eller mål\n'
+      '  port:53   dport:443     portar (exakt tal)\n'
+      '  proto:tcp   action:deny\n'
+      '  rule:"LAN till WAN"     regelnamn med blanksteg\n'
+      '  10.0.0.5                fritext över alla fält\n\n'
+      'Operatorer: and, or, not (även &&, ||, !, -).\n'
+      'Utelämnad operator betyder and. Parenteser stöds.\n\n'
+      'Högerklicka på en rad för att bygga filtret.',
+  'conn.som_kalla': 'Som källa',
+  'conn.som_mal': 'Som mål',
+  'conn.inkludera': 'Inkludera',
+  'conn.exkludera': 'Exkludera',
+  'conn.kopiera': 'Kopiera',
+  'conn.kopierat': 'Kopierat',
+
   'conn.ingen_trafik_matchar_filtret': 'Ingen trafik matchar filtret.',
   'conn.uppdatera_nu': 'Uppdatera nu',
   'conn.col_atgard': 'Åtgärd',
@@ -1199,6 +1220,27 @@ const Map<String, String> _en = {
   // --- connections_screen.dart ---
   'conn.anslutningar_loggning': 'Connections & Logging',
   'conn.rensa_filter': 'Clear filter',
+  'conn.filter_uttryck': 'Filter',
+  'conn.filter_hint': 'src:10.0.0.5 and not port:53',
+  'conn.filter_hjalp_titel': 'Filter expression',
+  'conn.filter_hjalp': 'Write it like in Check Point:\n\n'
+      '  src:10.0.0.5            from a host\n'
+      '  dst:8.8.8.8             to a host\n'
+      '  ip:10.9.9.0/24          network, source or destination\n'
+      '  port:53   dport:443     ports (exact number)\n'
+      '  proto:tcp   action:deny\n'
+      '  rule:"LAN to WAN"       rule names with spaces\n'
+      '  10.0.0.5                free text across all fields\n\n'
+      'Operators: and, or, not (also &&, ||, !, -).\n'
+      'An omitted operator means and. Parentheses are supported.\n\n'
+      'Right-click a row to build the filter.',
+  'conn.som_kalla': 'As source',
+  'conn.som_mal': 'As destination',
+  'conn.inkludera': 'Include',
+  'conn.exkludera': 'Exclude',
+  'conn.kopiera': 'Copy',
+  'conn.kopierat': 'Copied',
+
   'conn.ingen_trafik_matchar_filtret': 'No traffic matches the filter.',
   'conn.uppdatera_nu': 'Refresh now',
   'conn.col_atgard': 'Action',

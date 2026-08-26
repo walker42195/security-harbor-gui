@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import '../localization.dart';
+import '../log_filter.dart';
 
 /// En rad i loggvyn — läst direkt ur brandväggens kärnlogg (både
 /// tillåten OCH nekad trafik loggas numera med ett policynamns-bärande
@@ -42,6 +44,26 @@ class _TrafficRow {
     required this.inIface,
     required this.outIface,
   });
+
+  /// Radens fält som filtermotorn (log_filter.dart) frågar mot.
+  ///
+  /// Käll- och målfälten innehåller BÅDE adressen och objektnamnet, så att
+  /// `src:10.0.0.50` och `src:Skrivare` fungerar lika bra — man minns sällan
+  /// IP-adresser, men objektet har man själv döpt.
+  LogRowFields filterFields(String? srcName, String? dstName, String direction) => {
+        'src': [srcIp, srcName ?? ''],
+        'dst': [dstIp, dstName ?? ''],
+        'sport': [srcPort > 0 ? '$srcPort' : ''],
+        'dport': [dstPort > 0 ? '$dstPort' : ''],
+        'proto': [protocol],
+        'action': [accepted ? 'accept' : 'deny'],
+        'rule': [policyName],
+        'srcmac': [srcMac],
+        'dstmac': [dstMac],
+        'in': [inIface],
+        'out': [outIface],
+        'dir': [direction],
+      };
 
   factory _TrafficRow.fromFirewallLog(FirewallLogModel m) => _TrafficRow(
         accepted: m.action == 'accept',
@@ -157,6 +179,15 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   final ScrollController _hScrollController = ScrollController();
 
   // Filter
+  /// Check Point-liknande filteruttryck. Subsumerar de enkla fälten nedan —
+  /// de finns kvar eftersom de är snabbare för det allra vanligaste fallet —
+  /// men är det enda sättet att skriva ett UNDANTAG ("visa allt utom ...").
+  final TextEditingController _exprController = TextEditingController();
+  /// Syntaxfel i uttrycket, visat under fältet. Vid fel filtreras INTE
+  /// listan: att tyst dölja allt medan man skriver halva uttrycket vore
+  /// obegripligt.
+  String? _exprError;
+
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _macController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
@@ -190,6 +221,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _exprController.dispose();
     _ipController.dispose();
     _macController.dispose();
     _nameController.dispose();
@@ -260,6 +292,30 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
 
     if (_hideDefaultDeny) {
       rows = rows.where((r) => r.policyName != 'DefaultDeny').toList();
+    }
+
+    // Filteruttrycket sist: det är det mest uttrycksfulla filtret, och att
+    // köra det på en redan bantad lista är billigare.
+    final exprText = _exprController.text.trim();
+    if (exprText.isNotEmpty) {
+      try {
+        final filter = LogFilter.parse(exprText);
+        _exprError = null;
+        rows = rows.where((r) {
+          final direction = _classifyDirection(r, deviceZone);
+          return filter.matches(r.filterFields(
+            _resolveObjectName(objects, r.srcIp),
+            _resolveObjectName(objects, r.dstIp),
+            direction,
+          ));
+        }).toList();
+      } on LogFilterException catch (e) {
+        // Behåll listan ofiltrerad och visa felet — halvskrivna uttryck ska
+        // inte se ut som "inga träffar".
+        _exprError = e.message;
+      }
+    } else {
+      _exprError = null;
     }
 
     rows.sort((a, b) => b.timestamp.compareTo(a.timestamp));
@@ -335,7 +391,12 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         border: Border.all(color: const Color(0xFF334155)),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Wrap(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildExpressionField(),
+          const SizedBox(height: 10),
+          Wrap(
         spacing: 10,
         runSpacing: 10,
         crossAxisAlignment: WrapCrossAlignment.center,
@@ -371,6 +432,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             icon: const Icon(Icons.clear, size: 14, color: Colors.grey),
             label: Text(tr('conn.rensa_filter'), style: TextStyle(fontSize: 11, color: Colors.grey)),
             onPressed: () => setState(() {
+              _exprController.clear();
+              _exprError = null;
               _ipController.clear();
               _macController.clear();
               _nameController.clear();
@@ -381,7 +444,180 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             }),
           ),
         ],
+          ),
+        ],
       ),
+    );
+  }
+
+  /// Filteruttrycket — det enda fältet som kan uttrycka ett UNDANTAG.
+  /// Ligger överst och i full bredd eftersom uttryck snabbt blir långa.
+  Widget _buildExpressionField() {
+    final hasError = _exprError != null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 36,
+          child: TextField(
+            controller: _exprController,
+            onChanged: (_) => setState(() {}),
+            style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace'),
+            decoration: InputDecoration(
+              isDense: true,
+              prefixIcon: Icon(Icons.filter_alt, size: 16, color: hasError ? Colors.orangeAccent : Colors.cyanAccent),
+              prefixIconConstraints: const BoxConstraints(minWidth: 34),
+              labelText: tr('conn.filter_uttryck'),
+              labelStyle: const TextStyle(fontSize: 11, color: Colors.grey),
+              hintText: tr('conn.filter_hint'),
+              hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontFamily: 'monospace'),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              border: const OutlineInputBorder(),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: hasError ? Colors.orangeAccent : const Color(0xFF334155)),
+              ),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_exprController.text.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear, size: 15, color: Colors.grey),
+                      tooltip: tr('conn.rensa_filter'),
+                      onPressed: () => setState(() {
+                        _exprController.clear();
+                        _exprError = null;
+                      }),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.help_outline, size: 15, color: Colors.grey),
+                    tooltip: tr('conn.filter_hjalp_titel'),
+                    onPressed: _showFilterHelp,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, left: 4),
+            child: Text(_exprError!, style: const TextStyle(fontSize: 11, color: Colors.orangeAccent)),
+          ),
+      ],
+    );
+  }
+
+  void _showFilterHelp() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Text(tr('conn.filter_hjalp_titel'), style: const TextStyle(color: Colors.white, fontSize: 14)),
+        content: SingleChildScrollView(
+          child: SelectableText(
+            tr('conn.filter_hjalp'),
+            style: const TextStyle(color: Colors.white70, fontSize: 12, fontFamily: 'monospace'),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
+        ],
+      ),
+    );
+  }
+
+  /// Lägger till en term i filteruttrycket. Termer AND:as ihop — det är vad
+  /// man vill när man klickar sig fram till ett filter: varje klick smalnar
+  /// av urvalet ytterligare.
+  void _addFilterTerm(String term, {bool exclude = false}) {
+    final addition = exclude ? 'not $term' : term;
+    final current = _exprController.text.trim();
+    setState(() {
+      _exprController.text = current.isEmpty ? addition : '$current and $addition';
+    });
+  }
+
+  /// Citerar ett värde som innehåller blanksteg, så att ett regelnamn som
+  /// "LAN till WAN" blir EN term och inte tre.
+  static String _quote(String value) =>
+      value.contains(RegExp(r'\s')) ? '"$value"' : value;
+
+  /// Högerklicksmeny för en cell — samma arbetssätt som i Check Points
+  /// SmartConsole: man klickar sig fram till filtret i stället för att skriva
+  /// det. Varje val AND:as in i uttrycksfältet.
+  void _showCellMenu(BuildContext context, Offset globalPosition, List<_FilterTarget> targets) {
+    if (targets.isEmpty) return;
+    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final position = RelativeRect.fromLTRB(
+      globalPosition.dx,
+      globalPosition.dy,
+      overlay.size.width - globalPosition.dx,
+      overlay.size.height - globalPosition.dy,
+    );
+
+    final items = <PopupMenuEntry<VoidCallback>>[];
+    for (var i = 0; i < targets.length; i++) {
+      final t = targets[i];
+      if (i > 0) items.add(const PopupMenuDivider(height: 6));
+      items.add(PopupMenuItem<VoidCallback>(
+        enabled: false,
+        height: 26,
+        child: Text(t.label, style: const TextStyle(fontSize: 11, color: Colors.cyanAccent)),
+      ));
+      for (final action in t.actions) {
+        items.add(PopupMenuItem<VoidCallback>(
+          height: 32,
+          value: action.$2,
+          child: Text(action.$1, style: const TextStyle(fontSize: 12, color: Colors.white)),
+        ));
+      }
+    }
+
+    showMenu<VoidCallback>(
+      context: context,
+      position: position,
+      color: const Color(0xFF1E293B),
+      items: items,
+    ).then((selected) => selected?.call());
+  }
+
+  /// Byggstenarna för en IP-cell. Käll- och målroll är separata val, precis
+  /// som i Check Point: samma adress kan vara det ena i en rad och det andra
+  /// i nästa.
+  List<(String, VoidCallback)> _ipActions(String ip) => [
+        (tr('conn.som_kalla'), () => _addFilterTerm('src:$ip')),
+        (tr('conn.som_mal'), () => _addFilterTerm('dst:$ip')),
+        (tr('conn.inkludera'), () => _addFilterTerm('ip:$ip')),
+        (tr('conn.exkludera'), () => _addFilterTerm('ip:$ip', exclude: true)),
+        (tr('conn.kopiera'), () => _copy(ip)),
+      ];
+
+  List<(String, VoidCallback)> _simpleActions(String field, String value) => [
+        (tr('conn.inkludera'), () => _addFilterTerm('$field:${_quote(value)}')),
+        (tr('conn.exkludera'), () => _addFilterTerm('$field:${_quote(value)}', exclude: true)),
+        (tr('conn.kopiera'), () => _copy(value)),
+      ];
+
+  void _copy(String value) {
+    Clipboard.setData(ClipboardData(text: value));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${tr('conn.kopierat')}: $value'), duration: const Duration(seconds: 1)),
+    );
+  }
+
+  /// Gör en cell högerklickbar. Vänsterklick lämnas orört — raderna är inte
+  /// klickbara i övrigt, och att råka filtrera vid ett vanligt klick vore
+  /// irriterande i en lista som uppdateras var fjärde sekund.
+  Widget _filterable(Widget child, List<_FilterTarget> targets) {
+    if (targets.isEmpty) return child;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onSecondaryTapDown: (d) => _showCellMenu(context, d.globalPosition, targets),
+      // Långtryck ger samma meny på pekskärm (telefonappen har ingen
+      // högerknapp).
+      onLongPressStart: (d) => _showCellMenu(context, d.globalPosition, targets),
+      child: child,
     );
   }
 
@@ -511,8 +747,10 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     final srcName = _resolveObjectName(objects, r.srcIp);
     final dstName = _resolveObjectName(objects, r.dstIp);
     final direction = _classifyDirection(r, deviceZone);
+    final action = r.accepted ? 'accept' : 'deny';
     final cells = <Widget>[
-      Container(
+      _filterable(
+        Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
           color: (r.accepted ? Colors.tealAccent : Colors.redAccent).withValues(alpha: 0.15),
@@ -522,6 +760,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
           r.accepted ? 'ACCEPT' : 'DENY',
           style: TextStyle(color: r.accepted ? Colors.tealAccent : Colors.redAccent, fontSize: 9, fontWeight: FontWeight.bold),
         ),
+      ),
+        [_FilterTarget(action.toUpperCase(), _simpleActions('action', action))],
       ),
       Text(r.timestamp.isEmpty ? '—' : r.timestamp, style: _cellStyle, overflow: TextOverflow.ellipsis),
       Row(
@@ -540,20 +780,48 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
           ),
         ],
       ),
-      Text(r.policyName.isEmpty ? '—' : r.policyName, style: _cellStyle, overflow: TextOverflow.ellipsis),
-      Text(r.protocol.toUpperCase(), style: _cellStyle, overflow: TextOverflow.ellipsis),
-      Text(
-        '${r.srcIp}${r.srcPort > 0 ? ':${r.srcPort}' : ''}${srcName != null ? '\n$srcName' : ''}',
-        style: _cellStyle,
-        overflow: TextOverflow.ellipsis,
+      _filterable(
+        Text(r.policyName.isEmpty ? '—' : r.policyName, style: _cellStyle, overflow: TextOverflow.ellipsis),
+        r.policyName.isEmpty ? [] : [_FilterTarget(r.policyName, _simpleActions('rule', r.policyName))],
       ),
-      Text(r.srcMac.isEmpty ? '—' : r.srcMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
-      Text(
-        '${r.dstIp}${r.dstPort > 0 ? ':${r.dstPort}' : ''}${dstName != null ? '\n$dstName' : ''}',
-        style: _cellStyle,
-        overflow: TextOverflow.ellipsis,
+      _filterable(
+        Text(r.protocol.toUpperCase(), style: _cellStyle, overflow: TextOverflow.ellipsis),
+        r.protocol.isEmpty ? [] : [_FilterTarget(r.protocol.toUpperCase(), _simpleActions('proto', r.protocol))],
       ),
-      Text(r.dstMac.isEmpty ? '—' : r.dstMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
+      _filterable(
+        Text(
+          '${r.srcIp}${r.srcPort > 0 ? ':${r.srcPort}' : ''}${srcName != null ? '\n$srcName' : ''}',
+          style: _cellStyle,
+          overflow: TextOverflow.ellipsis,
+        ),
+        [
+          if (r.srcIp.isNotEmpty) _FilterTarget(r.srcIp, _ipActions(r.srcIp)),
+          // Objektnamnet är ett eget filtermål: `src:Skrivare` är ofta det man
+          // egentligen menar, och det överlever att enheten byter adress.
+          if (srcName != null) _FilterTarget(srcName, _simpleActions('src', srcName)),
+          if (r.srcPort > 0) _FilterTarget('port ${r.srcPort}', _simpleActions('port', '${r.srcPort}')),
+        ],
+      ),
+      _filterable(
+        Text(r.srcMac.isEmpty ? '—' : r.srcMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
+        r.srcMac.isEmpty ? [] : [_FilterTarget(r.srcMac, _simpleActions('mac', r.srcMac))],
+      ),
+      _filterable(
+        Text(
+          '${r.dstIp}${r.dstPort > 0 ? ':${r.dstPort}' : ''}${dstName != null ? '\n$dstName' : ''}',
+          style: _cellStyle,
+          overflow: TextOverflow.ellipsis,
+        ),
+        [
+          if (r.dstIp.isNotEmpty) _FilterTarget(r.dstIp, _ipActions(r.dstIp)),
+          if (dstName != null) _FilterTarget(dstName, _simpleActions('dst', dstName)),
+          if (r.dstPort > 0) _FilterTarget('port ${r.dstPort}', _simpleActions('port', '${r.dstPort}')),
+        ],
+      ),
+      _filterable(
+        Text(r.dstMac.isEmpty ? '—' : r.dstMac, style: _cellStyle, overflow: TextOverflow.ellipsis),
+        r.dstMac.isEmpty ? [] : [_FilterTarget(r.dstMac, _simpleActions('mac', r.dstMac))],
+      ),
       Text(r.stateOrChain, style: _cellStyle, overflow: TextOverflow.ellipsis),
     ];
 
@@ -656,3 +924,11 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
 
 const _headerStyle = TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold);
 const _cellStyle = TextStyle(color: Colors.white, fontSize: 11);
+
+/// Ett filtrerbart värde i en cell, med de val högerklicksmenyn ska visa.
+/// Rubriken är själva värdet, så man ser vad man håller på att filtrera på.
+class _FilterTarget {
+  final String label;
+  final List<(String, VoidCallback)> actions;
+  const _FilterTarget(this.label, this.actions);
+}
