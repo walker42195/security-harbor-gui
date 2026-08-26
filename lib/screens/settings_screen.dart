@@ -1,9 +1,14 @@
+import 'dart:convert' show utf8;
+import '../theme.dart';
+import 'dart:typed_data' show Uint8List;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 import '../localization.dart';
 import '../time_format.dart';
+import 'package:file_selector/file_selector.dart';
 import '../providers/config_provider.dart';
 import '../models/config_model.dart';
 import '../widgets/tls_trust_dialogs.dart';
@@ -137,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadTimezones(provider);
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -148,7 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               const Icon(Icons.settings, color: Colors.cyanAccent, size: 22),
               const SizedBox(width: 10),
-              Text(tr('settings.page_title'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              Text(tr('settings.page_title'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 14),
@@ -199,7 +204,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// när klienten kopplas till en brandvägg, inte något man återkommer till.
   Widget _buildLoginCard(BuildContext context, ConfigProvider provider) {
     return Card(
-              color: const Color(0xFF1E293B),
+              color: AppColors.surface,
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -217,7 +222,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     // Server URL
                     TextField(
                       controller: _urlController,
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style: TextStyle(color: AppColors.text, fontSize: 12),
                       decoration: InputDecoration(
                         labelText: tr('settings.login.url_label'),
                         hintText: tr('settings.https_192_168_1_1_8443'),
@@ -234,7 +239,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Expanded(
                           child: TextField(
                             controller: _usernameController,
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            style: TextStyle(color: AppColors.text, fontSize: 12),
                             decoration: InputDecoration(
                               labelText: tr('settings.login.username_label'),
                               hintText: tr('settings.master'),
@@ -249,13 +254,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: TextField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            style: TextStyle(color: AppColors.text, fontSize: 12),
                             decoration: InputDecoration(
                               labelText: tr('settings.login.password_label'),
                               border: const OutlineInputBorder(),
                               prefixIcon: const Icon(Icons.lock, color: Colors.cyanAccent, size: 18),
                               suffixIcon: IconButton(
-                                icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 18, color: Colors.grey),
+                                icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 18, color: AppColors.textMuted),
                                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                               ),
                               isDense: true,
@@ -333,7 +338,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
   
-                    const Divider(color: Colors.white10, height: 32),
+                    Divider(color: AppColors.divider, height: 32),
   
                     // Övriga Systeminställningar
                     // Rollback-timeouten var tidigare en Chip — ett värde man
@@ -342,7 +347,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     // det en riktig inmatningsruta.
                     ListTile(
                       dense: true,
-                      title: Text(tr('settings.rollback_timeout.title'), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                      title: Text(tr('settings.rollback_timeout.title'), style: TextStyle(color: AppColors.text, fontSize: 12)),
                       subtitle: Text(tr('settings.rollback_timeout.body'), style: const TextStyle(fontSize: 11)),
                       trailing: provider.isAdmin
                           ? SizedBox(
@@ -355,12 +360,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     child: TextField(
                                       controller: _rollbackTimeoutController,
                                       keyboardType: TextInputType.number,
-                                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                                      style: TextStyle(color: AppColors.text, fontSize: 13),
                                       textAlign: TextAlign.right,
-                                      decoration: const InputDecoration(
+                                      decoration: InputDecoration(
                                         isDense: true,
                                         suffixText: 's',
-                                        suffixStyle: TextStyle(color: Colors.white54, fontSize: 12),
+                                        suffixStyle: TextStyle(color: AppColors.textMuted, fontSize: 12),
                                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                                         border: OutlineInputBorder(),
                                         enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF475569))),
@@ -381,10 +386,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               style: const TextStyle(color: Colors.cyanAccent, fontSize: 13, fontWeight: FontWeight.bold),
                             ),
                     ),
-                    const Divider(color: Colors.white10),
+                    Divider(color: AppColors.divider),
                     ListTile(
                       dense: true,
-                      title: Text(tr('settings.wan_lock.title'), style: TextStyle(color: Colors.white, fontSize: 12)),
+                      title: Text(tr('settings.wan_lock.title'), style: TextStyle(color: AppColors.text, fontSize: 12)),
                       subtitle: Text(tr('settings.wan_lock.body'), style: TextStyle(fontSize: 11)),
                       trailing: const Icon(Icons.verified_user, color: Colors.tealAccent, size: 18),
                     ),
@@ -418,7 +423,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         selected != _serverTimezone;
 
     return Card(
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -434,7 +439,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 6),
             Text(tr('settings.tidszon_body'),
-                style: const TextStyle(color: Colors.white60, fontSize: 11.5)),
+                style: TextStyle(color: AppColors.textMuted, fontSize: 11.5)),
             const SizedBox(height: 14),
             Row(
               children: [
@@ -474,11 +479,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 10),
             Row(
               children: [
-                const Icon(Icons.desktop_windows_outlined, size: 13, color: Colors.white38),
+                Icon(Icons.desktop_windows_outlined, size: 13, color: AppColors.textFaint),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(tr('settings.tidszon_klientnotis'),
-                      style: const TextStyle(color: Colors.white38, fontSize: 10.5)),
+                      style: TextStyle(color: AppColors.textFaint, fontSize: 10.5)),
                 ),
               ],
             ),
@@ -492,10 +497,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label.toUpperCase(),
-              style: const TextStyle(
-                  color: Colors.grey, fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+              style: TextStyle(
+                  color: AppColors.textMuted, fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
           const SizedBox(height: 3),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 12.5)),
+          Text(value, style: TextStyle(color: AppColors.text, fontSize: 12.5)),
         ],
       );
 
@@ -512,9 +517,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               .where((z) => query.isEmpty || z.toLowerCase().contains(query))
               .toList();
           return AlertDialog(
-            backgroundColor: const Color(0xFF1E293B),
+            backgroundColor: AppColors.surface,
             title: Text(tr('settings.tidszon'),
-                style: const TextStyle(color: Colors.white, fontSize: 14)),
+                style: TextStyle(color: AppColors.text, fontSize: 14)),
             content: SizedBox(
               width: 420,
               height: 420,
@@ -524,12 +529,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: searchCtrl,
                     autofocus: true,
                     onChanged: (_) => setDialogState(() {}),
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(color: AppColors.text, fontSize: 12),
                     decoration: InputDecoration(
                       isDense: true,
-                      prefixIcon: const Icon(Icons.search, size: 16, color: Colors.grey),
+                      prefixIcon: Icon(Icons.search, size: 16, color: AppColors.textMuted),
                       labelText: tr('settings.tidszon_sok'),
-                      labelStyle: const TextStyle(fontSize: 11, color: Colors.grey),
+                      labelStyle: TextStyle(fontSize: 11, color: AppColors.textMuted),
                       border: const OutlineInputBorder(),
                     ),
                   ),
@@ -538,7 +543,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: matches.isEmpty
                         ? Center(
                             child: Text(tr('settings.tidszon_ej_satt'),
-                                style: const TextStyle(color: Colors.white38, fontSize: 12)))
+                                style: TextStyle(color: AppColors.textFaint, fontSize: 12)))
                         : ListView.builder(
                             itemCount: matches.length,
                             itemBuilder: (_, i) {
@@ -550,10 +555,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 leading: Icon(
                                     isCurrent ? Icons.radio_button_checked : Icons.radio_button_off,
                                     size: 15,
-                                    color: isCurrent ? Colors.cyanAccent : Colors.grey),
+                                    color: isCurrent ? Colors.cyanAccent : AppColors.textMuted),
                                 title: Text(zone,
                                     style: TextStyle(
-                                        color: isCurrent ? Colors.cyanAccent : Colors.white,
+                                        color: isCurrent ? Colors.cyanAccent : AppColors.text,
                                         fontSize: 12)),
                                 onTap: () => Navigator.of(ctx).pop(zone),
                               );
@@ -583,7 +588,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildLanguageCard(ConfigProvider provider) {
     return Card(
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -597,7 +602,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(tr('settings.language.body'), style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Text(tr('settings.language.body'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
             const SizedBox(height: 14),
             SegmentedButton<AppLanguage>(
               segments: [
@@ -607,8 +612,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               selected: {provider.language},
               onSelectionChanged: (selection) => provider.setLanguage(selection.first),
               style: SegmentedButton.styleFrom(
-                backgroundColor: const Color(0xFF0F172A),
-                foregroundColor: Colors.white70,
+                backgroundColor: AppColors.bg,
+                foregroundColor: AppColors.textMuted,
                 selectedBackgroundColor: Colors.cyanAccent,
                 selectedForegroundColor: Colors.black,
               ),
@@ -621,7 +626,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildChangePasswordCard(ConfigProvider provider) {
     return Card(
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -641,7 +646,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: TextField(
                     controller: _currentPwController,
                     obscureText: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(color: AppColors.text, fontSize: 12),
                     decoration: InputDecoration(
                       labelText: tr('settings.nuvarande_losenord'),
                       border: OutlineInputBorder(),
@@ -654,7 +659,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: TextField(
                     controller: _newPwController,
                     obscureText: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(color: AppColors.text, fontSize: 12),
                     decoration: InputDecoration(
                       labelText: tr('settings.nytt_losenord_minst_8_tecken'),
                       border: OutlineInputBorder(),
@@ -720,7 +725,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     return Card(
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -746,7 +751,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 6),
             Text(tr('settings.vidarebefordra_brandvaggens_systemloggar_inklusive_tillaten_nekad'),
-              style: TextStyle(color: Colors.white54, fontSize: 11),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
             const SizedBox(height: 16),
             Row(
@@ -755,7 +760,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   flex: 2,
                   child: TextField(
                     controller: _syslogHostController,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(color: AppColors.text, fontSize: 12),
                     decoration: InputDecoration(
                       labelText: tr('settings.mottagarens_ip_eller_hostnamn'),
                       border: OutlineInputBorder(),
@@ -768,7 +773,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: TextField(
                     controller: _syslogPortController,
                     keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(color: AppColors.text, fontSize: 12),
                     decoration: InputDecoration(
                       labelText: tr('settings.port'),
                       hintText: '514',
@@ -780,8 +785,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(width: 12),
                 DropdownButton<String>(
                   value: protocol,
-                  dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  dropdownColor: AppColors.surface,
+                  style: TextStyle(color: AppColors.text, fontSize: 12),
                   items: [
                     DropdownMenuItem(value: 'udp', child: Text(tr('settings.udp'))),
                     DropdownMenuItem(value: 'tcp', child: Text(tr('settings.tcp'))),
@@ -1076,9 +1081,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final res = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-        content: Text(body, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        backgroundColor: AppColors.surface,
+        title: Text(title, style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
+        content: Text(body, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('settings.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(
@@ -1103,11 +1108,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          SizedBox(width: 110, child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600))),
+          SizedBox(width: 110, child: Text(label, style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.w600))),
           Expanded(
             child: Text(
               trp('settings.now_latest', {'current': current, 'latest': available != null ? trp('settings.latest_suffix', {'available': available}) : ''}),
-              style: TextStyle(color: updateAvailable ? Colors.orangeAccent : Colors.white70, fontSize: 12),
+              style: TextStyle(color: updateAvailable ? Colors.orangeAccent : AppColors.textMuted, fontSize: 12),
             ),
           ),
           ?action,
@@ -1124,7 +1129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final fwUpdateAvailable = _fwUpdate?['update_available'] == true || agentNew || webNew;
 
     return Card(
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1149,7 +1154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 8),
             if (!_updateChecked)
               Text(tr('settings.klicka_pa_kontrollera_for_att_se'),
-                  style: TextStyle(color: Colors.white70, fontSize: 11)),
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
             if (_updateChecked && _fwUpdate != null) ...[
               _versionRow(
                 label: tr('settings.agent_label'),
@@ -1192,7 +1197,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ],
             if (_updateChecked && !kIsWeb && desktopUpdateSupported) ...[
-              const Divider(color: Colors.white24, height: 24),
+              Divider(color: AppColors.textFaint, height: 24),
               _versionRow(
                 label: tr('settings.desktop_label'),
                 current: _desktopUpdate?.current ?? kGuiVersion,
@@ -1226,7 +1231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ],
-            const Divider(color: Colors.white24, height: 24),
+            Divider(color: AppColors.textFaint, height: 24),
             Row(
               children: [
                 const Icon(Icons.history, color: Colors.cyanAccent, size: 18),
@@ -1236,20 +1241,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 IconButton(
                   icon: _loadingRetainedVersions
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.refresh, size: 16, color: Colors.white54),
+                      : Icon(Icons.refresh, size: 16, color: AppColors.textMuted),
                   onPressed: _loadingRetainedVersions ? null : () => _loadRetainedVersions(provider),
                 ),
               ],
             ),
             Text(
               tr('settings.retained_versions_body'),
-              style: const TextStyle(color: Colors.white54, fontSize: 11),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
             const SizedBox(height: 6),
             if (_retainedVersions == null || _retainedVersions!.isEmpty)
               Padding(
                 padding: EdgeInsets.symmetric(vertical: 6),
-                child: Text(tr('settings.inga_tidigare_versioner_sparade_annu'), style: TextStyle(color: Colors.white38, fontSize: 11)),
+                child: Text(tr('settings.inga_tidigare_versioner_sparade_annu'), style: TextStyle(color: AppColors.textFaint, fontSize: 11)),
               )
             else
               ..._retainedVersions!.map((v) {
@@ -1263,12 +1268,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       SizedBox(
                         width: 90,
-                        child: Text(version, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                        child: Text(version, style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
                       Expanded(
                         child: Text(
                           archivedAt != null ? trp('settings.saved_at', {'date': formatServerTime(archivedAt)}) : '',
-                          style: const TextStyle(color: Colors.white54, fontSize: 11),
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 11),
                         ),
                       ),
                       if (isCurrent)
@@ -1303,7 +1308,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// backa till utan den här listan.
   Widget _buildConfigHistoryCard(ConfigProvider provider) {
     return Card(
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -1314,7 +1319,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Icon(Icons.history_toggle_off, color: Colors.cyanAccent, size: 22),
                 const SizedBox(width: 10),
                 Text(tr('settings.config_history.title'),
-                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                    style: TextStyle(color: AppColors.text, fontSize: 15, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 if (_currentConfigRevision != null)
                   Text(trp('settings.config_history.current_revision', {'revision': '$_currentConfigRevision'}),
@@ -1322,19 +1327,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 IconButton(
                   icon: _loadingConfigHistory
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.refresh, size: 16, color: Colors.white54),
+                      : Icon(Icons.refresh, size: 16, color: AppColors.textMuted),
                   onPressed: _loadingConfigHistory ? null : () => _loadConfigHistory(provider),
                 ),
               ],
             ),
             const SizedBox(height: 6),
-            Text(tr('settings.config_history.body'), style: const TextStyle(color: Colors.white54, fontSize: 11)),
+            Text(tr('settings.config_history.body'), style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
             const SizedBox(height: 10),
             if (_configHistory == null || _configHistory!.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Text(tr('settings.config_history.empty'),
-                    style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                    style: TextStyle(color: AppColors.textFaint, fontSize: 11)),
               )
             else
               ..._configHistory!.map((entry) {
@@ -1349,12 +1354,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SizedBox(
                         width: 90,
                         child: Text(trp('settings.config_history.revision', {'revision': revision}),
-                            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                            style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.w600)),
                       ),
                       Expanded(
                         child: Text(
                           archivedAt != null ? trp('settings.saved_at', {'date': formatServerTime(archivedAt)}) : '',
-                          style: const TextStyle(color: Colors.white54, fontSize: 11),
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 11),
                         ),
                       ),
                       OutlinedButton.icon(
@@ -1379,7 +1384,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildBackupRestoreCard(ConfigProvider provider) {
     return Card(
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -1394,10 +1399,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 6),
             Text(tr('settings.backupen_innehaller_konfigurationen_och_alla_nycklar'),
-              style: TextStyle(color: Colors.white54, fontSize: 11),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
             const SizedBox(height: 16),
-            Text(tr('settings.skapa_backup'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            Text(tr('settings.skapa_backup'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -1405,13 +1410,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: TextField(
                     controller: _backupPassphraseController,
                     obscureText: _obscureBackupPassphrase,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    // Utan onChanged byggs vyn aldrig om medan man skriver, så
+                    // knappens isEmpty-villkor omvärderades inte och den förblev
+                    // släckt. Att klicka på ögat råkade anropa setState och
+                    // "fixade" det — därav den förvirrande buggen.
+                    onChanged: (_) => setState(() {}),
+                    style: TextStyle(color: AppColors.text, fontSize: 12),
                     decoration: InputDecoration(
                       labelText: tr('settings.losenfras_for_backupen'),
                       border: const OutlineInputBorder(),
                       isDense: true,
                       suffixIcon: IconButton(
-                        icon: Icon(_obscureBackupPassphrase ? Icons.visibility : Icons.visibility_off, size: 18, color: Colors.grey),
+                        icon: Icon(_obscureBackupPassphrase ? Icons.visibility : Icons.visibility_off, size: 18, color: AppColors.textMuted),
                         onPressed: () => setState(() => _obscureBackupPassphrase = !_obscureBackupPassphrase),
                       ),
                     ),
@@ -1451,8 +1461,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 height: 120,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
-                  border: Border.all(color: const Color(0xFF334155)),
+                  color: AppColors.bg,
+                  border: Border.all(color: AppColors.border),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: SingleChildScrollView(
@@ -1461,29 +1471,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               Align(
                 alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  icon: const Icon(Icons.copy, size: 14, color: Colors.cyanAccent),
-                  label: Text(tr('settings.kopiera'), style: TextStyle(fontSize: 11, color: Colors.cyanAccent)),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: _backupResultController.text));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(tr('settings.backup_kopierad_till_urklipp')), backgroundColor: Colors.teal),
-                    );
-                  },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      icon: const Icon(Icons.save_alt, size: 14, color: Colors.cyanAccent),
+                      label: Text(tr('settings.spara_till_fil'),
+                          style: const TextStyle(fontSize: 11, color: Colors.cyanAccent)),
+                      onPressed: _saveBackupToFile,
+                    ),
+                    TextButton.icon(
+                      icon: const Icon(Icons.copy, size: 14, color: Colors.cyanAccent),
+                      label: Text(tr('settings.kopiera'), style: TextStyle(fontSize: 11, color: Colors.cyanAccent)),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: _backupResultController.text));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(tr('settings.backup_kopierad_till_urklipp')), backgroundColor: Colors.teal),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],
-            const Divider(color: Colors.white10, height: 32),
-            Text(tr('settings.aterstall_fran_backup'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            Divider(color: AppColors.divider, height: 32),
+            Text(tr('settings.aterstall_fran_backup'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text(tr('settings.brandvaggen_startar_om_automatiskt_vid_lyckad'),
               style: TextStyle(color: Colors.amberAccent, fontSize: 11),
             ),
             const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.folder_open, size: 14),
+                label: Text(tr('settings.las_fran_fil'), style: const TextStyle(fontSize: 11)),
+                style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.cyanAccent,
+                    side: const BorderSide(color: Colors.cyanAccent)),
+                onPressed: _loadBackupFromFile,
+              ),
+            ),
+            const SizedBox(height: 8),
             TextField(
               controller: _restoreB64Controller,
               maxLines: 4,
-              style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'monospace'),
+              onChanged: (_) => setState(() {}),
+              style: TextStyle(color: AppColors.text, fontSize: 11, fontFamily: 'monospace'),
               decoration: InputDecoration(labelText: tr('settings.klistra_in_backup_text'), border: OutlineInputBorder(), isDense: true),
             ),
             const SizedBox(height: 8),
@@ -1493,7 +1527,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: TextField(
                     controller: _restorePassphraseController,
                     obscureText: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    onChanged: (_) => setState(() {}),
+                    style: TextStyle(color: AppColors.text, fontSize: 12),
                     decoration: InputDecoration(labelText: tr('settings.losenfras'), border: OutlineInputBorder(), isDense: true),
                   ),
                 ),
@@ -1527,9 +1562,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// Backupfilens ändelse. Egen ändelse i stället för .txt, så filen går att
+  /// känna igen och filväljaren kan filtrera på den vid återställning.
+  static const _backupExtension = 'shb';
+
+  /// Sparar backupen till fil.
+  ///
+  /// Innehållet är den redan krypterade base64-strängen — samma sträng som
+  /// visas i rutan. Textrutan är kvar: den behövs när man vill klistra in
+  /// backupen någon annanstans, och den är det enda som fungerar om
+  /// filväljaren inte går att öppna.
+  Future<void> _saveBackupToFile() async {
+    final content = _backupResultController.text;
+    if (content.isEmpty) return;
+
+    final now = DateTime.now();
+    final stamp = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}_'
+        '${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+    final suggested = 'security-harbor-backup_$stamp.$_backupExtension';
+
+    try {
+      final location = await getSaveLocation(
+        suggestedName: suggested,
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'Security Harbor backup', extensions: [_backupExtension]),
+        ],
+      );
+      if (location == null) return; // användaren avbröt
+      final file = XFile.fromData(
+        Uint8List.fromList(utf8.encode(content)),
+        mimeType: 'application/octet-stream',
+        name: suggested,
+      );
+      await file.saveTo(location.path);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(trp('settings.backup_sparad_till', {'path': location.path})),
+        backgroundColor: Colors.teal,
+        duration: const Duration(seconds: 6),
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('${tr('settings.spara_misslyckades')}: $e'),
+        backgroundColor: Colors.red,
+      ));
+    }
+  }
+
+  /// Läser en backupfil in i textrutan.
+  ///
+  /// Fyller BARA i rutan — återställningen körs fortfarande av den vanliga
+  /// knappen, med lösenfras. Att låta ett filval starta en återställning
+  /// direkt vore alldeles för lätt att göra av misstag: en återställning
+  /// skriver över hela konfigurationen och startar om brandväggen.
+  Future<void> _loadBackupFromFile() async {
+    try {
+      final file = await openFile(
+        acceptedTypeGroups: [
+          const XTypeGroup(label: 'Security Harbor backup', extensions: [_backupExtension]),
+          const XTypeGroup(label: 'Alla filer', extensions: ['*']),
+        ],
+      );
+      if (file == null) return; // användaren avbröt
+      final content = (await file.readAsString()).trim();
+      if (!mounted) return;
+      setState(() => _restoreB64Controller.text = content);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(trp('settings.backup_last_fran', {'name': file.name})),
+        backgroundColor: Colors.teal,
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('${tr('settings.kunde_inte_lasa_filen')}: $e'),
+        backgroundColor: Colors.red,
+      ));
+    }
+  }
+
   Widget _buildFactoryResetCard(ConfigProvider provider) {
     return Card(
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4), side: const BorderSide(color: Colors.redAccent, width: 1)),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -1545,13 +1660,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 6),
             Text(tr('settings.tar_bort_all_konfiguration_alla_nycklar'),
-              style: TextStyle(color: Colors.white70, fontSize: 11),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _factoryResetPasswordController,
               obscureText: true,
-              style: const TextStyle(color: Colors.white, fontSize: 12),
+              style: TextStyle(color: AppColors.text, fontSize: 12),
               decoration: InputDecoration(labelText: tr('settings.ditt_nuvarande_losenord_kravs'), border: OutlineInputBorder(), isDense: true),
             ),
             const SizedBox(height: 10),
@@ -1563,7 +1678,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onChanged: (v) => setState(() => _factoryResetConfirmed = v ?? false),
                 ),
                 Expanded(
-                  child: Text(tr('settings.jag_forstar_att_detta_raderar_all'), style: TextStyle(color: Colors.white, fontSize: 12)),
+                  child: Text(tr('settings.jag_forstar_att_detta_raderar_all'), style: TextStyle(color: AppColors.text, fontSize: 12)),
                 ),
               ],
             ),
@@ -1597,7 +1712,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildUserManagementCard(ConfigProvider provider) {
     return Card(
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -1619,13 +1734,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             if (_users.isEmpty && !_loadingUsers)
-              Text(tr('settings.inga_anvandare_inlasta'), style: TextStyle(color: Colors.white38, fontSize: 12))
+              Text(tr('settings.inga_anvandare_inlasta'), style: TextStyle(color: AppColors.textFaint, fontSize: 12))
             else
               ..._users.map((u) => ListTile(
                     dense: true,
                     leading: Icon(u['role'] == 'admin' ? Icons.admin_panel_settings : Icons.visibility, color: Colors.cyanAccent, size: 18),
-                    title: Text(u['username'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 12)),
-                    subtitle: Text(u['role'] ?? '', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                    title: Text(u['username'] ?? '', style: TextStyle(color: AppColors.text, fontSize: 12)),
+                    subtitle: Text(u['role'] ?? '', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1652,15 +1767,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
                   )),
-            const Divider(color: Colors.white10, height: 32),
-            Text(tr('settings.skapa_ny_anvandare'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            Divider(color: AppColors.divider, height: 32),
+            Text(tr('settings.skapa_ny_anvandare'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _newUserController,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(color: AppColors.text, fontSize: 12),
                     decoration: InputDecoration(labelText: tr('settings.anvandarnamn'), border: OutlineInputBorder(), isDense: true),
                   ),
                 ),
@@ -1669,15 +1784,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: TextField(
                     controller: _newUserPwController,
                     obscureText: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(color: AppColors.text, fontSize: 12),
                     decoration: InputDecoration(labelText: tr('settings.losenord_minst_8_tecken'), border: OutlineInputBorder(), isDense: true),
                   ),
                 ),
                 const SizedBox(width: 12),
                 DropdownButton<String>(
                   value: _newUserRole,
-                  dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  dropdownColor: AppColors.surface,
+                  style: TextStyle(color: AppColors.text, fontSize: 12),
                   items: [
                     DropdownMenuItem(value: 'viewer', child: Text(tr('settings.viewer'))),
                     DropdownMenuItem(value: 'admin', child: Text(tr('settings.admin'))),
@@ -1722,12 +1837,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: Text(trp('settings.reset_password_for', {'user': user['username']}), style: const TextStyle(color: Colors.white, fontSize: 14)),
+        backgroundColor: AppColors.surface,
+        title: Text(trp('settings.reset_password_for', {'user': user['username']}), style: TextStyle(color: AppColors.text, fontSize: 14)),
         content: TextField(
           controller: pwController,
           obscureText: true,
-          style: const TextStyle(color: Colors.white, fontSize: 12),
+          style: TextStyle(color: AppColors.text, fontSize: 12),
           decoration: InputDecoration(labelText: tr('settings.nytt_losenord_minst_8_tecken'), border: OutlineInputBorder(), isDense: true),
         ),
         actions: [

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../theme.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -117,7 +118,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     final provider = Provider.of<ConfigProvider>(context);
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -128,7 +129,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
               children: [
                 const Icon(Icons.gpp_maybe_outlined, color: Colors.redAccent, size: 22),
                 const SizedBox(width: 10),
-                Text(tr('sec.sakerhetshandelser_ids'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(tr('sec.sakerhetshandelser_ids'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 IconButton(
                   icon: _loading
@@ -140,7 +141,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
             ),
             const SizedBox(height: 4),
             Text(tr('sec.passiv_overvakning_suricata_af_packet_lage'),
-              style: TextStyle(color: Colors.white54, fontSize: 11),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
             const SizedBox(height: 14),
 
@@ -150,8 +151,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Column(
@@ -170,7 +171,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                                 _hasActiveFilter
                                     ? '${filtered.length} av ${_events.length} larm (filtrerat)'
                                     : '${_events.length} larm (senaste 1000 raderna i eve.json)',
-                                style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.bold),
                               ),
                               const Spacer(),
                               // Info-overlay: vad IDS är, hur det fungerar, länk till Suricata.
@@ -185,18 +186,18 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                             ],
                           ),
                         ),
-                        const Divider(color: Color(0xFF334155), height: 1),
+                        Divider(color: AppColors.border, height: 1),
                         _buildIdsFilterBar(),
-                        const Divider(color: Color(0xFF334155), height: 1),
+                        Divider(color: AppColors.border, height: 1),
                         if (_events.isEmpty)
                           Padding(
                             padding: EdgeInsets.all(20),
-                            child: Text(tr('sec.inga_larm_annu'), style: TextStyle(color: Colors.white38, fontSize: 12)),
+                            child: Text(tr('sec.inga_larm_annu'), style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
                           )
                         else if (filtered.isEmpty)
                           Padding(
                             padding: EdgeInsets.all(20),
-                            child: Text(tr('sec.inga_larm_matchar_filtret'), style: TextStyle(color: Colors.white38, fontSize: 12)),
+                            child: Text(tr('sec.inga_larm_matchar_filtret'), style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
                           )
                         else
                           // Samma skäl som i Loggning-vyn: man vill kunna
@@ -211,19 +212,19 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                               dataRowMaxHeight: 32,
                               showCheckboxColumn: false,
                               columns: [
-                                DataColumn(label: Text(tr('sec.tid'), style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text(tr('sec.allvarlighet'), style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text(tr('sec.signatur'), style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text(tr('sec.kategori'), style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text(tr('sec.kalla'), style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text(tr('sec.mal'), style: TextStyle(color: Colors.grey, fontSize: 11))),
-                                DataColumn(label: Text(tr('sec.protokoll'), style: TextStyle(color: Colors.grey, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.tid'), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.allvarlighet'), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.signatur'), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.kategori'), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.kalla'), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.mal'), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                                DataColumn(label: Text(tr('sec.protokoll'), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                               ],
                               rows: filtered
                                   .map((e) => DataRow(
                                         onSelectChanged: (_) => _showEventDetail(e),
                                         cells: [
-                                          DataCell(Text(e.timestamp, style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                                          DataCell(Text(e.timestamp, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                                           DataCell(Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                             decoration: BoxDecoration(
@@ -233,11 +234,11 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                                             ),
                                             child: Text('${e.severity}', style: TextStyle(color: _severityColor(e.severity), fontSize: 11, fontWeight: FontWeight.bold)),
                                           )),
-                                          DataCell(SizedBox(width: 320, child: Text(e.signature, style: const TextStyle(color: Colors.white, fontSize: 11), overflow: TextOverflow.ellipsis))),
-                                          DataCell(Text(e.category, style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                          DataCell(Text('${e.srcIp}:${e.srcPort}', style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                          DataCell(Text('${e.dstIp}:${e.dstPort}', style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                          DataCell(Text(e.protocol, style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                                          DataCell(SizedBox(width: 320, child: Text(e.signature, style: TextStyle(color: AppColors.text, fontSize: 11), overflow: TextOverflow.ellipsis))),
+                                          DataCell(Text(e.category, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                                          DataCell(Text('${e.srcIp}:${e.srcPort}', style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                                          DataCell(Text('${e.dstIp}:${e.dstPort}', style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                                          DataCell(Text(e.protocol, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                                         ],
                                       ))
                                   .toList(),
@@ -266,7 +267,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
             decoration: InputDecoration(
               isDense: true,
               labelText: label,
-              labelStyle: const TextStyle(fontSize: 10, color: Colors.grey),
+              labelStyle: TextStyle(fontSize: 10, color: AppColors.textMuted),
               contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               border: const OutlineInputBorder(),
             ),
@@ -286,10 +287,10 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
             child: DropdownButtonHideUnderline(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(border: Border.all(color: const Color(0xFF334155)), borderRadius: BorderRadius.circular(4)),
+                decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(4)),
                 child: DropdownButton<String>(
                   value: _fSeverity,
-                  dropdownColor: const Color(0xFF1E293B),
+                  dropdownColor: AppColors.surface,
                   style: const TextStyle(fontSize: 11, color: Colors.white),
                   items: [
                     DropdownMenuItem(value: 'ALL', child: Text(tr('sec.allvarlighet_alla'))),
@@ -308,8 +309,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
           field(tr('sec.mal_ip_port'), _fMal, 150),
           field(tr('sec.protokoll'), _fProtokoll, 100),
           TextButton.icon(
-            icon: const Icon(Icons.clear, size: 14, color: Colors.grey),
-            label: Text(tr('sec.rensa_filter'), style: TextStyle(fontSize: 11, color: Colors.grey)),
+            icon: Icon(Icons.clear, size: 14, color: AppColors.textMuted),
+            label: Text(tr('sec.rensa_filter'), style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
             onPressed: _hasActiveFilter ? _clearFilters : null,
           ),
         ],
@@ -323,8 +324,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(width: 120, child: Text(k, style: const TextStyle(color: Colors.grey, fontSize: 12))),
-              Expanded(child: SelectableText(v.isEmpty ? '—' : v, style: TextStyle(color: valueColor ?? Colors.white, fontSize: 12))),
+              SizedBox(width: 120, child: Text(k, style: TextStyle(color: AppColors.textMuted, fontSize: 12))),
+              Expanded(child: SelectableText(v.isEmpty ? '—' : v, style: TextStyle(color: valueColor ?? AppColors.text, fontSize: 12))),
             ],
           ),
         );
@@ -332,7 +333,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     showDialog(
       context: context,
       builder: (dctx) => Dialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 560),
@@ -346,11 +347,11 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                   children: [
                     Icon(Icons.gpp_maybe_outlined, color: _severityColor(e.severity), size: 20),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(tr('sec.larmdetaljer'), style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold))),
-                    IconButton(icon: const Icon(Icons.close, color: Colors.white54, size: 18), onPressed: () => Navigator.pop(dctx)),
+                    Expanded(child: Text(tr('sec.larmdetaljer'), style: TextStyle(color: AppColors.text, fontSize: 15, fontWeight: FontWeight.bold))),
+                    IconButton(icon: Icon(Icons.close, color: AppColors.textMuted, size: 18), onPressed: () => Navigator.pop(dctx)),
                   ],
                 ),
-                const Divider(color: Color(0xFF334155)),
+                Divider(color: AppColors.border),
                 const SizedBox(height: 4),
                 row(tr('sec.signatur'), e.signature),
                 row(tr('sec.allvarlighet'), '${e.severity}  (${e.severity == 1 ? tr('sec.hog') : e.severity == 2 ? tr('sec.medel') : tr('sec.lag')})', valueColor: _severityColor(e.severity)),
@@ -362,7 +363,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(4)),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -373,7 +374,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                           e.category.toLowerCase().contains('generic protocol command decode')
                               ? tr('sec.decoder_alert_note')
                               : tr('sec.signature_alert_note'),
-                          style: const TextStyle(color: Colors.white60, fontSize: 11, height: 1.4),
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 11, height: 1.4),
                         ),
                       ),
                     ],
@@ -410,7 +411,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
   void _showIdsInfo(BuildContext context) {
     Widget para(String s) => Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: Text(s, style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.4)),
+          child: Text(s, style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4)),
         );
     Widget head(String s) => Padding(
           padding: const EdgeInsets.only(bottom: 6, top: 2),
@@ -420,7 +421,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     showDialog(
       context: context,
       builder: (dctx) => Dialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 560, maxHeight: 620),
@@ -436,15 +437,15 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(tr('sec.vad_ar_ids_och_vad_betyder'),
-                          style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                          style: TextStyle(color: AppColors.text, fontSize: 15, fontWeight: FontWeight.bold)),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white54, size: 18),
+                      icon: Icon(Icons.close, color: AppColors.textMuted, size: 18),
                       onPressed: () => Navigator.pop(dctx),
                     ),
                   ],
                 ),
-                const Divider(color: Color(0xFF334155)),
+                Divider(color: AppColors.border),
                 Flexible(
                   child: SingleChildScrollView(
                     child: Column(
@@ -514,8 +515,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -525,7 +526,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
             children: [
               const Icon(Icons.radar, color: Colors.redAccent, size: 16),
               const SizedBox(width: 8),
-              Text(tr('sec.ids_installningar'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(tr('sec.ids_installningar'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
               const Spacer(),
               Switch(
                 value: ids.enabled,
@@ -553,7 +554,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
               onChanged: (v) => setState(() => _ifaceController.text = v ?? ''),
             ),
           ),
-          const Divider(color: Colors.white10, height: 28),
+          Divider(color: AppColors.divider, height: 28),
           Row(
             children: [
               Switch(
@@ -564,7 +565,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(tr('sec.auto_block_kall_ip_n_fran'),
-                  style: TextStyle(color: Colors.white, fontSize: 11),
+                  style: TextStyle(color: AppColors.text, fontSize: 11),
                 ),
               ),
             ],
@@ -579,8 +580,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                       : null,
                   isDense: true,
                   isExpanded: true,
-                  dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  dropdownColor: AppColors.surface,
+                  style: TextStyle(color: AppColors.text, fontSize: 12),
                   decoration: InputDecoration(
                     labelText: tr('sec.objekt_att_blockera_ip_i'),
                     contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme.dart';
 
 /// Grupperar fält i en bordad, luftig sektion – samma visuella mönster som
 /// "Add Policy Properties"-dialogen (From/To-boxarna). Delas av alla
@@ -7,8 +8,8 @@ import 'package:flutter/material.dart';
 Widget dialogSection({required String title, required List<Widget> children}) {
   return Container(
     decoration: BoxDecoration(
-      border: Border.all(color: const Color(0xFF334155)),
-      color: const Color(0xFF0F172A),
+      border: Border.all(color: AppColors.border),
+      color: AppColors.bg,
       borderRadius: BorderRadius.circular(4),
     ),
     child: Column(
@@ -17,9 +18,9 @@ Widget dialogSection({required String title, required List<Widget> children}) {
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: const BoxDecoration(
-            color: Color(0xFF1E293B),
-            border: Border(bottom: BorderSide(color: Color(0xFF334155))),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border(bottom: BorderSide(color: AppColors.border)),
           ),
           child: Text(title, style: const TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold)),
         ),
@@ -54,9 +55,9 @@ Widget dialogTitleRow(BuildContext context, String title, VoidCallback onClose) 
   return Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
-      Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+      Text(title, style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
       IconButton(
-        icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+        icon: Icon(Icons.close, size: 16, color: AppColors.textMuted),
         onPressed: onClose,
       ),
     ],

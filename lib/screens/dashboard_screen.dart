@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
@@ -180,7 +181,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final metricsList = _metrics.values.toList();
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -232,7 +233,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Expanded(
                   child: Text(tr('dashboard.realtid_trafik_bandbredd_per_interface_vlan'),
-                    style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: AppColors.text, fontSize: 13, fontWeight: FontWeight.bold),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -282,8 +283,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -300,7 +301,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Expanded(
                 child: Text(
                   item.label,
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppColors.text, fontSize: 11, fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -322,7 +323,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(3),
               child: Container(
-                color: const Color(0xFF0F172A),
+                color: AppColors.bg,
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: CustomPaint(
                   size: Size.infinite,
@@ -354,8 +355,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
@@ -374,9 +375,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(title, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text(title, style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 2),
-                Text(mainValue, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                Text(mainValue, style: TextStyle(color: AppColors.text, fontSize: 13, fontWeight: FontWeight.bold)),
                 Text(subValue, style: TextStyle(color: accentColor, fontSize: 9)),
               ],
             ),
@@ -411,7 +412,7 @@ class BandwidthGraphPainter extends CustomPainter {
 
     // Gridlinjer och Skala (100%, 50%, 0%)
     final gridPaint = Paint()
-      ..color = const Color(0xFF334155)
+      ..color = AppColors.border
       ..strokeWidth = 0.8
       ..style = PaintingStyle.stroke;
 

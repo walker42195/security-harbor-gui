@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
@@ -46,7 +47,7 @@ class _DnsScreenState extends State<DnsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
           width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 480.0),
@@ -59,22 +60,22 @@ class _DnsScreenState extends State<DnsScreen> {
                 children: [
                   Expanded(
                     child: Text(trp('dns.blocked_domains_title', {'name': src.name, 'count': '${domains.length}'}),
-                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                        style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                   ),
-                  IconButton(icon: const Icon(Icons.close, color: Colors.grey), onPressed: () => Navigator.pop(ctx)),
+                  IconButton(icon: Icon(Icons.close, color: AppColors.textMuted), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
               const SizedBox(height: 10),
               Expanded(
                 child: domains.isEmpty
-                    ? Center(child: Text(tr('dns.inga_domaner_hamtade_annu'), style: TextStyle(color: Colors.grey, fontSize: 12)))
+                    ? Center(child: Text(tr('dns.inga_domaner_hamtade_annu'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)))
                     : Container(
-                        decoration: BoxDecoration(color: const Color(0xFF0F172A), border: Border.all(color: const Color(0xFF334155)), borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(color: AppColors.bg, border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(4)),
                         child: ListView.builder(
                           itemCount: domains.length,
                           itemBuilder: (c, i) => Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                            child: Text(domains[i], style: const TextStyle(color: Colors.white70, fontSize: 11, fontFamily: 'monospace')),
+                            child: Text(domains[i], style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontFamily: 'monospace')),
                           ),
                         ),
                       ),
@@ -92,7 +93,7 @@ class _DnsScreenState extends State<DnsScreen> {
     final dns = _current(provider);
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -103,7 +104,7 @@ class _DnsScreenState extends State<DnsScreen> {
               children: [
                 Icon(Icons.dns, color: Colors.cyanAccent, size: 22),
                 SizedBox(width: 10),
-                Text(tr('dns.dns_dns_filtrering'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(tr('dns.dns_dns_filtrering'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 14),
@@ -125,8 +126,8 @@ class _DnsScreenState extends State<DnsScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -135,7 +136,7 @@ class _DnsScreenState extends State<DnsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(tr('dns.lokal_dns_resolver'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(tr('dns.lokal_dns_resolver'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
               Row(
                 children: [
                   Switch(
@@ -143,13 +144,13 @@ class _DnsScreenState extends State<DnsScreen> {
                     activeThumbColor: Colors.tealAccent,
                     onChanged: (v) => _save(provider, dns.copyWith(enabled: v)),
                   ),
-                  Text(dns.enabled ? tr('dns.aktiverad') : tr('dns.inaktiverad'), style: TextStyle(color: dns.enabled ? Colors.tealAccent : Colors.grey, fontSize: 11)),
+                  Text(dns.enabled ? tr('dns.aktiverad') : tr('dns.inaktiverad'), style: TextStyle(color: dns.enabled ? Colors.tealAccent : AppColors.textMuted, fontSize: 11)),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(tr('dns.upplosningslage'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+          Text(tr('dns.upplosningslage'), style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           RadioGroup<bool>(
             groupValue: dns.recursive,
@@ -161,7 +162,7 @@ class _DnsScreenState extends State<DnsScreen> {
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     activeColor: Colors.tealAccent,
-                    title: Text(tr('dns.vidarebefordra_till_upstream_servrar'), style: TextStyle(color: Colors.white, fontSize: 12)),
+                    title: Text(tr('dns.vidarebefordra_till_upstream_servrar'), style: TextStyle(color: AppColors.text, fontSize: 12)),
                     value: false,
                   ),
                 ),
@@ -170,7 +171,7 @@ class _DnsScreenState extends State<DnsScreen> {
                     dense: true,
                     contentPadding: EdgeInsets.zero,
                     activeColor: Colors.tealAccent,
-                    title: Text(tr('dns.sla_upp_sjalv_mot_rot_servrarna'), style: TextStyle(color: Colors.white, fontSize: 12)),
+                    title: Text(tr('dns.sla_upp_sjalv_mot_rot_servrarna'), style: TextStyle(color: AppColors.text, fontSize: 12)),
                     value: true,
                   ),
                 ),
@@ -189,7 +190,7 @@ class _DnsScreenState extends State<DnsScreen> {
                   onChanged: (v) => _save(provider, dns.copyWith(dotEnabled: v)),
                 ),
                 const SizedBox(width: 6),
-                Text(tr('dns.dns_over_tls_dot_mot_upstream'), style: TextStyle(color: Colors.white, fontSize: 12)),
+                Text(tr('dns.dns_over_tls_dot_mot_upstream'), style: TextStyle(color: AppColors.text, fontSize: 12)),
               ],
             ),
             if (dns.dotEnabled) ...[
@@ -199,7 +200,7 @@ class _DnsScreenState extends State<DnsScreen> {
           ] else ...[
             const SizedBox(height: 6),
             Text(tr('dns.i_rekursivt_lage_slar_servern_upp'),
-              style: TextStyle(color: Colors.grey, fontSize: 10),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 10),
             ),
           ],
           const SizedBox(height: 10),
@@ -226,14 +227,14 @@ class _DnsScreenState extends State<DnsScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(tr('dns.lokal_dns_zon'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+          Text(tr('dns.lokal_dns_zon'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -244,7 +245,7 @@ class _DnsScreenState extends State<DnsScreen> {
               ),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(tr('dns.registrera_dhcp_tilldelade_enheters_vardnamn_automatiskt'), style: TextStyle(color: Colors.white, fontSize: 12)),
+                child: Text(tr('dns.registrera_dhcp_tilldelade_enheters_vardnamn_automatiskt'), style: TextStyle(color: AppColors.text, fontSize: 12)),
               ),
             ],
           ),
@@ -265,7 +266,7 @@ class _DnsScreenState extends State<DnsScreen> {
               Expanded(
                 child: Text(
                   tr('dns.dns_devices_hint'),
-                  style: const TextStyle(color: Colors.white70, fontSize: 10),
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 10),
                 ),
               ),
             ],
@@ -279,8 +280,8 @@ class _DnsScreenState extends State<DnsScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -289,7 +290,7 @@ class _DnsScreenState extends State<DnsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(trp('dns.domain_blocklists_count', {'n': '${dns.blocklists.length}'}), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(trp('dns.domain_blocklists_count', {'n': '${dns.blocklists.length}'}), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
                 label: Text(tr('dns.lagg_till_blocklista'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
@@ -300,13 +301,13 @@ class _DnsScreenState extends State<DnsScreen> {
           ),
           const SizedBox(height: 6),
           Text(tr('dns.flera_blocklistor_kan_vara_aktiva_samtidigt'),
-            style: TextStyle(color: Colors.grey, fontSize: 10),
+            style: TextStyle(color: AppColors.textMuted, fontSize: 10),
           ),
           const SizedBox(height: 10),
           if (dns.blocklists.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(tr('dns.inga_domanblocklistor_tillagda_annu'), style: TextStyle(color: Colors.grey, fontSize: 12)),
+              child: Text(tr('dns.inga_domanblocklistor_tillagda_annu'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
             )
           else
             ...dns.blocklists.map((src) => _buildBlocklistRow(provider, dns, src)),
@@ -321,8 +322,8 @@ class _DnsScreenState extends State<DnsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.bg,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -330,15 +331,15 @@ class _DnsScreenState extends State<DnsScreen> {
         children: [
           Row(
             children: [
-              Icon(src.enabled ? Icons.block : Icons.block_outlined, size: 16, color: src.enabled ? Colors.tealAccent : Colors.grey),
+              Icon(src.enabled ? Icons.block : Icons.block_outlined, size: 16, color: src.enabled ? Colors.tealAccent : AppColors.textMuted),
               const SizedBox(width: 10),
               Expanded(
                 flex: 2,
-                child: Text(src.name, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                child: Text(src.name, style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
               ),
               Expanded(
                 flex: 2,
-                child: Text(_kindLabel(src.kind), style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                child: Text(_kindLabel(src.kind), style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
               ),
               TextButton(
                 onPressed: () => _viewDomains(provider, src),
@@ -379,7 +380,7 @@ class _DnsScreenState extends State<DnsScreen> {
               child: Wrap(
                 spacing: 14,
                 children: [
-                  Text(src.lastUpdated.isEmpty ? 'Aldrig uppdaterad' : 'Uppdaterad: ${_shortTime(src.lastUpdated)}', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                  Text(src.lastUpdated.isEmpty ? 'Aldrig uppdaterad' : 'Uppdaterad: ${_shortTime(src.lastUpdated)}', style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
                   if (src.lastError.isNotEmpty) Text('Fel: ${src.lastError}', style: const TextStyle(color: Colors.redAccent, fontSize: 10)),
                 ],
               ),
@@ -399,7 +400,7 @@ class _DnsScreenState extends State<DnsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => Dialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
             width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 460.0),
@@ -408,15 +409,15 @@ class _DnsScreenState extends State<DnsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(tr('dns.lagg_till_domanblocklista'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(tr('dns.lagg_till_domanblocklista'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 12),
                 _labeledField(tr('dns.namn_label'), nameCtrl),
                 const SizedBox(height: 12),
-                Text(tr('dns.kalltyp'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text(tr('dns.kalltyp'), style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 DropdownButtonFormField<String>(
                   initialValue: kind,
-                  dropdownColor: const Color(0xFF1E293B),
+                  dropdownColor: AppColors.surface,
                   style: const TextStyle(fontSize: 12, color: Colors.white),
                   decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
                   items: [
@@ -497,7 +498,7 @@ class _DnsScreenState extends State<DnsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         SizedBox(
           height: 34,
@@ -507,7 +508,7 @@ class _DnsScreenState extends State<DnsScreen> {
             decoration: InputDecoration(
               isDense: true,
               hintText: hint,
-              hintStyle: const TextStyle(color: Colors.grey, fontSize: 11),
+              hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 11),
               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               border: const OutlineInputBorder(),
             ),

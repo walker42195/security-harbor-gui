@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../theme.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -322,7 +323,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     rows.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -337,7 +338,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                     Icon(Icons.list_alt, color: Colors.cyanAccent, size: 22),
                     SizedBox(width: 10),
                     Text(tr('conn.anslutningar_loggning'),
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                     // Frågetecknet ligger i sidhuvudet och inte bara som en
                     // liten ikon inne i filterfältet: hjälpen behövs INNAN
@@ -359,13 +360,13 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                         padding: EdgeInsets.only(right: 10),
                         child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyanAccent)),
                       ),
-                    Text(trp('conn.rader_count', {'n': '${rows.length}'}), style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                    Text(trp('conn.rader_count', {'n': '${rows.length}'}), style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                     const SizedBox(width: 10),
                     // Dölj/visa DefaultDeny-raderna.
                     TextButton.icon(
-                      icon: Icon(_hideDefaultDeny ? Icons.visibility_off : Icons.visibility, size: 15, color: _hideDefaultDeny ? Colors.orangeAccent : Colors.grey),
+                      icon: Icon(_hideDefaultDeny ? Icons.visibility_off : Icons.visibility, size: 15, color: _hideDefaultDeny ? Colors.orangeAccent : AppColors.textMuted),
                       label: Text(_hideDefaultDeny ? tr('conn.defaultdeny_dold') : tr('conn.dolj_defaultdeny'),
-                          style: TextStyle(fontSize: 11, color: _hideDefaultDeny ? Colors.orangeAccent : Colors.grey)),
+                          style: TextStyle(fontSize: 11, color: _hideDefaultDeny ? Colors.orangeAccent : AppColors.textMuted)),
                       onPressed: () => setState(() => _hideDefaultDeny = !_hideDefaultDeny),
                     ),
                     const SizedBox(width: 4),
@@ -399,8 +400,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -441,8 +442,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             'IPV6': tr('conn.endast_ipv6'),
           }, (v) => setState(() => _ipVersionFilter = v)),
           TextButton.icon(
-            icon: const Icon(Icons.clear, size: 14, color: Colors.grey),
-            label: Text(tr('conn.rensa_filter'), style: TextStyle(fontSize: 11, color: Colors.grey)),
+            icon: Icon(Icons.clear, size: 14, color: AppColors.textMuted),
+            label: Text(tr('conn.rensa_filter'), style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
             onPressed: () => setState(() {
               _exprController.clear();
               _exprError = null;
@@ -474,26 +475,26 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
           child: TextField(
             controller: _exprController,
             onChanged: (_) => setState(() {}),
-            style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace'),
+            style: TextStyle(fontSize: 12, color: AppColors.text, fontFamily: 'monospace'),
             decoration: InputDecoration(
               isDense: true,
               prefixIcon: Icon(Icons.filter_alt, size: 16, color: hasError ? Colors.orangeAccent : Colors.cyanAccent),
               prefixIconConstraints: const BoxConstraints(minWidth: 34),
               labelText: tr('conn.filter_uttryck'),
-              labelStyle: const TextStyle(fontSize: 11, color: Colors.grey),
+              labelStyle: TextStyle(fontSize: 11, color: AppColors.textMuted),
               hintText: tr('conn.filter_hint'),
-              hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontFamily: 'monospace'),
+              hintStyle: TextStyle(fontSize: 11, color: AppColors.hint, fontFamily: 'monospace'),
               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
               border: const OutlineInputBorder(),
               enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: hasError ? Colors.orangeAccent : const Color(0xFF334155)),
+                borderSide: BorderSide(color: hasError ? Colors.orangeAccent : AppColors.border),
               ),
               suffixIcon: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (_exprController.text.isNotEmpty)
                     IconButton(
-                      icon: const Icon(Icons.clear, size: 15, color: Colors.grey),
+                      icon: Icon(Icons.clear, size: 15, color: AppColors.textMuted),
                       tooltip: tr('conn.rensa_filter'),
                       onPressed: () => setState(() {
                         _exprController.clear();
@@ -501,7 +502,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                       }),
                     ),
                   IconButton(
-                    icon: const Icon(Icons.help_outline, size: 15, color: Colors.grey),
+                    icon: Icon(Icons.help_outline, size: 15, color: AppColors.textMuted),
                     tooltip: tr('conn.filter_hjalp_titel'),
                     onPressed: _showFilterHelp,
                   ),
@@ -541,14 +542,14 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         title: Row(
           children: [
             const Icon(Icons.filter_alt, size: 18, color: Colors.cyanAccent),
             const SizedBox(width: 8),
             Expanded(
               child: Text(tr('conn.filter_hjalp_titel'),
-                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                  style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -560,7 +561,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(tr('conn.filter_hjalp_intro'),
-                    style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                 const SizedBox(height: 14),
                 _helpHeading(tr('conn.filter_hjalp_exempel')),
                 const SizedBox(height: 6),
@@ -581,7 +582,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(tr(descKey),
-                              style: const TextStyle(color: Colors.white60, fontSize: 11.5)),
+                              style: TextStyle(color: AppColors.textMuted, fontSize: 11.5)),
                         ),
                       ],
                     ),
@@ -590,12 +591,12 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                 _helpHeading(tr('conn.filter_hjalp_operatorer')),
                 const SizedBox(height: 4),
                 Text(tr('conn.filter_hjalp_op_text'),
-                    style: const TextStyle(color: Colors.white60, fontSize: 11.5, height: 1.5)),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 11.5, height: 1.5)),
                 const SizedBox(height: 12),
                 _helpHeading(tr('conn.filter_hjalp_falt')),
                 const SizedBox(height: 4),
                 Text(tr('conn.filter_hjalp_falt_text'),
-                    style: const TextStyle(color: Colors.white60, fontSize: 11.5, height: 1.5)),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 11.5, height: 1.5)),
                 const SizedBox(height: 14),
                 Container(
                   padding: const EdgeInsets.all(10),
@@ -610,7 +611,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(tr('conn.filter_hjalp_tips'),
-                            style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
+                            style: TextStyle(color: AppColors.textMuted, fontSize: 11.5)),
                       ),
                     ],
                   ),
@@ -628,8 +629,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
 
   static Widget _helpHeading(String text) => Text(
         text.toUpperCase(),
-        style: const TextStyle(
-            color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.6),
+        style: TextStyle(
+            color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.6),
       );
 
   /// Lägger till en term i filteruttrycket. Termer AND:as ihop — det är vad
@@ -682,7 +683,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     showMenu<VoidCallback>(
       context: context,
       position: position,
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       items: items,
     ).then((selected) => selected?.call());
   }
@@ -738,7 +739,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         decoration: InputDecoration(
           isDense: true,
           labelText: label,
-          labelStyle: const TextStyle(fontSize: 11, color: Colors.grey),
+          labelStyle: TextStyle(fontSize: 11, color: AppColors.textMuted),
           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           border: const OutlineInputBorder(),
         ),
@@ -753,12 +754,12 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFF334155)),
+            border: Border.all(color: AppColors.border),
             borderRadius: BorderRadius.circular(4),
           ),
           child: DropdownButton<String>(
             value: value,
-            dropdownColor: const Color(0xFF1E293B),
+            dropdownColor: AppColors.surface,
             style: const TextStyle(fontSize: 12, color: Colors.white),
             items: options.entries
                 .map((e) => DropdownMenuItem(value: e.key, child: Text('$label: ${e.value}')))
@@ -828,7 +829,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             child: SizedBox(
               width: (hovered || active) ? 3 : 2,
               height: double.infinity,
-              child: ColoredBox(color: (hovered || active) ? Colors.cyanAccent : Colors.white38),
+              child: ColoredBox(color: (hovered || active) ? Colors.cyanAccent : AppColors.textFaint),
             ),
           ),
         ),
@@ -876,7 +877,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
           Icon(
             direction == 'IN' ? Icons.arrow_downward : (direction == 'OUT' ? Icons.arrow_upward : Icons.swap_horiz),
             size: 12,
-            color: direction == 'IN' ? Colors.amber : (direction == 'OUT' ? Colors.cyanAccent : Colors.grey),
+            color: direction == 'IN' ? Colors.amber : (direction == 'OUT' ? Colors.cyanAccent : AppColors.textMuted),
           ),
           const SizedBox(width: 4),
           Text(
@@ -934,7 +935,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 10),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: const Color(0xFF334155).withValues(alpha: 0.5))),
+        border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.5))),
       ),
       child: Row(
         children: [
@@ -979,8 +980,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: LayoutBuilder(
@@ -997,8 +998,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: const BoxDecoration(
-                      border: Border(bottom: BorderSide(color: Color(0xFF334155))),
+                    decoration: BoxDecoration(
+                      border: Border(bottom: BorderSide(color: AppColors.border)),
                     ),
                     child: _buildHeaderRow(widths),
                   ),
@@ -1007,7 +1008,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                         ? Center(
                             child: Padding(
                               padding: EdgeInsets.all(24.0),
-                              child: Text(tr('conn.ingen_trafik_matchar_filtret'), style: TextStyle(color: Colors.grey, fontSize: 12)),
+                              child: Text(tr('conn.ingen_trafik_matchar_filtret'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                             ),
                           )
                         : _maybeSelectable(
@@ -1028,8 +1029,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   }
 }
 
-const _headerStyle = TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold);
-const _cellStyle = TextStyle(color: Colors.white, fontSize: 11);
+TextStyle get _headerStyle => TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold);
+TextStyle get _cellStyle => TextStyle(color: AppColors.text, fontSize: 11);
 
 /// Ett filtrerbart värde i en cell, med de val högerklicksmenyn ska visa.
 /// Rubriken är själva värdet, så man ser vad man håller på att filtrera på.

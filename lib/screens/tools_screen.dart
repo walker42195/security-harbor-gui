@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
@@ -54,7 +55,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
     final provider = Provider.of<ConfigProvider>(context);
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -76,16 +77,16 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     Icon(Icons.build_circle_outlined, color: Colors.cyanAccent, size: 22),
                     SizedBox(width: 10),
                     Text(tr('tools.natverksdiagnostik_verktyg'),
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: const Color(0xFF334155)),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: Row(
                     children: [
@@ -103,14 +104,14 @@ class _ToolsScreenState extends State<ToolsScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(tr('tools.ange_mal_ip_eller_hostnamn'), style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold)),
+                  Text(tr('tools.ange_mal_ip_eller_hostnamn'), style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -119,7 +120,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           height: 36,
                           child: TextField(
                             controller: _targetController,
-                            style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                            style: TextStyle(fontSize: 12, color: AppColors.text, fontWeight: FontWeight.bold),
                             decoration: InputDecoration(
                               hintText: tr('tools.t_ex_8_8_8_8'),
                               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -149,7 +150,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         label: Text(tr('tools.kor_traceroute'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.lightBlueAccent,
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppColors.text,
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         ),
                         onPressed: _anyLoading ? null : () => _runTraceroute(provider),
@@ -163,7 +164,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     spacing: 6,
                     runSpacing: 6,
                     children: [
-                      Text(tr('tools.snabbval'), style: TextStyle(color: Colors.grey, fontSize: 10)),
+                      Text(tr('tools.snabbval'), style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
                       _buildPresetChip(tr('tools.google_preset'), '8.8.8.8'),
                       _buildPresetChip(tr('tools.cloudflare_preset'), '1.1.1.1'),
                       _buildPresetChip(tr('tools.quad9_preset'), '9.9.9.9'),
@@ -182,8 +183,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Column(
@@ -193,7 +194,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     children: [
                       Icon(Icons.radar, color: Colors.tealAccent, size: 16),
                       SizedBox(width: 8),
-                      Text(tr('tools.nmap_portskanning'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(tr('tools.nmap_portskanning'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -235,8 +236,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Column(
@@ -246,15 +247,15 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     children: [
                       Icon(Icons.travel_explore, size: 15, color: Colors.cyanAccent),
                       SizedBox(width: 6),
-                      Text(tr('tools.dns_uppslag_dig'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(tr('tools.dns_uppslag_dig'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(tr('tools.namn_att_sla_upp_anges_i'), style: TextStyle(color: Colors.grey, fontSize: 10)),
+                  Text(tr('tools.namn_att_sla_upp_anges_i'), style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text(tr('tools.typ'), style: TextStyle(color: Colors.grey, fontSize: 11)),
+                      Text(tr('tools.typ'), style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                       const SizedBox(width: 6),
                       // Höjden matchar nu textfältet bredvid (36px) i
                       // stället för att bara krympa till DropdownButtonets
@@ -264,16 +265,16 @@ class _ToolsScreenState extends State<ToolsScreen> {
                         height: 36,
                         padding: const EdgeInsets.symmetric(horizontal: 8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0F172A),
-                          border: Border.all(color: const Color(0xFF334155)),
+                          color: AppColors.bg,
+                          border: Border.all(color: AppColors.border),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
                             value: _digType,
                             isDense: true,
-                            dropdownColor: const Color(0xFF1E293B),
-                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            dropdownColor: AppColors.surface,
+                            style: TextStyle(color: AppColors.text, fontSize: 12),
                             items: const ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SOA', 'PTR', 'SRV']
                                 .map((t) => DropdownMenuItem(value: t, child: Text(t)))
                                 .toList(),
@@ -321,8 +322,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Row(
@@ -331,7 +332,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(tr('tools.arp_tabell_ip_mac_for_enheter'),
-                        style: TextStyle(color: Colors.white70, fontSize: 11)),
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                   ),
                   const SizedBox(width: 10),
                   ElevatedButton.icon(
@@ -356,8 +357,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Column(
@@ -367,7 +368,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     children: [
                       Icon(Icons.podcasts, color: Colors.orangeAccent, size: 16),
                       SizedBox(width: 8),
-                      Text(tr('tools.paketfangst_tcpdump'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text(tr('tools.paketfangst_tcpdump'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -447,7 +448,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(tr('tools.fangsten_avslutas_automatiskt_efter_valt_antal'),
-                    style: TextStyle(color: Colors.grey, fontSize: 10),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 10),
                   ),
                 ],
               ),
@@ -460,8 +461,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Column(
@@ -471,7 +472,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(tr('tools.konsol_utdata'),
-                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                       Row(
                         children: [
@@ -502,9 +503,9 @@ class _ToolsScreenState extends State<ToolsScreen> {
                     height: 340,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
+                      color: AppColors.bg,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: const Color(0xFF334155)),
+                      border: Border.all(color: AppColors.border),
                     ),
                     child: SingleChildScrollView(
                       child: SelectableText(
@@ -527,8 +528,8 @@ class _ToolsScreenState extends State<ToolsScreen> {
   Widget _buildPresetChip(String label, String value) {
     return ActionChip(
       label: Text(label, style: const TextStyle(fontSize: 10, color: Colors.cyanAccent)),
-      backgroundColor: const Color(0xFF0F172A),
-      side: const BorderSide(color: Color(0xFF334155)),
+      backgroundColor: AppColors.bg,
+      side: BorderSide(color: AppColors.border),
       padding: EdgeInsets.zero,
       visualDensity: VisualDensity.compact,
       onPressed: () {
@@ -657,7 +658,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Checkbox(value: value, activeColor: Colors.tealAccent, onChanged: (v) => onChanged(v ?? false)),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 11)),
+          Text(label, style: TextStyle(color: AppColors.text, fontSize: 11)),
           const SizedBox(width: 10),
         ],
       ),

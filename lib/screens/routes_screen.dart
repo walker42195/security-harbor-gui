@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
@@ -27,14 +28,14 @@ class _RoutesScreenState extends State<RoutesScreen> {
     final routes = cfg?.staticRoutes ?? [];
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: const Color(0xFF1E293B),
+            color: AppColors.surface,
             child: Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,
               spacing: 8,
@@ -46,7 +47,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                     Icon(Icons.alt_route, color: Colors.cyanAccent, size: 20),
                     SizedBox(width: 8),
                     Text(tr('routes.statiska_rutter_routing'),
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -65,10 +66,10 @@ class _RoutesScreenState extends State<RoutesScreen> {
 
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: const Color(0xFF0F172A),
+            color: AppColors.bg,
             child: Text(
               tr('routes.intro_body'),
-              style: const TextStyle(color: Colors.grey, fontSize: 11),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
           ),
 
@@ -77,20 +78,20 @@ class _RoutesScreenState extends State<RoutesScreen> {
               width: double.infinity,
               margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: routes.isEmpty
                   ? Center(
                       child: Text(tr('routes.inga_statiska_rutter_definierade'),
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                       ),
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       itemCount: routes.length,
-                      separatorBuilder: (_, _) => const Divider(color: Color(0xFF334155), height: 1),
+                      separatorBuilder: (_, _) => Divider(color: AppColors.border, height: 1),
                       itemBuilder: (context, idx) => _buildRouteRow(context, provider, cfg!, idx),
                     ),
             ),
@@ -109,7 +110,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
           Icon(
             r.enabled ? Icons.check_circle : Icons.pause_circle_outline,
             size: 16,
-            color: r.enabled ? Colors.tealAccent : Colors.grey,
+            color: r.enabled ? Colors.tealAccent : AppColors.textMuted,
           ),
           const SizedBox(width: 10),
           // Expanded (flex) i stället för en hård SizedBox(width: 180) —
@@ -122,7 +123,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
               r.name.isEmpty ? '(namnlös rutt)' : r.name,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: r.enabled ? Colors.white : Colors.grey,
+                color: r.enabled ? AppColors.text : AppColors.textMuted,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -134,12 +135,12 @@ class _RoutesScreenState extends State<RoutesScreen> {
             child: RichText(
               overflow: TextOverflow.ellipsis,
               text: TextSpan(
-                style: const TextStyle(fontSize: 12, color: Colors.white70),
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                 children: [
                   TextSpan(text: r.network, style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold)),
                   const TextSpan(text: '  via  '),
                   TextSpan(text: r.gateway, style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold)),
-                  if (r.interfaceDevice.isNotEmpty) TextSpan(text: '  dev ${r.interfaceDevice}', style: const TextStyle(color: Colors.white38)),
+                  if (r.interfaceDevice.isNotEmpty) TextSpan(text: '  dev ${r.interfaceDevice}', style: TextStyle(color: AppColors.textFaint)),
                 ],
               ),
             ),
@@ -174,11 +175,11 @@ class _RoutesScreenState extends State<RoutesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: Text(tr('routes.ta_bort_rutten'), style: TextStyle(color: Colors.white, fontSize: 14)),
+        backgroundColor: AppColors.surface,
+        title: Text(tr('routes.ta_bort_rutten'), style: TextStyle(color: AppColors.text, fontSize: 14)),
         content: Text(
           trp('routes.delete_confirm_body', {'name': r.name.isEmpty ? r.network : r.name}),
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
+          style: TextStyle(color: AppColors.textMuted, fontSize: 12),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('routes.avbryt'))),
@@ -199,7 +200,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         SizedBox(
           height: 34,
@@ -209,7 +210,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
             decoration: InputDecoration(
               isDense: true,
               hintText: hint,
-              hintStyle: const TextStyle(color: Colors.grey, fontSize: 11),
+              hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 11),
               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               border: const OutlineInputBorder(),
             ),
@@ -238,10 +239,10 @@ class _RoutesScreenState extends State<RoutesScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: AppColors.surface,
           title: Text(
             isEditing ? tr('routes.redigera_rutt') : tr('routes.ny_statisk_rutt'),
-            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+            style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold),
           ),
           content: SizedBox(
             width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 420.0),
@@ -255,18 +256,18 @@ class _RoutesScreenState extends State<RoutesScreen> {
                 const SizedBox(height: 10),
                 _dialogField(tr('routes.gateway'), gatewayCtrl, hint: tr('routes.gateway_hint')),
                 const SizedBox(height: 10),
-                Text(tr('routes.granssnitt_valfritt'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text(tr('routes.granssnitt_valfritt'), style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 DropdownButtonFormField<String>(
                   initialValue: selectedDevice,
-                  dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  dropdownColor: AppColors.surface,
+                  style: TextStyle(color: AppColors.text, fontSize: 12),
                   decoration: const InputDecoration(
                     isDense: true,
                     contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     border: OutlineInputBorder(),
                   ),
-                  hint: Text(tr('routes.lat_karnan_valja_rekommenderas'), style: TextStyle(color: Colors.grey, fontSize: 11)),
+                  hint: Text(tr('routes.lat_karnan_valja_rekommenderas'), style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                   items: [
                     DropdownMenuItem(value: null, child: Text(tr('routes.lat_karnan_valja_rekommenderas'))),
                     for (final d in devices) DropdownMenuItem(value: d, child: Text(d)),
@@ -284,7 +285,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                       checkColor: Colors.black,
                       onChanged: (v) => setState(() => enabled = v ?? true),
                     ),
-                    Text(tr('routes.aktiverad'), style: TextStyle(color: Colors.white, fontSize: 12)),
+                    Text(tr('routes.aktiverad'), style: TextStyle(color: AppColors.text, fontSize: 12)),
                   ],
                 ),
                 if (formError != null) ...[

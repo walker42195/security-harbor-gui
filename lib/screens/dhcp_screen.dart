@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
@@ -254,7 +255,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => Dialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
             width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 420.0),
@@ -268,9 +269,9 @@ class _DhcpScreenState extends State<DhcpScreen> {
                     const Icon(Icons.push_pin, size: 18, color: Colors.amberAccent),
                     const SizedBox(width: 8),
                     Text(mac.isEmpty ? tr('dhcp.ny_dhcp_reservation') : tr('dhcp.reservera_ip_till_mac'),
-                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                        style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                     const Spacer(),
-                    IconButton(icon: const Icon(Icons.close, size: 18, color: Colors.white54), onPressed: () => Navigator.pop(ctx)),
+                    IconButton(icon: Icon(Icons.close, size: 18, color: AppColors.textMuted), onPressed: () => Navigator.pop(ctx)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -280,16 +281,16 @@ class _DhcpScreenState extends State<DhcpScreen> {
                 const SizedBox(height: 10),
                 _resField(ipCtrl, tr('dhcp.reserverad_ip_label'), tr('dhcp.reserverad_ip_hint')),
                 const SizedBox(height: 10),
-                Text(tr('dhcp.granssnitt_dhcp_scope'), style: TextStyle(color: Colors.grey, fontSize: 11)),
+                Text(tr('dhcp.granssnitt_dhcp_scope'), style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: BoxDecoration(border: Border.all(color: const Color(0xFF334155)), borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(4)),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       isExpanded: true,
                       value: selectedDevice,
-                      dropdownColor: const Color(0xFF1E293B),
+                      dropdownColor: AppColors.surface,
                       style: const TextStyle(fontSize: 12, color: Colors.white),
                       items: ifaces
                           .map((i) => DropdownMenuItem(value: i.device, child: Text('${i.device}${i.zone.isNotEmpty ? ' (${i.zone})' : ''}')))
@@ -353,7 +354,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+        Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
         const SizedBox(height: 4),
         SizedBox(
           height: 36,
@@ -362,7 +363,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
             style: const TextStyle(fontSize: 12, color: Colors.white),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
+              hintStyle: TextStyle(color: AppColors.textFaint, fontSize: 12),
               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               border: const OutlineInputBorder(),
             ),
@@ -381,8 +382,8 @@ class _DhcpScreenState extends State<DhcpScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -415,22 +416,22 @@ class _DhcpScreenState extends State<DhcpScreen> {
                       DataCell(Text(
                         e.res.hostname.isEmpty ? tr('dhcp.namnlos') : e.res.hostname,
                         style: TextStyle(
-                            color: e.res.hostname.isEmpty ? Colors.white38 : Colors.white,
+                            color: e.res.hostname.isEmpty ? AppColors.textFaint : AppColors.text,
                             fontSize: 11),
                       )),
                       DataCell(SelectableText(e.res.ip,
                           style: const TextStyle(color: Colors.cyanAccent, fontSize: 11))),
                       DataCell(SelectableText(e.res.mac,
-                          style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                       DataCell(Text(e.device,
-                          style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                       DataCell(active
                           ? Tooltip(
                               message: tr('dhcp.aktiv_lease_finns'),
                               child: const Icon(Icons.check_circle, size: 15, color: Colors.greenAccent))
                           : Tooltip(
                               message: tr('dhcp.ingen_aktiv_lease'),
-                              child: const Icon(Icons.remove_circle_outline, size: 15, color: Colors.white24))),
+                              child: Icon(Icons.remove_circle_outline, size: 15, color: AppColors.textFaint))),
                       DataCell(Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -463,13 +464,13 @@ class _DhcpScreenState extends State<DhcpScreen> {
             Padding(
               padding: const EdgeInsets.all(20),
               child: Text(tr('dhcp.inga_reservationer_lagg_till_manuellt_eller'),
-                  style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                  style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
             )
           else if (reservations.isEmpty)
             Padding(
               padding: const EdgeInsets.all(20),
               child: Text(tr('dhcp.inga_reservationer_matchar_filtret'),
-                  style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                  style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
             ),
         ],
       ),
@@ -500,9 +501,9 @@ class _DhcpScreenState extends State<DhcpScreen> {
         label: Text('$label ($count)',
             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
         style: ElevatedButton.styleFrom(
-          backgroundColor: selected ? Colors.cyanAccent : const Color(0xFF1E293B),
-          foregroundColor: selected ? Colors.black : Colors.white70,
-          side: BorderSide(color: selected ? Colors.cyanAccent : const Color(0xFF334155)),
+          backgroundColor: selected ? Colors.cyanAccent : AppColors.surface,
+          foregroundColor: selected ? Colors.black : AppColors.textMuted,
+          side: BorderSide(color: selected ? Colors.cyanAccent : AppColors.border),
           elevation: 0,
         ),
         onPressed: selected ? null : () => setState(() => _view = view),
@@ -532,7 +533,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
   Widget build(BuildContext context) {
     final visible = _visible;
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -543,7 +544,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
               children: [
                 const Icon(Icons.devices_other, color: Colors.cyanAccent, size: 22),
                 const SizedBox(width: 10),
-                Text(tr('dhcp.dhcp_klienter'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(tr('dhcp.dhcp_klienter'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 IconButton(
                   icon: _loading
@@ -555,7 +556,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
             ),
             const SizedBox(height: 4),
             Text(tr('dhcp.enheter_som_fatt_en_adress_av'),
-              style: TextStyle(color: Colors.white54, fontSize: 11),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
             const SizedBox(height: 12),
 
@@ -567,8 +568,8 @@ class _DhcpScreenState extends State<DhcpScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B),
-                border: Border.all(color: const Color(0xFF334155)),
+                color: AppColors.surface,
+                border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Wrap(
@@ -585,9 +586,9 @@ class _DhcpScreenState extends State<DhcpScreen> {
                       style: const TextStyle(fontSize: 12, color: Colors.white),
                       decoration: InputDecoration(
                         isDense: true,
-                        prefixIcon: Icon(Icons.search, size: 16, color: Colors.grey),
+                        prefixIcon: Icon(Icons.search, size: 16, color: AppColors.textMuted),
                         labelText: tr('dhcp.sok_namn_ip_eller_mac'),
-                        labelStyle: TextStyle(fontSize: 11, color: Colors.grey),
+                        labelStyle: TextStyle(fontSize: 11, color: AppColors.textMuted),
                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                         border: OutlineInputBorder(),
                       ),
@@ -598,10 +599,10 @@ class _DhcpScreenState extends State<DhcpScreen> {
                     child: DropdownButtonHideUnderline(
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
-                        decoration: BoxDecoration(border: Border.all(color: const Color(0xFF334155)), borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(4)),
                         child: DropdownButton<String>(
                           value: _ifaceFilter,
-                          dropdownColor: const Color(0xFF1E293B),
+                          dropdownColor: AppColors.surface,
                           style: const TextStyle(fontSize: 12, color: Colors.white),
                           items: [
                             DropdownMenuItem(value: 'ALL', child: Text(tr('dhcp.granssnitt_alla'))),
@@ -616,12 +617,12 @@ class _DhcpScreenState extends State<DhcpScreen> {
                     _search.text.trim().isNotEmpty || _ifaceFilter != 'ALL'
                         ? '${visible.length} av ${_leases.length} klienter'
                         : '${_leases.length} klienter',
-                    style: const TextStyle(color: Colors.white54, fontSize: 11),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 11),
                   ),
                   if (_search.text.trim().isNotEmpty || _ifaceFilter != 'ALL')
                     TextButton.icon(
-                      icon: const Icon(Icons.clear, size: 14, color: Colors.grey),
-                      label: Text(tr('dhcp.rensa'), style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      icon: Icon(Icons.clear, size: 14, color: AppColors.textMuted),
+                      label: Text(tr('dhcp.rensa'), style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
                       onPressed: () => setState(() {
                         _search.clear();
                         _ifaceFilter = 'ALL';
@@ -639,8 +640,8 @@ class _DhcpScreenState extends State<DhcpScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  border: Border.all(color: const Color(0xFF334155)),
+                  color: AppColors.surface,
+                  border: Border.all(color: AppColors.border),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Column(
@@ -671,13 +672,13 @@ class _DhcpScreenState extends State<DhcpScreen> {
                             rows: visible
                                 .map((l) => DataRow(cells: [
                                       DataCell(Text(l.hostname.isEmpty ? '(okänt)' : l.hostname,
-                                          style: TextStyle(color: l.hostname.isEmpty ? Colors.white38 : Colors.white, fontSize: 11))),
+                                          style: TextStyle(color: l.hostname.isEmpty ? AppColors.textFaint : AppColors.text, fontSize: 11))),
                                       DataCell(SelectableText(l.ip, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11))),
-                                      DataCell(SelectableText(l.mac, style: const TextStyle(color: Colors.white70, fontSize: 11))),
-                                      DataCell(Text(l.interfaceDevice, style: const TextStyle(color: Colors.white70, fontSize: 11))),
+                                      DataCell(SelectableText(l.mac, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                                      DataCell(Text(l.interfaceDevice, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                                       DataCell(Text(l.zone, style: const TextStyle(color: Colors.amberAccent, fontSize: 11))),
-                                      DataCell(Text(_fmtTime(l.startTs), style: const TextStyle(color: Colors.white54, fontSize: 11))),
-                                      DataCell(Text(_expiry(l.expireTs), style: const TextStyle(color: Colors.white54, fontSize: 11))),
+                                      DataCell(Text(_fmtTime(l.startTs), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
+                                      DataCell(Text(_expiry(l.expireTs), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                                       DataCell(_isReserved(l.mac)
                                           ? const Tooltip(message: 'Redan reserverad', child: Icon(Icons.check_circle, size: 16, color: Colors.greenAccent))
                                           : IconButton(
@@ -695,12 +696,12 @@ class _DhcpScreenState extends State<DhcpScreen> {
                       Padding(
                         padding: EdgeInsets.all(20),
                         child: Text(tr('dhcp.inga_aktiva_dhcp_utlaningar_enheter_dyker'),
-                            style: TextStyle(color: Colors.white38, fontSize: 12)),
+                            style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
                       )
                     else if (visible.isEmpty)
                       Padding(
                         padding: EdgeInsets.all(20),
-                        child: Text(tr('dhcp.inga_klienter_matchar_filtret'), style: TextStyle(color: Colors.white38, fontSize: 12)),
+                        child: Text(tr('dhcp.inga_klienter_matchar_filtret'), style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
                       ),
                   ],
                 ),
@@ -713,7 +714,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
   }
 }
 
-const _hStyle = TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold);
+TextStyle get _hStyle => TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.bold);
 
 /// Vilken av DHCP-sidans två listor som visas.
 enum _DhcpView { leases, reservations }

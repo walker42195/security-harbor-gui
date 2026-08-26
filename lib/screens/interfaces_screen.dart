@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
@@ -63,7 +64,7 @@ class InterfacesScreen extends StatelessWidget {
     final cfg = provider.candidateConfig ?? provider.runningConfig;
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -79,7 +80,7 @@ class InterfacesScreen extends StatelessWidget {
               runSpacing: 8,
               children: [
                 Text(tr('iface.natverksgranssnitt_vlan'),
-                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold),
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.category_outlined, size: 14),
@@ -106,10 +107,10 @@ class InterfacesScreen extends StatelessWidget {
             const SizedBox(height: 12),
             if (cfg != null && cfg.interfaces.isEmpty)
               Card(
-                color: Color(0xFF1E293B),
+                color: AppColors.surface,
                 child: Padding(
                   padding: EdgeInsets.all(24.0),
-                  child: Center(child: Text(tr('iface.inga_konfigurerade_granssnitt_annu'), style: TextStyle(color: Colors.grey, fontSize: 11))),
+                  child: Center(child: Text(tr('iface.inga_konfigurerade_granssnitt_annu'), style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                 ),
               )
             else if (cfg != null)
@@ -124,7 +125,7 @@ class InterfacesScreen extends StatelessWidget {
                   final isStatic = iface.addressType == 'static';
 
                   return Card(
-                    color: const Color(0xFF1E293B),
+                    color: AppColors.surface,
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ExpansionTile(
                       tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
@@ -136,7 +137,7 @@ class InterfacesScreen extends StatelessWidget {
                       ),
                       title: Text(
                         '${iface.name.isNotEmpty ? iface.name : iface.device}${isVLAN ? " [VLAN ${iface.vlanId}]" : ""}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(
                         trp('iface.card_zone_type', {'device': iface.device, 'zone': iface.zone, 'type': isStatic ? trp('iface.static_ip_paren', {'ip': iface.ipv4}) : trp('iface.dhcp_client_paren', {'ip': iface.ipv4.isNotEmpty ? ' (${iface.ipv4})' : ''})}),
@@ -207,20 +208,20 @@ class InterfacesScreen extends StatelessWidget {
                                   ),
                                   if (iface.ipv4.isNotEmpty)
                                     Chip(
-                                      label: Text('${isWAN ? "Extern IP" : "IP"}: ${_cidrAddress(iface.ipv4)}', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                                      backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                                      label: Text('${isWAN ? "Extern IP" : "IP"}: ${_cidrAddress(iface.ipv4)}', style: TextStyle(color: AppColors.text, fontSize: 10, fontWeight: FontWeight.bold)),
+                                      backgroundColor: AppColors.textMuted.withValues(alpha: 0.2),
                                       visualDensity: VisualDensity.compact,
                                     ),
                                   if (iface.ipv4.contains('/'))
                                     Chip(
-                                      label: Text(trp('iface.subnat_label', {'ip': iface.ipv4, 'mask': _cidrNetmask(iface.ipv4)}), style: const TextStyle(color: Colors.white70, fontSize: 10)),
-                                      backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                                      label: Text(trp('iface.subnat_label', {'ip': iface.ipv4, 'mask': _cidrNetmask(iface.ipv4)}), style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
+                                      backgroundColor: AppColors.textMuted.withValues(alpha: 0.2),
                                       visualDensity: VisualDensity.compact,
                                     ),
                                   if (iface.gateway.isNotEmpty)
                                     Chip(
-                                      label: Text('Gateway: ${iface.gateway}', style: const TextStyle(color: Colors.white, fontSize: 10)),
-                                      backgroundColor: Colors.grey.withValues(alpha: 0.2),
+                                      label: Text('Gateway: ${iface.gateway}', style: TextStyle(color: AppColors.text, fontSize: 10)),
+                                      backgroundColor: AppColors.textMuted.withValues(alpha: 0.2),
                                       visualDensity: VisualDensity.compact,
                                     ),
                                   // Visas bara när MAC:en är manuellt satt —
@@ -297,15 +298,15 @@ class InterfacesScreen extends StatelessWidget {
                                     ElevatedButton.icon(
                                       icon: const Icon(Icons.settings_ethernet, size: 14),
                                       label: Text(tr('iface.konfigurera_dhcp_scope'), style: TextStyle(fontSize: 10)),
-                                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF334155), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
+                                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.border, foregroundColor: AppColors.text, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
                                       onPressed: () => _showDHCPDialog(context, provider, cfg, idx),
                                     ),
                                   ],
                                 ),
                                 if (iface.dhcp != null && iface.dhcp!.enabled) ...[
                                   const SizedBox(height: 4),
-                                  Text('IP Pool: ${iface.dhcp!.rangeStart} - ${iface.dhcp!.rangeEnd}', style: const TextStyle(color: Colors.grey, fontSize: 10)),
-                                  Text('Klient DNS: ${iface.dhcp!.dnsServers.join(", ")}  |  Gateway: ${iface.dhcp!.gateway}', style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                                  Text('IP Pool: ${iface.dhcp!.rangeStart} - ${iface.dhcp!.rangeEnd}', style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
+                                  Text('Klient DNS: ${iface.dhcp!.dnsServers.join(", ")}  |  Gateway: ${iface.dhcp!.gateway}', style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
                                 ],
                               ],
                             ],
@@ -372,14 +373,14 @@ class InterfacesScreen extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(tr('iface.kort_som_hittats_pa_systemet_men'),
-                style: TextStyle(color: Colors.white54, fontSize: 10)),
+                style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
             const SizedBox(height: 8),
             ...newNics.map((d) {
               final name = (d['name'] ?? '').toString();
               final mac = (d['mac'] ?? '').toString();
               final isUp = d['is_up'] == true;
               return Card(
-                color: const Color(0xFF1E293B),
+                color: AppColors.surface,
                 margin: const EdgeInsets.only(bottom: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4),
@@ -388,9 +389,9 @@ class InterfacesScreen extends StatelessWidget {
                 child: ListTile(
                   dense: true,
                   leading: const Icon(Icons.settings_ethernet, size: 18, color: Colors.amberAccent),
-                  title: Text(name, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                  title: Text(name, style: TextStyle(color: AppColors.text, fontSize: 13, fontWeight: FontWeight.bold)),
                   subtitle: Text(trp('iface.mac_link_unconfigured', {'mac': mac.isEmpty ? "—" : mac, 'link': isUp ? tr('iface.uppe') : tr('iface.nere')}),
-                      style: const TextStyle(color: Colors.white54, fontSize: 10)),
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
                   trailing: ElevatedButton.icon(
                     icon: const Icon(Icons.add, size: 14),
                     label: Text(tr('iface.lagg_till'), style: TextStyle(fontSize: 11)),
@@ -450,7 +451,7 @@ class InterfacesScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => Dialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
             width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 480.0),
@@ -472,8 +473,8 @@ class InterfacesScreen extends StatelessWidget {
                     dialogSection(title: trp('iface.section_fysiskt_kort', {'vlan': '${iface.vlanId}'}), children: [
                       DropdownButtonFormField<String>(
                         initialValue: physicalDevices.contains(selectedParent) ? selectedParent : (physicalDevices.isNotEmpty ? physicalDevices.first : null),
-                        dropdownColor: const Color(0xFF1E293B),
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        dropdownColor: AppColors.surface,
+                        style: TextStyle(color: AppColors.text, fontSize: 12),
                         decoration: InputDecoration(
                           labelText: tr('iface.foraldrakort'),
                           isDense: true,
@@ -520,7 +521,7 @@ class InterfacesScreen extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(tr('iface.mac_address_hint'),
-                          style: const TextStyle(color: Colors.white38, fontSize: 10)),
+                          style: TextStyle(color: AppColors.textFaint, fontSize: 10)),
                     ),
                   ]),
                   const SizedBox(height: 12),
@@ -528,8 +529,8 @@ class InterfacesScreen extends StatelessWidget {
                   dialogSection(title: tr('iface.section_zon'), children: [
                     DropdownButtonFormField<String>(
                       initialValue: _zoneExistsInMenu(selectedZonePreset, cfg) ? selectedZonePreset : 'CUSTOM',
-                      dropdownColor: const Color(0xFF1E293B),
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      dropdownColor: AppColors.surface,
+                      style: TextStyle(color: AppColors.text, fontSize: 12),
                       decoration: InputDecoration(
                         labelText: tr('iface.tilldelad_zon'),
                         isDense: true,
@@ -627,19 +628,19 @@ class InterfacesScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         title: Row(
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.amber, size: 20),
             const SizedBox(width: 8),
-            Expanded(child: Text(trp('iface.ta_bort_granssnitt_confirm', {'label': label}), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold))),
+            Expanded(child: Text(trp('iface.ta_bort_granssnitt_confirm', {'label': label}), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold))),
           ],
         ),
         content: Text(
           isVLAN
               ? trp('iface.delete_vlan_body', {'device': iface.device})
               : trp('iface.delete_iface_body', {'device': iface.device}),
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
+          style: TextStyle(color: AppColors.textMuted, fontSize: 12),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('iface.avbryt'), style: TextStyle(fontSize: 12))),
@@ -694,7 +695,7 @@ class InterfacesScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => Dialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
             width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 480.0),
@@ -707,9 +708,9 @@ class InterfacesScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(tr('iface.skapa_nytt_linux_vlan'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                      Text(tr('iface.skapa_nytt_linux_vlan'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                       IconButton(
-                        icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+                        icon: Icon(Icons.close, size: 16, color: AppColors.textMuted),
                         onPressed: () => Navigator.pop(ctx),
                       ),
                     ],
@@ -726,8 +727,8 @@ class InterfacesScreen extends StatelessWidget {
                   dialogSection(title: tr('iface.section_zon'), children: [
                     DropdownButtonFormField<String>(
                       initialValue: selectedZonePreset,
-                      dropdownColor: const Color(0xFF1E293B),
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      dropdownColor: AppColors.surface,
+                      style: TextStyle(color: AppColors.text, fontSize: 12),
                       decoration: InputDecoration(
                         labelText: tr('iface.tilldelad_zon_2'),
                         isDense: true,
@@ -825,7 +826,7 @@ class InterfacesScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
           width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 440.0),
@@ -837,9 +838,9 @@ class InterfacesScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(trp('iface.dhcp_installningar_for', {'id': iface.id}), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(trp('iface.dhcp_installningar_for', {'id': iface.id}), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 16, color: Colors.grey),
+                    icon: Icon(Icons.close, size: 16, color: AppColors.textMuted),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
@@ -942,7 +943,7 @@ class InterfacesScreen extends StatelessWidget {
           final current = provider.candidateConfig ?? provider.runningConfig ?? cfg;
           final zones = _allZoneNames(current);
           return Dialog(
-            backgroundColor: const Color(0xFF1E293B),
+            backgroundColor: AppColors.surface,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
             child: Container(
               width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 480.0),
@@ -966,22 +967,22 @@ class InterfacesScreen extends StatelessWidget {
                           final usage = _zoneUsageCount(current, zone);
                           final isWAN = zone == 'WAN';
                           return Card(
-                            color: const Color(0xFF0F172A),
+                            color: AppColors.bg,
                             margin: const EdgeInsets.only(bottom: 6),
                             child: ListTile(
                               dense: true,
-                              title: Text(zone, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                              title: Text(zone, style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
                               subtitle: Text('$usage gränssnitt använder zonen', style: const TextStyle(fontSize: 10)),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
-                                    icon: Icon(Icons.edit, size: 16, color: isWAN ? Colors.grey : Colors.cyanAccent),
+                                    icon: Icon(Icons.edit, size: 16, color: isWAN ? AppColors.textMuted : Colors.cyanAccent),
                                     tooltip: isWAN ? tr('iface.wan_kan_inte_dopas_om') : tr('iface.dop_om_zon'),
                                     onPressed: isWAN ? null : () => _promptRenameZone(context, provider, zone, () => setState(() {})),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.delete, size: 16, color: (isWAN || usage > 0) ? Colors.grey : Colors.redAccent),
+                                    icon: Icon(Icons.delete, size: 16, color: (isWAN || usage > 0) ? AppColors.textMuted : Colors.redAccent),
                                     tooltip: isWAN
                                         ? tr('iface.wan_kan_inte_tas_bort')
                                         : (usage > 0 ? trp('iface.zon_anvands_av', {'n': '$usage'}) : tr('iface.ta_bort_zon')),
@@ -1009,8 +1010,8 @@ class InterfacesScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: Text(trp('iface.dop_om_zon_title', {'zone': oldZone}), style: const TextStyle(color: Colors.white, fontSize: 14)),
+        backgroundColor: AppColors.surface,
+        title: Text(trp('iface.dop_om_zon_title', {'zone': oldZone}), style: TextStyle(color: AppColors.text, fontSize: 14)),
         content: dialogField(ctrl, tr('iface.nytt_zonnamn'), hint: 't.ex. DMZ, KAMEROR'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('iface.avbryt'), style: TextStyle(fontSize: 12))),
@@ -1081,10 +1082,10 @@ class InterfacesScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: Text('Ta bort zon "$zone"?', style: const TextStyle(color: Colors.white, fontSize: 14)),
+        backgroundColor: AppColors.surface,
+        title: Text('Ta bort zon "$zone"?', style: TextStyle(color: AppColors.text, fontSize: 14)),
         content: Text(tr('iface.zonen_tas_bort_ur_listan_och'),
-          style: TextStyle(color: Colors.white70, fontSize: 12),
+          style: TextStyle(color: AppColors.textMuted, fontSize: 12),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(tr('iface.avbryt'), style: TextStyle(fontSize: 12))),

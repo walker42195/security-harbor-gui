@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
@@ -19,7 +20,7 @@ class SniRoutesScreen extends StatelessWidget {
     final routes = cfg?.sniRoutes ?? [];
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -31,7 +32,7 @@ class SniRoutesScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(tr('sni.namnbaserad_routning_sni'),
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                      style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add, size: 14),
@@ -44,17 +45,17 @@ class SniRoutesScreen extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               tr('sni.intro_body'),
-              style: const TextStyle(color: Colors.grey, fontSize: 11),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
             const SizedBox(height: 12),
             if (cfg == null)
-              Text(tr('sni.laddar'), style: TextStyle(color: Colors.grey))
+              Text(tr('sni.laddar'), style: TextStyle(color: AppColors.textMuted))
             else if (routes.isEmpty)
-              const Card(
-                color: Color(0xFF1E293B),
+              Card(
+                color: AppColors.surface,
                 child: Padding(
                   padding: EdgeInsets.all(24.0),
-                  child: Center(child: Text('Inga regler ännu. Skapa en med "+ Ny regel".', style: TextStyle(color: Colors.grey, fontSize: 11))),
+                  child: Center(child: Text('Inga regler ännu. Skapa en med "+ Ny regel".', style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                 ),
               )
             else
@@ -68,13 +69,13 @@ class SniRoutesScreen extends StatelessWidget {
   Widget _buildRouteCard(BuildContext context, ConfigProvider provider, ConfigModel cfg, int idx, SNIRouteModel r) {
     String targetLabel(SNIBackendModel b) => b.isLocalOpenVPN ? tr('sni.lokal_openvpn') : '${b.targetIp}:${b.targetPort}';
     return Card(
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       margin: const EdgeInsets.only(bottom: 8),
       child: ExpansionTile(
         dense: true,
-        leading: Icon(Icons.alt_route, size: 18, color: r.enabled ? Colors.tealAccent : Colors.grey),
+        leading: Icon(Icons.alt_route, size: 18, color: r.enabled ? Colors.tealAccent : AppColors.textMuted),
         title: Text('${r.name.isNotEmpty ? r.name : r.id}  ·  TCP ${r.listenPort}${r.externalIp.isNotEmpty ? " @ ${r.externalIp}" : ""}',
-            style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
         subtitle: Text(trp('sni.namn_mal_count', {'n': '${r.backends.length}'}) + (r.defaultBackend != null ? trp('sni.fallback_suffix', {'target': targetLabel(r.defaultBackend!)}) : ''),
             style: const TextStyle(fontSize: 11)),
         trailing: Row(
@@ -115,7 +116,7 @@ class SniRoutesScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Text('• ${b.hostnames.join(", ")}  →  ${targetLabel(b)}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                   ),
                 if (r.defaultBackend != null)
                   Padding(
@@ -159,7 +160,7 @@ class SniRoutesScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setState) => Dialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
             width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 560.0),
@@ -208,7 +209,7 @@ class SniRoutesScreen extends StatelessWidget {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(tr('sni.trafik_utan_matchande_namn_t_ex'),
-                              style: TextStyle(color: Colors.white70, fontSize: 11)),
+                              style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                         ),
                       ],
                     ),
@@ -264,8 +265,8 @@ class SniRoutesScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.bg,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -276,8 +277,8 @@ class SniRoutesScreen extends StatelessWidget {
               Expanded(
                 child: DropdownButtonFormField<String>(
                   initialValue: b.type,
-                  dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  dropdownColor: AppColors.surface,
+                  style: TextStyle(color: AppColors.text, fontSize: 12),
                   decoration: InputDecoration(labelText: tr('sni.maltyp'), isDense: true, border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8)),
                   items: [
                     DropdownMenuItem(value: 'internal', child: Text(tr('sni.intern_server'))),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
@@ -32,7 +33,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
     final cfg = provider.candidateConfig ?? provider.runningConfig;
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -53,7 +54,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                   children: [
                     Icon(Icons.category, color: Colors.cyanAccent, size: 22),
                     SizedBox(width: 10),
-                    Text(tr('objects.objekt_grupper'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text(tr('objects.objekt_grupper'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 ElevatedButton.icon(
@@ -83,21 +84,21 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
             ],
             if (cfg != null && cfg.objects.isEmpty)
               Card(
-                color: Color(0xFF1E293B),
+                color: AppColors.surface,
                 child: Padding(
                   padding: EdgeInsets.all(32.0),
-                  child: Center(child: Text(tr('objects.inga_sparade_natverksobjekt_annu'), style: TextStyle(color: Colors.grey, fontSize: 12))),
+                  child: Center(child: Text(tr('objects.inga_sparade_natverksobjekt_annu'), style: TextStyle(color: AppColors.textMuted, fontSize: 12))),
                 ),
               )
             else if (cfg != null) ...[
               if (_visibleObjects(cfg.objects).isEmpty)
                 Card(
-                  color: const Color(0xFF1E293B),
+                  color: AppColors.surface,
                   child: Padding(
                     padding: const EdgeInsets.all(32.0),
                     child: Center(
                       child: Text(tr('objects.inga_traffar'),
-                          style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                     ),
                   ),
                 )
@@ -138,9 +139,9 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
           label: Text('$label ($count)',
               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(
-            backgroundColor: selected ? Colors.cyanAccent : const Color(0xFF1E293B),
-            foregroundColor: selected ? Colors.black : Colors.white70,
-            side: BorderSide(color: selected ? Colors.cyanAccent : const Color(0xFF334155)),
+            backgroundColor: selected ? Colors.cyanAccent : AppColors.surface,
+            foregroundColor: selected ? Colors.black : AppColors.textMuted,
+            side: BorderSide(color: selected ? Colors.cyanAccent : AppColors.border),
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
@@ -152,8 +153,8 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -167,18 +168,18 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
               style: const TextStyle(fontSize: 12, color: Colors.white),
               decoration: InputDecoration(
                 isDense: true,
-                prefixIcon: const Icon(Icons.search, size: 16, color: Colors.grey),
+                prefixIcon: Icon(Icons.search, size: 16, color: AppColors.textMuted),
                 prefixIconConstraints: const BoxConstraints(minWidth: 34),
                 labelText: tr('objects.sok'),
-                labelStyle: const TextStyle(fontSize: 11, color: Colors.grey),
+                labelStyle: TextStyle(fontSize: 11, color: AppColors.textMuted),
                 hintText: tr('objects.sok_hint'),
-                hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                hintStyle: TextStyle(fontSize: 11, color: AppColors.hint),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
                 border: const OutlineInputBorder(),
                 suffixIcon: _search.text.isEmpty
                     ? null
                     : IconButton(
-                        icon: const Icon(Icons.clear, size: 15, color: Colors.grey),
+                        icon: Icon(Icons.clear, size: 15, color: AppColors.textMuted),
                         onPressed: () => setState(() => _search.clear()),
                       ),
               ),
@@ -208,7 +209,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
     final refreshing = _refreshingIds.contains(obj.id);
 
     return Card(
-      color: const Color(0xFF1E293B),
+      color: AppColors.surface,
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -217,7 +218,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
           children: [
             ListTile(
               leading: Icon(src != null ? Icons.shield : Icons.category, color: src != null ? Colors.tealAccent : Colors.cyanAccent),
-              title: Text(obj.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+              title: Text(obj.name, style: TextStyle(color: AppColors.text, fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: src != null
                   ? Row(
                       children: [
@@ -276,8 +277,8 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                   spacing: 14,
                   runSpacing: 4,
                   children: [
-                    _statusChip(Icons.update, src.lastUpdated.isEmpty ? tr('objects.aldrig_uppdaterad') : trp('objects.uppdaterad_colon', {'time': _shortTime(src.lastUpdated)}), src.lastError.isNotEmpty ? Colors.amberAccent : Colors.grey),
-                    _statusChip(Icons.timer, trp('objects.var_x_timme', {'hours': '${src.refreshHours}'}), Colors.grey),
+                    _statusChip(Icons.update, src.lastUpdated.isEmpty ? tr('objects.aldrig_uppdaterad') : trp('objects.uppdaterad_colon', {'time': _shortTime(src.lastUpdated)}), src.lastError.isNotEmpty ? Colors.amberAccent : AppColors.textMuted),
+                    _statusChip(Icons.timer, trp('objects.var_x_timme', {'hours': '${src.refreshHours}'}), AppColors.textMuted),
                     if (src.lastError.isNotEmpty) _statusChip(Icons.error_outline, trp('objects.fel_colon', {'err': src.lastError}), Colors.redAccent),
                   ],
                 ),
@@ -292,7 +293,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
           width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 480.0),
@@ -305,14 +306,14 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
               const SizedBox(height: 10),
               Expanded(
                 child: obj.values.isEmpty
-                    ? Center(child: Text(tr('objects.inga_varden_hamtade_annu'), style: TextStyle(color: Colors.grey, fontSize: 12)))
+                    ? Center(child: Text(tr('objects.inga_varden_hamtade_annu'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)))
                     : Container(
-                        decoration: BoxDecoration(color: const Color(0xFF0F172A), border: Border.all(color: const Color(0xFF334155)), borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(color: AppColors.bg, border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(4)),
                         child: ListView.builder(
                           itemCount: obj.values.length,
                           itemBuilder: (c, i) => Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                            child: Text(obj.values[i], style: const TextStyle(color: Colors.white70, fontSize: 11, fontFamily: 'monospace')),
+                            child: Text(obj.values[i], style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontFamily: 'monospace')),
                           ),
                         ),
                       ),
@@ -380,9 +381,9 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: Text(tr('objects.ta_bort_objekt'), style: TextStyle(color: Colors.white, fontSize: 14)),
-        content: Text(trp('objects.delete_confirm_body', {'name': obj.name}), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        backgroundColor: AppColors.surface,
+        title: Text(tr('objects.ta_bort_objekt'), style: TextStyle(color: AppColors.text, fontSize: 14)),
+        content: Text(trp('objects.delete_confirm_body', {'name': obj.name}), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('objects.avbryt'), style: TextStyle(fontSize: 12))),
           ElevatedButton(
@@ -410,7 +411,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
           width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 440.0),
@@ -507,7 +508,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => Dialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
             width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 460.0),
@@ -527,7 +528,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 if (candidates.isEmpty)
                   Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text(tr('objects.skapa_forst_nagra_objekt_host_natverk'), style: TextStyle(color: Colors.white54, fontSize: 12)),
+                    child: Text(tr('objects.skapa_forst_nagra_objekt_host_natverk'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                   )
                 else
                   ConstrainedBox(
@@ -554,10 +555,10 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                             activeColor: Colors.amberAccent,
                             checkColor: Colors.black,
                             value: selected.contains(o.id),
-                            title: Text(o.name, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                            title: Text(o.name, style: TextStyle(color: AppColors.text, fontSize: 12)),
                             subtitle: Text(
                               subtitle,
-                              style: const TextStyle(color: Colors.white38, fontSize: 10),
+                              style: TextStyle(color: AppColors.textFaint, fontSize: 10),
                             ),
                             onChanged: (v) => setDialogState(() {
                               if (v == true) {
@@ -622,7 +623,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => Dialog(
-          backgroundColor: const Color(0xFF1E293B),
+          backgroundColor: AppColors.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           child: Container(
             width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 460.0),
@@ -636,11 +637,11 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 dialogSection(title: tr('objects.section_kalla'), children: [
                   dialogField(nameCtrl, tr('objects.objektnamn')),
                   const SizedBox(height: 12),
-                  Text(tr('objects.kalltyp'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+                  Text(tr('objects.kalltyp'), style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   DropdownButtonFormField<String>(
                     initialValue: kind,
-                    dropdownColor: const Color(0xFF1E293B),
+                    dropdownColor: AppColors.surface,
                     style: const TextStyle(fontSize: 12, color: Colors.white),
                     decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
                     items: [

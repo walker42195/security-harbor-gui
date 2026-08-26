@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
@@ -62,9 +63,9 @@ class _ServicesScreenState extends State<ServicesScreen> {
       case 'failed':
         return Colors.redAccent;
       case 'inactive':
-        return Colors.grey;
+        return AppColors.textMuted;
       default:
-        return Colors.grey;
+        return AppColors.textMuted;
     }
   }
 
@@ -107,11 +108,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
-        title: Text(trp('services.restart_confirm_title', {'name': s.name}), style: const TextStyle(color: Colors.white, fontSize: 14)),
+        backgroundColor: AppColors.surface,
+        title: Text(trp('services.restart_confirm_title', {'name': s.name}), style: TextStyle(color: AppColors.text, fontSize: 14)),
         content: Text(
           isSelf ? tr('services.restart_confirm_self') : tr('services.restart_confirm_other'),
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
+          style: TextStyle(color: AppColors.textMuted, fontSize: 12),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('services.avbryt'))),
@@ -161,14 +162,14 @@ class _ServicesScreenState extends State<ServicesScreen> {
     final provider = Provider.of<ConfigProvider>(context);
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: const Color(0xFF1E293B),
+            color: AppColors.surface,
             child: Wrap(
               crossAxisAlignment: WrapCrossAlignment.center,
               spacing: 10,
@@ -179,11 +180,11 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   children: [
                     const Icon(Icons.miscellaneous_services, color: Colors.cyanAccent, size: 20),
                     const SizedBox(width: 8),
-                    Text(tr('services.tjanster'), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text(tr('services.tjanster'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 IconButton(
-                  icon: Icon(Icons.refresh, size: 18, color: _loading ? Colors.white24 : Colors.tealAccent),
+                  icon: Icon(Icons.refresh, size: 18, color: _loading ? AppColors.textFaint : Colors.tealAccent),
                   tooltip: tr('services.uppdatera_status'),
                   onPressed: _loading ? null : _poll,
                 ),
@@ -192,10 +193,10 @@ class _ServicesScreenState extends State<ServicesScreen> {
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            color: const Color(0xFF0F172A),
+            color: AppColors.bg,
             child: Text(
               tr('services.status_note'),
-              style: const TextStyle(color: Colors.grey, fontSize: 11),
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
           ),
           Expanded(
@@ -203,7 +204,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                 ? Center(
                     child: _loading
                         ? const CircularProgressIndicator(color: Colors.cyanAccent)
-                        : Text(tr('services.kunde_inte_hamta_tjanststatus'), style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        : Text(tr('services.kunde_inte_hamta_tjanststatus'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(12),
@@ -222,8 +223,8 @@ class _ServicesScreenState extends State<ServicesScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: s.active == 'failed' ? Colors.redAccent.withValues(alpha: 0.5) : const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: s.active == 'failed' ? Colors.redAccent.withValues(alpha: 0.5) : AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Wrap(
@@ -246,7 +247,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Flexible(child: Text(s.name, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold))),
+                          Flexible(child: Text(s.name, style: TextStyle(color: AppColors.text, fontSize: 13, fontWeight: FontWeight.bold))),
                           // En tjänst kan vara igång i systemd utan att
                           // FUNKTIONEN är påslagen hos oss — rsyslog är
                           // systemets ordinarie logghanterare och körs
@@ -256,17 +257,17 @@ class _ServicesScreenState extends State<ServicesScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                               decoration: BoxDecoration(
-                                color: Colors.white10,
+                                color: AppColors.divider,
                                 borderRadius: BorderRadius.circular(3),
-                                border: Border.all(color: Colors.white24),
+                                border: Border.all(color: AppColors.textFaint),
                               ),
                               child: Text(tr('services.not_configured'),
-                                  style: const TextStyle(color: Colors.white54, fontSize: 9, fontWeight: FontWeight.bold)),
+                                  style: TextStyle(color: AppColors.textMuted, fontSize: 9, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ],
                       ),
-                      Text(s.description, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                      Text(s.description, style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
                     ],
                   ),
                 ),
@@ -283,13 +284,13 @@ class _ServicesScreenState extends State<ServicesScreen> {
             child: Text(
               '${_statusLabel(s)} (${s.sub})',
               style: TextStyle(
-                color: s.configured ? _statusColor(s) : Colors.white38,
+                color: s.configured ? _statusColor(s) : AppColors.textFaint,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          Text(s.unit, style: const TextStyle(color: Colors.white38, fontSize: 10, fontFamily: 'monospace')),
+          Text(s.unit, style: TextStyle(color: AppColors.textFaint, fontSize: 10, fontFamily: 'monospace')),
           OutlinedButton.icon(
             icon: restarting
                 ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.amberAccent))

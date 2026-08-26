@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../localization.dart';
@@ -126,7 +127,7 @@ class _MainScreenState extends State<MainScreen> {
       final isNarrow = outerConstraints.maxWidth < _kNarrowBreakpoint;
       return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.bg,
       // Drawer ersätter NavigationRailen på smala skärmar (se _kNarrowBreakpoint)
       // — byggs av samma `destinations`-lista så menyn alltid är i synk.
       drawer: isNarrow ? _buildDrawer(destinations) : null,
@@ -142,15 +143,15 @@ class _MainScreenState extends State<MainScreen> {
           Container(
             constraints: const BoxConstraints(minHeight: 42),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: const BoxDecoration(
-              color: Color(0xFF1E293B),
-              border: Border(bottom: BorderSide(color: Color(0xFF334155), width: 1)),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
             ),
             child: Row(
               children: [
                 if (isNarrow) ...[
                   IconButton(
-                    icon: const Icon(Icons.menu, color: Colors.white, size: 20),
+                    icon: Icon(Icons.menu, color: AppColors.text, size: 20),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     tooltip: tr('main.menu_tooltip'),
@@ -168,7 +169,7 @@ class _MainScreenState extends State<MainScreen> {
                 if (!isNarrow)
                   Text(
                     tr('main.title'),
-                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+                    style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2),
                   ),
                 if (!isNarrow) const SizedBox(width: 6),
                 if (!isNarrow)
@@ -206,7 +207,7 @@ class _MainScreenState extends State<MainScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
+                      color: AppColors.bg,
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(color: provider.isAuthenticated ? Colors.tealAccent.withValues(alpha: 0.4) : Colors.amber.withValues(alpha: 0.4)),
                     ),
@@ -239,6 +240,20 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   ),
                 ),
+                // Temaväxling i toppraden: den ska vara nåbar från varje vy,
+                // inte begravd i Inställningar.
+                const SizedBox(width: 8),
+                Tooltip(
+                  message: tr('main.theme_toggle'),
+                  child: IconButton(
+                    icon: Icon(AppTheme.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                        size: 17, color: AppColors.accent),
+                    splashRadius: 16,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    padding: EdgeInsets.zero,
+                    onPressed: () => AppTheme.instance.toggle(),
+                  ),
+                ),
                 // WAN-adressen bredvid anslutningsindikatorn. Den är det man
                 // oftast behöver läsa av snabbt (DNS-pekare, port forwards,
                 // "har ISP:n bytt adress?") och låg annars begravd under
@@ -251,8 +266,8 @@ class _MainScreenState extends State<MainScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
-                        border: Border.all(color: const Color(0xFF334155)),
+                        color: AppColors.surface,
+                        border: Border.all(color: AppColors.border),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(
@@ -262,7 +277,7 @@ class _MainScreenState extends State<MainScreen> {
                           const SizedBox(width: 5),
                           Text(
                             isNarrow ? wan : '${tr('main.wan_ip')} $wan',
-                            style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -272,7 +287,7 @@ class _MainScreenState extends State<MainScreen> {
                 const SizedBox(width: 4),
                 if (provider.isAuthenticated)
                   IconButton(
-                    icon: const Icon(Icons.refresh, size: 16, color: Colors.white54),
+                    icon: Icon(Icons.refresh, size: 16, color: AppColors.textMuted),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     tooltip: tr('main.refresh_tooltip'),
@@ -281,7 +296,7 @@ class _MainScreenState extends State<MainScreen> {
                 if (provider.isAuthenticated) ...[
                   const SizedBox(width: 8),
                   IconButton(
-                    icon: const Icon(Icons.logout, size: 16, color: Colors.white54),
+                    icon: Icon(Icons.logout, size: 16, color: AppColors.textMuted),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     tooltip: tr('main.logout_tooltip'),
@@ -296,9 +311,9 @@ class _MainScreenState extends State<MainScreen> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.person_outline, size: 14, color: Colors.grey),
+                      Icon(Icons.person_outline, size: 14, color: AppColors.textMuted),
                       const SizedBox(width: 4),
-                      Text(provider.api.username ?? '—', style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                      Text(provider.api.username ?? '—', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
                     ],
                   ),
                 ],
@@ -326,7 +341,7 @@ class _MainScreenState extends State<MainScreen> {
                           .map((w) => (w as Map)['message']?.toString() ?? '')
                           .where((m) => m.isNotEmpty)
                           .join('\n'),
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                      style: TextStyle(color: AppColors.text, fontSize: 11, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -351,14 +366,14 @@ class _MainScreenState extends State<MainScreen> {
                         _failedServices.length == 1
                             ? trp('main.service_alarm_one', {'name': _failedServices.first.name})
                             : trp('main.service_alarm_many', {'count': '${_failedServices.length}', 'names': _failedServices.map((s) => s.name).join(", ")}),
-                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.text, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                   OutlinedButton.icon(
                     icon: const Icon(Icons.build_circle_outlined, size: 14),
                     label: Text(tr('main.show_services'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white), padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
+                    style: OutlinedButton.styleFrom(foregroundColor: AppColors.text, side: const BorderSide(color: Colors.white), padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
                     onPressed: () {
                       final idx = screens.indexWhere((w) => w is ServicesScreen);
                       if (idx >= 0) setState(() => _selectedIndex = idx);
@@ -384,7 +399,7 @@ class _MainScreenState extends State<MainScreen> {
                   Expanded(
                     child: Text(
                       provider.statusMessage!,
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.text, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -411,7 +426,7 @@ class _MainScreenState extends State<MainScreen> {
                       Expanded(
                         child: Text(
                           trp('main.safe_apply_banner', {'seconds': '${provider.rollbackSecondsRemaining}'}),
-                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: AppColors.text, fontSize: 11, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -440,7 +455,7 @@ class _MainScreenState extends State<MainScreen> {
                       OutlinedButton.icon(
                         icon: const Icon(Icons.undo, size: 14),
                         label: Text(tr('main.rollback'), style: const TextStyle(fontSize: 11)),
-                        style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        style: OutlinedButton.styleFrom(foregroundColor: AppColors.text, side: const BorderSide(color: Colors.white), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
                         onPressed: () async {
                           await provider.rollbackChanges();
                           if (context.mounted) {
@@ -463,7 +478,7 @@ class _MainScreenState extends State<MainScreen> {
                   provider.runningConfig != null &&
                   provider.candidateConfig!.revision > provider.runningConfig!.revision))
             Container(
-              color: const Color(0xFF1E293B),
+              color: AppColors.surface,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: const BoxDecoration(
                 border: Border(bottom: BorderSide(color: Colors.cyanAccent, width: 1)),
@@ -481,7 +496,7 @@ class _MainScreenState extends State<MainScreen> {
                       Expanded(
                         child: Text(
                           tr('main.unapplied_banner'),
-                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                          style: TextStyle(color: AppColors.text, fontSize: 11, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
@@ -497,16 +512,16 @@ class _MainScreenState extends State<MainScreen> {
                       OutlinedButton.icon(
                         icon: const Icon(Icons.undo, size: 14),
                         label: Text(tr('main.undo_changes'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        style: OutlinedButton.styleFrom(foregroundColor: AppColors.text, side: BorderSide(color: AppColors.textFaint), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
                         onPressed: () async {
                           final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (dctx) => AlertDialog(
-                              backgroundColor: const Color(0xFF1E293B),
-                              title: Text(tr('main.undo_dialog_title'), style: const TextStyle(color: Colors.white, fontSize: 14)),
+                              backgroundColor: AppColors.surface,
+                              title: Text(tr('main.undo_dialog_title'), style: TextStyle(color: AppColors.text, fontSize: 14)),
                               content: Text(
                                 tr('main.undo_dialog_body'),
-                                style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
                               ),
                               actions: [
                                 TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('main.cancel'))),
@@ -606,15 +621,15 @@ class _MainScreenState extends State<MainScreen> {
                     child: SingleChildScrollView(
                       child: IntrinsicHeight(
                         child: NavigationRail(
-                            backgroundColor: const Color(0xFF1E293B),
+                            backgroundColor: AppColors.surface,
                             selectedIndex: _selectedIndex,
                             onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
                             labelType: NavigationRailLabelType.all,
                             minWidth: 56,
                             selectedIconTheme: const IconThemeData(color: Colors.cyanAccent, size: 18),
                             selectedLabelTextStyle: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 9),
-                            unselectedIconTheme: const IconThemeData(color: Colors.grey, size: 18),
-                            unselectedLabelTextStyle: const TextStyle(color: Colors.grey, fontSize: 9),
+                            unselectedIconTheme: IconThemeData(color: AppColors.textMuted, size: 18),
+                            unselectedLabelTextStyle: TextStyle(color: AppColors.textMuted, fontSize: 9),
                             leading: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8.0),
                               child: Column(
@@ -637,7 +652,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       ),
                     ),
-                  const VerticalDivider(thickness: 1, width: 1, color: Colors.white10),
+                  VerticalDivider(thickness: 1, width: 1, color: AppColors.divider),
                 ],
                 Expanded(child: screens[_selectedIndex]),
               ],
@@ -656,7 +671,7 @@ class _MainScreenState extends State<MainScreen> {
   // ordning utan att någon lista kan glömmas bort att uppdatera för sig.
   Widget _buildDrawer(List<NavigationRailDestination> destinations) {
     return Drawer(
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: AppColors.surface,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -676,11 +691,11 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Text(tr('main.title'), style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                  Text(tr('main.title'), style: TextStyle(color: AppColors.text, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
                 ],
               ),
             ),
-            const Divider(color: Colors.white10, height: 1),
+            Divider(color: AppColors.divider, height: 1),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -691,10 +706,10 @@ class _MainScreenState extends State<MainScreen> {
                   return ListTile(
                     leading: selected ? dest.selectedIcon : dest.icon,
                     title: DefaultTextStyle.merge(
-                      style: TextStyle(color: selected ? Colors.cyanAccent : Colors.white, fontWeight: selected ? FontWeight.bold : FontWeight.normal, fontSize: 13),
+                      style: TextStyle(color: selected ? Colors.cyanAccent : AppColors.text, fontWeight: selected ? FontWeight.bold : FontWeight.normal, fontSize: 13),
                       child: dest.label,
                     ),
-                    iconColor: selected ? Colors.cyanAccent : Colors.grey,
+                    iconColor: selected ? Colors.cyanAccent : AppColors.textMuted,
                     selected: selected,
                     selectedTileColor: Colors.cyanAccent.withValues(alpha: 0.08),
                     onTap: () {
@@ -741,25 +756,25 @@ void _showPendingChanges(BuildContext context, ConfigProvider provider) {
   showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: AppColors.surface,
       title: Row(
         children: [
           const Icon(Icons.difference_outlined, size: 18, color: Colors.cyanAccent),
           const SizedBox(width: 8),
           Expanded(
             child: Text(tr('main.changes_title'),
-                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
           ),
           if (changes.isNotEmpty)
             Text(trp('main.changes_count', {'n': '${changes.length}'}),
-                style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
         ],
       ),
       content: SizedBox(
         width: 720,
         child: changes.isEmpty
             ? Text(tr('main.changes_none'),
-                style: const TextStyle(color: Colors.white60, fontSize: 12))
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12))
             : SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -770,8 +785,8 @@ void _showPendingChanges(BuildContext context, ConfigProvider provider) {
                         padding: const EdgeInsets.only(top: 10, bottom: 6),
                         child: Text(
                           (sectionLabels[section.key] ?? section.key).toUpperCase(),
-                          style: const TextStyle(
-                              color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.6),
+                          style: TextStyle(
+                              color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.6),
                         ),
                       ),
                       ...section.value.map(_changeRow),
@@ -840,8 +855,8 @@ Widget _changeRow(ConfigChange c) {
                 if (c.item.isNotEmpty)
                   TextSpan(
                       text: c.item,
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                      style: TextStyle(
+                          color: AppColors.text, fontSize: 11.5, fontWeight: FontWeight.w600)),
                 if (c.field.isNotEmpty)
                   TextSpan(
                       text: '${c.item.isEmpty ? '' : ' · '}${fieldLabels[c.field] ?? c.field}',
@@ -853,26 +868,26 @@ Widget _changeRow(ConfigChange c) {
                   child: Text.rich(TextSpan(children: [
                     TextSpan(
                         text: (c.before?.isEmpty ?? true) ? '—' : c.before,
-                        style: const TextStyle(
-                            color: Colors.white38,
+                        style: TextStyle(
+                            color: AppColors.textFaint,
                             fontSize: 11,
                             fontFamily: 'monospace',
                             decoration: TextDecoration.lineThrough)),
-                    const TextSpan(
+                    TextSpan(
                         text: '  →  ',
-                        style: TextStyle(color: Colors.white38, fontSize: 11)),
+                        style: TextStyle(color: AppColors.textFaint, fontSize: 11)),
                     TextSpan(
                         text: (c.after?.isEmpty ?? true) ? '—' : c.after,
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 11, fontFamily: 'monospace')),
+                        style: TextStyle(
+                            color: AppColors.text, fontSize: 11, fontFamily: 'monospace')),
                   ])),
                 )
               else if ((c.after ?? c.before ?? '').isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
                   child: Text(c.after ?? c.before ?? '',
-                      style: const TextStyle(
-                          color: Colors.white54, fontSize: 11, fontFamily: 'monospace')),
+                      style: TextStyle(
+                          color: AppColors.textMuted, fontSize: 11, fontFamily: 'monospace')),
                 ),
             ],
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme.dart';
 import '../services/api_service.dart';
 import '../localization.dart';
 
@@ -40,7 +41,7 @@ Future<void> showTlsProbeFailedDialog(BuildContext context, String error) {
   return showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: AppColors.surface,
       title: Row(
         children: [
           Icon(Icons.error_outline, color: Colors.redAccent),
@@ -54,7 +55,7 @@ Future<void> showTlsProbeFailedDialog(BuildContext context, String error) {
         children: [
           Text(
             tr('tls.probe_failed_body'),
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+            style: TextStyle(color: AppColors.text, fontSize: 12),
           ),
           const SizedBox(height: 8),
           SelectableText(error, style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontFamily: 'monospace')),
@@ -74,17 +75,17 @@ Future<bool?> showTrustNewCertificateDialog(BuildContext context, String fingerp
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
-      backgroundColor: const Color(0xFF1E293B),
-      title: Text(tr('tls.nytt_certifikat'), style: TextStyle(color: Colors.white, fontSize: 15)),
+      backgroundColor: AppColors.surface,
+      title: Text(tr('tls.nytt_certifikat'), style: TextStyle(color: AppColors.text, fontSize: 15)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(tr('tls.brandvaggens_certifikat'), style: TextStyle(color: Colors.white, fontSize: 12)),
+          Text(tr('tls.brandvaggens_certifikat'), style: TextStyle(color: AppColors.text, fontSize: 12)),
           const SizedBox(height: 8),
           SelectableText(fingerprint, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11, fontFamily: 'monospace')),
           const SizedBox(height: 12),
-          Text(tr('tls.lita_pa_detta_certifikat'), style: TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(tr('tls.lita_pa_detta_certifikat'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
         ],
       ),
       actions: [
@@ -107,7 +108,7 @@ Future<bool?> showCertificateMismatchDialog(BuildContext context, String expecte
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
-      backgroundColor: const Color(0xFF1E293B),
+      backgroundColor: AppColors.surface,
       title: Row(
         children: [
           Icon(Icons.warning_amber, color: Colors.redAccent),
@@ -119,12 +120,12 @@ Future<bool?> showCertificateMismatchDialog(BuildContext context, String expecte
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(tr('tls.detta_kan_betyda_ett_man_in'), style: TextStyle(color: Colors.white, fontSize: 12)),
+          Text(tr('tls.detta_kan_betyda_ett_man_in'), style: TextStyle(color: AppColors.text, fontSize: 12)),
           const SizedBox(height: 12),
-          Text(tr('tls.forvantat'), style: TextStyle(color: Colors.grey, fontSize: 11)),
-          SelectableText(expected, style: const TextStyle(color: Colors.white70, fontSize: 11, fontFamily: 'monospace')),
+          Text(tr('tls.forvantat'), style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+          SelectableText(expected, style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontFamily: 'monospace')),
           const SizedBox(height: 8),
-          Text(tr('tls.faktiskt'), style: TextStyle(color: Colors.grey, fontSize: 11)),
+          Text(tr('tls.faktiskt'), style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
           SelectableText(actual, style: const TextStyle(color: Colors.redAccent, fontSize: 11, fontFamily: 'monospace')),
         ],
       ),

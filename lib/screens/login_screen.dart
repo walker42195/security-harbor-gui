@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../localization.dart';
@@ -60,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppColors.bg,
       body: Center(
         child: provider.isInitializing
             ? const CircularProgressIndicator(color: Colors.cyanAccent)
@@ -90,15 +91,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Text(tr('login.subtitle'), style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text(tr('login.subtitle'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                       const SizedBox(height: 12),
                       _LanguageToggle(provider: provider),
                       const SizedBox(height: 20),
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
-                          border: Border.all(color: const Color(0xFF334155)),
+                          color: AppColors.surface,
+                          border: Border.all(color: AppColors.border),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Column(
@@ -107,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (!kIsWeb) ...[
                               TextField(
                                 controller: _urlController,
-                                style: const TextStyle(color: Colors.white, fontSize: 13),
+                                style: TextStyle(color: AppColors.text, fontSize: 13),
                                 decoration: InputDecoration(
                                   labelText: tr('login.url_label'),
                                   hintText: tr('login.url_hint'),
@@ -120,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                             TextField(
                               controller: _usernameController,
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
+                              style: TextStyle(color: AppColors.text, fontSize: 13),
                               decoration: InputDecoration(
                                 labelText: tr('login.username_label'),
                                 border: const OutlineInputBorder(),
@@ -132,14 +133,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             TextField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
+                              style: TextStyle(color: AppColors.text, fontSize: 13),
                               onSubmitted: (_) => _login(provider),
                               decoration: InputDecoration(
                                 labelText: tr('login.password_label'),
                                 border: const OutlineInputBorder(),
                                 prefixIcon: const Icon(Icons.lock, color: Colors.cyanAccent, size: 18),
                                 suffixIcon: IconButton(
-                                  icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 18, color: Colors.grey),
+                                  icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 18, color: AppColors.textMuted),
                                   onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                                 ),
                                 isDense: true,
@@ -194,7 +195,7 @@ class _LanguageToggle extends StatelessWidget {
       return TextButton(
         onPressed: active ? null : () => provider.setLanguage(lang),
         style: TextButton.styleFrom(
-          foregroundColor: active ? Colors.cyanAccent : Colors.grey,
+          foregroundColor: active ? Colors.cyanAccent : AppColors.textMuted,
           padding: const EdgeInsets.symmetric(horizontal: 8),
         ),
         child: Text(label, style: TextStyle(fontSize: 11, fontWeight: active ? FontWeight.bold : FontWeight.normal)),
@@ -205,7 +206,7 @@ class _LanguageToggle extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         langButton(AppLanguage.sv, 'SV'),
-        const Text('|', style: TextStyle(color: Colors.grey, fontSize: 11)),
+        Text('|', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
         langButton(AppLanguage.en, 'EN'),
       ],
     );

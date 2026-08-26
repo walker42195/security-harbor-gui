@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme.dart';
 import 'package:provider/provider.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
@@ -63,7 +64,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
     final dns = _current(provider);
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -77,7 +78,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
                   children: [
                     Icon(Icons.devices, color: Colors.cyanAccent, size: 22),
                     SizedBox(width: 10),
-                    Text(tr('dns_devices.dns_enheter'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    Text(tr('dns_devices.dns_enheter'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 OutlinedButton.icon(
@@ -101,8 +102,8 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
   Widget _cardShell({required Widget child}) => Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
-          border: Border.all(color: const Color(0xFF334155)),
+          color: AppColors.surface,
+          border: Border.all(color: AppColors.border),
           borderRadius: BorderRadius.circular(4),
         ),
         child: child,
@@ -116,7 +117,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Manuella DNS-poster (${dns.staticRecords.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text('Manuella DNS-poster (${dns.staticRecords.length})', style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
                 label: Text(tr('dns_devices.lagg_till_post'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
@@ -129,15 +130,15 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
           if (dns.staticRecords.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text(tr('dns_devices.inga_manuella_poster_tillagda_annu'), style: TextStyle(color: Colors.grey, fontSize: 12)),
+              child: Text(tr('dns_devices.inga_manuella_poster_tillagda_annu'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
             )
           else
             ...dns.staticRecords.map((rec) => Container(
                   padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
                   margin: const EdgeInsets.only(bottom: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A),
-                    border: Border.all(color: const Color(0xFF334155)),
+                    color: AppColors.bg,
+                    border: Border.all(color: AppColors.border),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
@@ -147,8 +148,8 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
                       // Manuella poster visas EXAKT som angivna (inget lokalt
                       // suffix hängs på — vill man ha det skriver man hela
                       // namnet själv). Bara DHCP-auto-poster får LocalDomain.
-                      Expanded(child: Text(rec.hostname, style: const TextStyle(color: Colors.white, fontSize: 12))),
-                      Expanded(child: Text(rec.ip, style: const TextStyle(color: Colors.grey, fontSize: 12, fontFamily: 'monospace'))),
+                      Expanded(child: Text(rec.hostname, style: TextStyle(color: AppColors.text, fontSize: 12))),
+                      Expanded(child: Text(rec.ip, style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontFamily: 'monospace'))),
                       IconButton(
                         icon: const Icon(Icons.delete_outline, size: 16, color: Colors.redAccent),
                         onPressed: () {
@@ -182,16 +183,16 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Automatiskt registrerade enheter (${named.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text('Automatiskt registrerade enheter (${named.length})', style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
               SizedBox(
                 width: 200,
                 child: TextField(
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  style: TextStyle(color: AppColors.text, fontSize: 12),
                   decoration: InputDecoration(
                     isDense: true,
                     hintText: tr('dns_devices.sok_namn_ip_mac'),
-                    hintStyle: TextStyle(color: Colors.grey, fontSize: 11),
-                    prefixIcon: Icon(Icons.search, size: 14, color: Colors.grey),
+                    hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                    prefixIcon: Icon(Icons.search, size: 14, color: AppColors.textMuted),
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                   ),
@@ -213,29 +214,29 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
           else if (filtered.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
-              child: Text(tr('dns_devices.inga_dhcp_enheter_med_vardnamn_hittades'), style: TextStyle(color: Colors.grey, fontSize: 12)),
+              child: Text(tr('dns_devices.inga_dhcp_enheter_med_vardnamn_hittades'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
             )
           else ...[
             Container(
               padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-              color: const Color(0xFF0F172A),
+              color: AppColors.bg,
               child: Row(
                 children: [
-                  Expanded(flex: 3, child: Text(tr('dns_devices.dns_namn'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
-                  Expanded(flex: 2, child: Text(tr('dns_devices.ip'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
-                  Expanded(flex: 2, child: Text(tr('dns_devices.granssnitt'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
-                  Expanded(flex: 2, child: Text(tr('dns_devices.zon'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold))),
+                  Expanded(flex: 3, child: Text(tr('dns_devices.dns_namn'), style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold))),
+                  Expanded(flex: 2, child: Text(tr('dns_devices.ip'), style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold))),
+                  Expanded(flex: 2, child: Text(tr('dns_devices.granssnitt'), style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold))),
+                  Expanded(flex: 2, child: Text(tr('dns_devices.zon'), style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold))),
                 ],
               ),
             ),
             ...filtered.map((l) => Container(
                   padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFF334155)))),
+                  decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border))),
                   child: Row(
                     children: [
-                      Expanded(flex: 3, child: Text(_fqdn(l.hostname, dns.localDomain), style: const TextStyle(color: Colors.white, fontSize: 12))),
-                      Expanded(flex: 2, child: Text(l.ip, style: const TextStyle(color: Colors.grey, fontSize: 12, fontFamily: 'monospace'))),
-                      Expanded(flex: 2, child: Text(l.interfaceDevice, style: const TextStyle(color: Colors.grey, fontSize: 11))),
+                      Expanded(flex: 3, child: Text(_fqdn(l.hostname, dns.localDomain), style: TextStyle(color: AppColors.text, fontSize: 12))),
+                      Expanded(flex: 2, child: Text(l.ip, style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontFamily: 'monospace'))),
+                      Expanded(flex: 2, child: Text(l.interfaceDevice, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
                       Expanded(flex: 2, child: Text(l.zone, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11))),
                     ],
                   ),
@@ -253,7 +254,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
           width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 400.0),
@@ -262,7 +263,7 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(tr('dns_devices.lagg_till_dns_post'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              Text(tr('dns_devices.lagg_till_dns_post'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               _labeledField(tr('dns_devices.namn_label'), hostnameCtrl, hint: tr('dns_devices.namn_hint')),
               const SizedBox(height: 12),
@@ -297,12 +298,12 @@ class _DnsDevicesScreenState extends State<DnsDevicesScreen> {
   Widget _labeledField(String label, TextEditingController ctrl, {String? hint}) {
     return TextField(
       controller: ctrl,
-      style: const TextStyle(color: Colors.white, fontSize: 12),
+      style: TextStyle(color: AppColors.text, fontSize: 12),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.grey, fontSize: 11),
+        labelStyle: TextStyle(color: AppColors.textMuted, fontSize: 11),
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey, fontSize: 11),
+        hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 11),
         isDense: true,
         border: const OutlineInputBorder(),
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),

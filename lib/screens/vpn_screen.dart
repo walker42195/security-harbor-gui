@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -85,7 +86,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
     final ovpn = _currentOvpn(provider);
 
     return Container(
-      color: const Color(0xFF0F172A),
+      color: AppColors.bg,
       alignment: Alignment.topLeft,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,7 +97,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
               children: [
                 const Icon(Icons.vpn_lock, color: Colors.cyanAccent, size: 22),
                 const SizedBox(width: 10),
-                Text(tr('vpn.vpn'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(tr('vpn.vpn'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -106,14 +107,14 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
             isScrollable: true,
             indicatorColor: Colors.cyanAccent,
             labelColor: Colors.cyanAccent,
-            unselectedLabelColor: Colors.grey,
+            unselectedLabelColor: AppColors.textMuted,
             labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             tabs: const [
               Tab(text: 'WireGuard'),
               Tab(text: 'OpenVPN'),
             ],
           ),
-          const Divider(color: Color(0xFF334155), height: 1),
+          Divider(color: AppColors.border, height: 1),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -156,8 +157,8 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -166,7 +167,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(tr('vpn.serverinstallningar_wg0'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(tr('vpn.serverinstallningar_wg0'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
               Row(
                 children: [
                   Switch(
@@ -174,7 +175,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
                     activeThumbColor: Colors.tealAccent,
                     onChanged: (v) => _saveWireGuard(provider, wg.copyWith(enabled: v)),
                   ),
-                  Text(wg.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: wg.enabled ? Colors.tealAccent : Colors.grey, fontSize: 11)),
+                  Text(wg.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: wg.enabled ? Colors.tealAccent : AppColors.textMuted, fontSize: 11)),
                 ],
               ),
             ],
@@ -212,18 +213,18 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
                 Expanded(
                   child: Row(
                     children: [
-                      const Icon(Icons.key, size: 13, color: Colors.grey),
+                      Icon(Icons.key, size: 13, color: AppColors.textMuted),
                       const SizedBox(width: 6),
-                      Text(tr('vpn.server_publik_nyckel'), style: TextStyle(color: Colors.grey, fontSize: 10)),
+                      Text(tr('vpn.server_publik_nyckel'), style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
                       const SizedBox(width: 6),
                       Expanded(
-                        child: SelectableText(serverPubKey, style: const TextStyle(color: Colors.white, fontSize: 10, fontFamily: 'monospace'), maxLines: 1),
+                        child: SelectableText(serverPubKey, style: TextStyle(color: AppColors.text, fontSize: 10, fontFamily: 'monospace'), maxLines: 1),
                       ),
                     ],
                   ),
                 )
               else
-                Text(tr('vpn.serverns_nyckelpar_genereras_automatiskt_nar_vpn'), style: TextStyle(color: Colors.grey, fontSize: 10)),
+                Text(tr('vpn.serverns_nyckelpar_genereras_automatiskt_nar_vpn'), style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
             ],
           ),
           const SizedBox(height: 6),
@@ -239,7 +240,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         SizedBox(
           height: 34,
@@ -249,7 +250,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
             decoration: InputDecoration(
               isDense: true,
               hintText: hint,
-              hintStyle: const TextStyle(color: Colors.grey, fontSize: 11),
+              hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 11),
               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               border: const OutlineInputBorder(),
             ),
@@ -263,8 +264,8 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -273,7 +274,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('VPN-klienter (${wg.peers.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text('VPN-klienter (${wg.peers.length})', style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
                 label: Text(tr('vpn.lagg_till_klient'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
@@ -286,7 +287,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
           if (wg.peers.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(tr('vpn.inga_vpn_klienter_tillagda_annu'), style: TextStyle(color: Colors.grey, fontSize: 12)),
+              child: Text(tr('vpn.inga_vpn_klienter_tillagda_annu'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
             )
           else
             ...wg.peers.map((peer) => _buildPeerRow(provider, wg, peer)),
@@ -300,25 +301,25 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.bg,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         children: [
-          Icon(peer.enabled ? Icons.person : Icons.person_off, size: 16, color: peer.enabled ? Colors.tealAccent : Colors.grey),
+          Icon(peer.enabled ? Icons.person : Icons.person_off, size: 16, color: peer.enabled ? Colors.tealAccent : AppColors.textMuted),
           const SizedBox(width: 10),
           Expanded(
             flex: 2,
-            child: Text(peer.name, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            child: Text(peer.name, style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
           ),
           Expanded(
             flex: 2,
-            child: Text(peer.allowedIps, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+            child: Text(peer.allowedIps, style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
           ),
           Expanded(
             flex: 3,
-            child: Text(peer.publicKey, style: const TextStyle(color: Colors.grey, fontSize: 10, fontFamily: 'monospace'), overflow: TextOverflow.ellipsis),
+            child: Text(peer.publicKey, style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontFamily: 'monospace'), overflow: TextOverflow.ellipsis),
           ),
           Switch(
             value: peer.enabled,
@@ -348,7 +349,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -356,7 +357,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(tr('vpn.lagg_till_vpn_klient'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              Text(tr('vpn.lagg_till_vpn_klient'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               _labeledField(tr('vpn.namn'), nameCtrl, hint: tr('vpn.namn_hint')),
               const SizedBox(height: 10),
@@ -365,7 +366,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('vpn.avbryt'), style: TextStyle(color: Colors.grey))),
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('vpn.avbryt'), style: TextStyle(color: AppColors.textMuted))),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
@@ -439,7 +440,7 @@ PersistentKeepalive = 25
       context: context,
       barrierDismissible: false,
       builder: (ctx) => Dialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
           width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 520.0),
@@ -453,7 +454,7 @@ PersistentKeepalive = 25
                   const Icon(Icons.warning_amber, color: Colors.amberAccent, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(trp('vpn.client_config_for', {'name': peer.name}), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    child: Text(trp('vpn.client_config_for', {'name': peer.name}), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -465,7 +466,7 @@ PersistentKeepalive = 25
               Center(
                 child: Container(
                   padding: const EdgeInsets.all(10),
-                  color: Colors.white,
+                  color: AppColors.text,
                   child: QrImageView(data: clientConfig, size: 220, backgroundColor: Colors.white),
                 ),
               ),
@@ -474,8 +475,8 @@ PersistentKeepalive = 25
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
-                  border: Border.all(color: const Color(0xFF334155)),
+                  color: AppColors.bg,
+                  border: Border.all(color: AppColors.border),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: SelectableText(clientConfig, style: const TextStyle(color: Colors.greenAccent, fontSize: 11, fontFamily: 'monospace')),
@@ -522,8 +523,8 @@ PersistentKeepalive = 25
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -532,7 +533,7 @@ PersistentKeepalive = 25
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(tr('vpn.serverinstallningar_tls_pki'), style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(tr('vpn.serverinstallningar_tls_pki'), style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
               Row(
                 children: [
                   Switch(
@@ -540,7 +541,7 @@ PersistentKeepalive = 25
                     activeThumbColor: Colors.tealAccent,
                     onChanged: (v) => _saveOpenVpn(provider, ovpn.copyWith(enabled: v)),
                   ),
-                  Text(ovpn.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: ovpn.enabled ? Colors.tealAccent : Colors.grey, fontSize: 11)),
+                  Text(ovpn.enabled ? 'Aktiverad' : 'Inaktiverad', style: TextStyle(color: ovpn.enabled ? Colors.tealAccent : AppColors.textMuted, fontSize: 11)),
                 ],
               ),
             ],
@@ -583,7 +584,7 @@ PersistentKeepalive = 25
                   ],
                 )
               else
-                Text(tr('vpn.ca_t_genereras_automatiskt_vid_forsta'), style: TextStyle(color: Colors.grey, fontSize: 10)),
+                Text(tr('vpn.ca_t_genereras_automatiskt_vid_forsta'), style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
             ],
           ),
           const SizedBox(height: 6),
@@ -599,13 +600,13 @@ PersistentKeepalive = 25
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(tr('vpn.protokoll'), style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold)),
+        Text(tr('vpn.protokoll'), style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         SizedBox(
           height: 34,
           child: DropdownButtonFormField<String>(
             initialValue: ovpn.protocol,
-            dropdownColor: const Color(0xFF1E293B),
+            dropdownColor: AppColors.surface,
             style: const TextStyle(fontSize: 12, color: Colors.white),
             decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
             items: [
@@ -625,8 +626,8 @@ PersistentKeepalive = 25
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Column(
@@ -635,7 +636,7 @@ PersistentKeepalive = 25
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Klientprofiler (${ovpn.clients.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text('Klientprofiler (${ovpn.clients.length})', style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, size: 14),
                 label: Text(tr('vpn.utfarda_klientcertifikat'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
@@ -648,7 +649,7 @@ PersistentKeepalive = 25
           if (ovpn.clients.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
-              child: Text(tr('vpn.inga_openvpn_klientprofiler_utfardade_annu'), style: TextStyle(color: Colors.grey, fontSize: 12)),
+              child: Text(tr('vpn.inga_openvpn_klientprofiler_utfardade_annu'), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
             )
           else
             ...ovpn.clients.map((c) => _buildOpenVpnClientRow(provider, ovpn, c)),
@@ -663,28 +664,28 @@ PersistentKeepalive = 25
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        border: Border.all(color: const Color(0xFF334155)),
+        color: AppColors.bg,
+        border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         children: [
-          Icon(client.revoked ? Icons.block : (active ? Icons.person : Icons.person_off), size: 16, color: client.revoked ? Colors.redAccent : (active ? Colors.tealAccent : Colors.grey)),
+          Icon(client.revoked ? Icons.block : (active ? Icons.person : Icons.person_off), size: 16, color: client.revoked ? Colors.redAccent : (active ? Colors.tealAccent : AppColors.textMuted)),
           const SizedBox(width: 10),
           Expanded(
             flex: 2,
-            child: Text(client.name, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+            child: Text(client.name, style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
           ),
           Expanded(
             flex: 2,
             child: Text(
               client.revoked ? tr('vpn.sparrad') : (client.enabled ? tr('vpn.aktiv') : tr('vpn.inaktiverad')),
-              style: TextStyle(color: client.revoked ? Colors.redAccent : Colors.grey, fontSize: 11),
+              style: TextStyle(color: client.revoked ? Colors.redAccent : AppColors.textMuted, fontSize: 11),
             ),
           ),
           Expanded(
             flex: 3,
-            child: Text('Serienr: ${client.certSerial}', style: const TextStyle(color: Colors.grey, fontSize: 10, fontFamily: 'monospace'), overflow: TextOverflow.ellipsis),
+            child: Text('Serienr: ${client.certSerial}', style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontFamily: 'monospace'), overflow: TextOverflow.ellipsis),
           ),
           if (!client.revoked)
             Switch(
@@ -719,7 +720,7 @@ PersistentKeepalive = 25
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => Dialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -727,14 +728,14 @@ PersistentKeepalive = 25
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(tr('vpn.utfarda_openvpn_klientcertifikat'), style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+              Text(tr('vpn.utfarda_openvpn_klientcertifikat'), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               _labeledField(tr('vpn.namn'), nameCtrl, hint: tr('vpn.namn_hint')),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('vpn.avbryt'), style: TextStyle(color: Colors.grey))),
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(tr('vpn.avbryt'), style: TextStyle(color: AppColors.textMuted))),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.tealAccent, foregroundColor: Colors.black),
@@ -810,7 +811,7 @@ PersistentKeepalive = 25
       context: context,
       barrierDismissible: false,
       builder: (ctx) => Dialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
         child: Container(
           width: (MediaQuery.of(context).size.width - 32).clamp(280.0, 520.0),
@@ -824,7 +825,7 @@ PersistentKeepalive = 25
                   const Icon(Icons.warning_amber, color: Colors.amberAccent, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(trp('vpn.client_profile_for', {'name': client.name}), style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                    child: Text(trp('vpn.client_profile_for', {'name': client.name}), style: TextStyle(color: AppColors.text, fontSize: 14, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -838,8 +839,8 @@ PersistentKeepalive = 25
                 constraints: const BoxConstraints(maxHeight: 320),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0F172A),
-                  border: Border.all(color: const Color(0xFF334155)),
+                  color: AppColors.bg,
+                  border: Border.all(color: AppColors.border),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: SingleChildScrollView(
