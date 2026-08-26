@@ -363,13 +363,15 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         ),
       ),
       Text(pol.service, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.cyanAccent, fontSize: 11)),
-      _truncatedCell(_zoneOrObjLabel(cfg, pol.sourceZone, pol.sourceObj)),
+      _truncatedCell(_zoneOrObjLabel(cfg, pol.sourceZone, pol.sourceObj),
+          object: _objectFor(cfg, pol.sourceObj)),
       _truncatedCell(isDNAT && pol.nat != null
           ? '${pol.nat!.internalIp}:${pol.nat!.internalPort}'
           // En local-regel gäller alltid brandväggen själv — visa SELF även
           // om destZone råkar innehålla ett gammalt (ignorerat) värde från
           // innan regeln gjordes till en local-regel.
-          : (pol.local ? 'SELF' : _zoneOrObjLabel(cfg, pol.destZone, pol.destObj))),
+          : (pol.local ? 'SELF' : _zoneOrObjLabel(cfg, pol.destZone, pol.destObj)),
+          object: (isDNAT && pol.nat != null) || pol.local ? null : _objectFor(cfg, pol.destObj)),
       Text(isDNAT && pol.nat != null ? 'tcp:${pol.nat!.externalPort}' : _getPortForService(pol.service), overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.amber, fontSize: 11)),
       Row(
         mainAxisSize: MainAxisSize.min,
@@ -535,14 +537,161 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   // fick annars hela DataTable-raden att svälla ut så långt åt höger att
   // Åtgärder-kolumnen blev praktiskt taget onåbar utan att scrolla mycket
   // långt horisontellt. Hela texten syns fortfarande i en tooltip vid hover.
-  Widget _truncatedCell(String text) {
+  Widget _truncatedCell(String text, {ObjectModel? object}) {
+    final label = Text(
+      text,
+      style: TextStyle(
+        color: object != null ? Colors.cyanAccent : Colors.white70,
+        fontSize: 11,
+        decoration: object != null ? TextDecoration.underline : null,
+        decorationStyle: TextDecorationStyle.dotted,
+      ),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    );
+    final cell = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 160),
+      child: label,
+    );
+    if (object == null) {
+      return Tooltip(message: text, child: cell);
+    }
+    // Refererar cellen ett objekt går det att klicka på för att se vad det
+    // faktiskt innehåller. En grupp visar bara sitt NAMN i policylistan, och
+    // att behöva gå till Objekt-vyn och leta upp den för att svara på "vilka
+    // adresser släpper den här regeln egentligen igenom?" var onödigt.
     return Tooltip(
-      message: text,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 160),
-        child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 11), overflow: TextOverflow.ellipsis, maxLines: 1),
+      message: tr('pol.visa_objektinnehall'),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => _showObjectContents(object),
+          child: cell,
+        ),
       ),
     );
+  }
+
+  /// Objektet en From/To-cell refererar, om någon.
+  ObjectModel? _objectFor(ConfigModel? cfg, String? objId) {
+    if (cfg == null || objId == null || objId.isEmpty || objId.toUpperCase() == 'ANY') {
+      return null;
+    }
+    for (final o in cfg.objects) {
+      if (o.id == objId) return o;
+    }
+    return null;
+  }
+
+  /// Overlay som visar vad ett objekt innehåller. En grupp löses upp till sina
+  /// medlemmar (vars values är ANDRA objekts ID:n), rekursivt, så man ser de
+  /// faktiska adresserna och inte bara ännu ett gruppnamn.
+  void _showObjectContents(ObjectModel object) {
+    final cfg = Provider.of<ConfigProvider>(context, listen: false).candidateConfig ??
+        Provider.of<ConfigProvider>(context, listen: false).runningConfig;
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        title: Row(
+          children: [
+            Icon(object.type == 'group' ? Icons.folder_open : Icons.category,
+                size: 18, color: Colors.cyanAccent),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(object.name,
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.cyanAccent.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Text(object.type.toUpperCase(),
+                  style: const TextStyle(color: Colors.cyanAccent, fontSize: 9, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 480,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (object.description.isNotEmpty) ...[
+                  Text(object.description,
+                      style: const TextStyle(color: Colors.white60, fontSize: 11.5)),
+                  const SizedBox(height: 12),
+                ],
+                ..._objectContentWidgets(cfg, object, 0, <String>{}),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
+        ],
+      ),
+    );
+  }
+
+  /// Bygger innehållsraderna. [seen] bryter cykler — en grupp som (direkt
+  /// eller indirekt) innehåller sig själv skulle annars ge oändlig rekursion
+  /// och hänga GUI:t.
+  List<Widget> _objectContentWidgets(ConfigModel? cfg, ObjectModel object, int depth, Set<String> seen) {
+    if (!seen.add(object.id) || depth > 5) {
+      return [
+        Padding(
+          padding: EdgeInsets.only(left: depth * 14.0, bottom: 4),
+          child: Text(tr('pol.cyklisk_grupp'),
+              style: const TextStyle(color: Colors.orangeAccent, fontSize: 11)),
+        ),
+      ];
+    }
+
+    if (object.values.isEmpty) {
+      return [
+        Padding(
+          padding: EdgeInsets.only(left: depth * 14.0, bottom: 4),
+          child: Text(tr('pol.objekt_tomt'),
+              style: const TextStyle(color: Colors.white38, fontSize: 11)),
+        ),
+      ];
+    }
+
+    final widgets = <Widget>[];
+    for (final value in object.values) {
+      final member = object.type == 'group' ? _objectFor(cfg, value) : null;
+      if (member != null) {
+        widgets.add(Padding(
+          padding: EdgeInsets.only(left: depth * 14.0, top: 6, bottom: 2),
+          child: Row(
+            children: [
+              Icon(member.type == 'group' ? Icons.folder_open : Icons.subdirectory_arrow_right,
+                  size: 13, color: Colors.cyanAccent),
+              const SizedBox(width: 6),
+              Text(member.name,
+                  style: const TextStyle(color: Colors.cyanAccent, fontSize: 11.5, fontWeight: FontWeight.w600)),
+              const SizedBox(width: 6),
+              Text(member.type,
+                  style: const TextStyle(color: Colors.white38, fontSize: 10)),
+            ],
+          ),
+        ));
+        widgets.addAll(_objectContentWidgets(cfg, member, depth + 1, seen));
+        continue;
+      }
+      widgets.add(Padding(
+        padding: EdgeInsets.only(left: depth * 14.0 + 19, bottom: 3),
+        child: SelectableText(
+          value,
+          style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontFamily: 'monospace'),
+        ),
+      ));
+    }
+    return widgets;
   }
 
   // Slår upp Hit Counter-data (Fas 7) för en policy. Nyckeln i

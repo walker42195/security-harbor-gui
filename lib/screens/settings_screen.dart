@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 import '../localization.dart';
+import '../time_format.dart';
 import '../providers/config_provider.dart';
 import '../models/config_model.dart';
 import '../widgets/tls_trust_dialogs.dart';
@@ -79,6 +80,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // Rollback-timeouten (sekunder) som redigerbart fält.
   final TextEditingController _rollbackTimeoutController = TextEditingController();
+  /// Tidszoner som servern känner till, plus den som faktiskt gäller där nu.
+  /// Hämtas en gång; listan är statisk för en given server.
+  List<String> _timezones = const [];
+  String _serverTimezone = '';
   int? _rollbackTimeoutLoadedFrom; // värdet fältet fylldes från, för dirty-check
 
   @override
@@ -129,6 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final provider = Provider.of<ConfigProvider>(context);
     _syncRollbackTimeoutField(provider);
+    _loadTimezones(provider);
 
     return Container(
       color: const Color(0xFF0F172A),
@@ -147,204 +153,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Inloggning & Serveranslutningskort
-          Card(
-            color: const Color(0xFF1E293B),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.security, color: Colors.cyanAccent, size: 22),
-                      const SizedBox(width: 10),
-                      Text(tr('settings.login.title'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  // Server URL
-                  TextField(
-                    controller: _urlController,
-                    style: const TextStyle(color: Colors.white, fontSize: 12),
-                    decoration: InputDecoration(
-                      labelText: tr('settings.login.url_label'),
-                      hintText: tr('settings.https_192_168_1_1_8443'),
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.link, color: Colors.cyanAccent, size: 18),
-                      isDense: true,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
 
-                  // Användarnamn & Lösenord
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _usernameController,
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
-                          decoration: InputDecoration(
-                            labelText: tr('settings.login.username_label'),
-                            hintText: tr('settings.master'),
-                            border: const OutlineInputBorder(),
-                            prefixIcon: const Icon(Icons.person, color: Colors.cyanAccent, size: 18),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
-                          decoration: InputDecoration(
-                            labelText: tr('settings.login.password_label'),
-                            border: const OutlineInputBorder(),
-                            prefixIcon: const Icon(Icons.lock, color: Colors.cyanAccent, size: 18),
-                            suffixIcon: IconButton(
-                              icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 18, color: Colors.grey),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                            ),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Inloggningsknapp & Status
-                  Row(
-                    children: [
-                      ElevatedButton.icon(
-                        icon: _isLoggingIn
-                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                            : const Icon(Icons.login, size: 16),
-                        label: Text(tr('settings.login.submit'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.cyanAccent,
-                          foregroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        ),
-                        onPressed: _isLoggingIn
-                            ? null
-                            : () async {
-                                setState(() => _isLoggingIn = true);
-                                await provider.changeAgentUrl(_urlController.text);
-                                if (!mounted) return;
-                                if (!kIsWeb) {
-                                  if (!context.mounted) return;
-                                  final proceed = await runTlsTrustCheck(context, provider.api);
-                                  if (!mounted || !proceed) {
-                                    setState(() => _isLoggingIn = false);
-                                    return;
-                                  }
-                                }
-                                await provider.login(_usernameController.text, _passwordController.text);
-                                setState(() => _isLoggingIn = false);
-
-                                if (context.mounted) {
-                                  final ok = provider.isAuthenticated;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(ok
-                                          ? trp('settings.login.snackbar_success', {'user': _usernameController.text, 'url': _urlController.text})
-                                          : trp('settings.login.snackbar_failed', {'url': _urlController.text})),
-                                      backgroundColor: ok ? Colors.green : Colors.red,
-                                    ),
-                                  );
-                                }
-                              },
-                      ),
-                      const SizedBox(width: 16),
-                      Row(
-                        children: [
-                          Icon(
-                            provider.isAuthenticated ? Icons.check_circle : Icons.error_outline,
-                            color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            provider.isAuthenticated
-                                ? tr('settings.login.status_logged_in')
-                                : tr('settings.login.status_logged_out'),
-                            style: TextStyle(
-                              color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  const Divider(color: Colors.white10, height: 32),
-
-                  // Övriga Systeminställningar
-                  // Rollback-timeouten var tidigare en Chip — ett värde man
-                  // kunde läsa (knappt: ljus text på cyan botten) men inte
-                  // ändra, trots att agenten läser fältet ur configen. Nu är
-                  // det en riktig inmatningsruta.
-                  ListTile(
-                    dense: true,
-                    title: Text(tr('settings.rollback_timeout.title'), style: const TextStyle(color: Colors.white, fontSize: 12)),
-                    subtitle: Text(tr('settings.rollback_timeout.body'), style: const TextStyle(fontSize: 11)),
-                    trailing: provider.isAdmin
-                        ? SizedBox(
-                            width: 132,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  width: 72,
-                                  child: TextField(
-                                    controller: _rollbackTimeoutController,
-                                    keyboardType: TextInputType.number,
-                                    style: const TextStyle(color: Colors.white, fontSize: 13),
-                                    textAlign: TextAlign.right,
-                                    decoration: const InputDecoration(
-                                      isDense: true,
-                                      suffixText: 's',
-                                      suffixStyle: TextStyle(color: Colors.white54, fontSize: 12),
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                      border: OutlineInputBorder(),
-                                      enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF475569))),
-                                    ),
-                                    onChanged: (_) => setState(() {}),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.save, size: 18, color: Colors.cyanAccent),
-                                  tooltip: tr('settings.rollback_timeout.save'),
-                                  onPressed: _rollbackTimeoutDirty(provider) ? () => _saveRollbackTimeout(provider) : null,
-                                ),
-                              ],
-                            ),
-                          )
-                        : Text(
-                            '${(provider.runningConfig ?? provider.candidateConfig)?.settings.rollbackTimeoutSec ?? 30} s',
-                            style: const TextStyle(color: Colors.cyanAccent, fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                  ),
-                  const Divider(color: Colors.white10),
-                  ListTile(
-                    dense: true,
-                    title: Text(tr('settings.wan_lock.title'), style: TextStyle(color: Colors.white, fontSize: 12)),
-                    subtitle: Text(tr('settings.wan_lock.body'), style: TextStyle(fontSize: 11)),
-                    trailing: const Icon(Icons.verified_user, color: Colors.tealAccent, size: 18),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
+          // Ordningen är den användaren bad om 2026-08-26: det man gör ofta
+          // överst, och Server-inloggning sist — den rör man en gång när
+          // klienten sätts upp och sedan aldrig mer.
+          if (provider.isAuthenticated && provider.isAdmin) ...[
+            _buildUpdatesCard(provider),
+            const SizedBox(height: 16),
+          ],
           _buildLanguageCard(provider),
+
+          if (provider.isAuthenticated && provider.isAdmin) ...[
+            const SizedBox(height: 16),
+            _buildTimezoneCard(provider),
+          ],
 
           if (provider.isAuthenticated) ...[
             const SizedBox(height: 16),
@@ -353,7 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           if (provider.isAuthenticated && provider.isAdmin) ...[
             const SizedBox(height: 16),
-            _buildUpdatesCard(provider),
+            _buildUserManagementCard(provider),
             const SizedBox(height: 16),
             _buildConfigHistoryCard(provider),
             const SizedBox(height: 16),
@@ -361,14 +183,402 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             _buildBackupRestoreCard(provider),
             const SizedBox(height: 16),
-            _buildUserManagementCard(provider),
-            const SizedBox(height: 16),
             _buildFactoryResetCard(provider),
           ],
+
+          const SizedBox(height: 16),
+          _buildLoginCard(context, provider),
         ],
         ),
       ),
     );
+  }
+
+  /// Server-inloggning (URL, användare, lösenord, anslutningsstatus).
+  /// Låg längst upp tidigare men ligger nu sist: det är en engångsinställning
+  /// när klienten kopplas till en brandvägg, inte något man återkommer till.
+  Widget _buildLoginCard(BuildContext context, ConfigProvider provider) {
+    return Card(
+              color: const Color(0xFF1E293B),
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.security, color: Colors.cyanAccent, size: 22),
+                        const SizedBox(width: 10),
+                        Text(tr('settings.login.title'), style: TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Server URL
+                    TextField(
+                      controller: _urlController,
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      decoration: InputDecoration(
+                        labelText: tr('settings.login.url_label'),
+                        hintText: tr('settings.https_192_168_1_1_8443'),
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.link, color: Colors.cyanAccent, size: 18),
+                        isDense: true,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+  
+                    // Användarnamn & Lösenord
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _usernameController,
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            decoration: InputDecoration(
+                              labelText: tr('settings.login.username_label'),
+                              hintText: tr('settings.master'),
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.person, color: Colors.cyanAccent, size: 18),
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                            decoration: InputDecoration(
+                              labelText: tr('settings.login.password_label'),
+                              border: const OutlineInputBorder(),
+                              prefixIcon: const Icon(Icons.lock, color: Colors.cyanAccent, size: 18),
+                              suffixIcon: IconButton(
+                                icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off, size: 18, color: Colors.grey),
+                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              ),
+                              isDense: true,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+  
+                    // Inloggningsknapp & Status
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          icon: _isLoggingIn
+                              ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                              : const Icon(Icons.login, size: 16),
+                          label: Text(tr('settings.login.submit'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.cyanAccent,
+                            foregroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          ),
+                          onPressed: _isLoggingIn
+                              ? null
+                              : () async {
+                                  setState(() => _isLoggingIn = true);
+                                  await provider.changeAgentUrl(_urlController.text);
+                                  if (!mounted) return;
+                                  if (!kIsWeb) {
+                                    if (!context.mounted) return;
+                                    final proceed = await runTlsTrustCheck(context, provider.api);
+                                    if (!mounted || !proceed) {
+                                      setState(() => _isLoggingIn = false);
+                                      return;
+                                    }
+                                  }
+                                  await provider.login(_usernameController.text, _passwordController.text);
+                                  setState(() => _isLoggingIn = false);
+  
+                                  if (context.mounted) {
+                                    final ok = provider.isAuthenticated;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(ok
+                                            ? trp('settings.login.snackbar_success', {'user': _usernameController.text, 'url': _urlController.text})
+                                            : trp('settings.login.snackbar_failed', {'url': _urlController.text})),
+                                        backgroundColor: ok ? Colors.green : Colors.red,
+                                      ),
+                                    );
+                                  }
+                                },
+                        ),
+                        const SizedBox(width: 16),
+                        Row(
+                          children: [
+                            Icon(
+                              provider.isAuthenticated ? Icons.check_circle : Icons.error_outline,
+                              color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              provider.isAuthenticated
+                                  ? tr('settings.login.status_logged_in')
+                                  : tr('settings.login.status_logged_out'),
+                              style: TextStyle(
+                                color: provider.isAuthenticated ? Colors.tealAccent : Colors.amber,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+  
+                    const Divider(color: Colors.white10, height: 32),
+  
+                    // Övriga Systeminställningar
+                    // Rollback-timeouten var tidigare en Chip — ett värde man
+                    // kunde läsa (knappt: ljus text på cyan botten) men inte
+                    // ändra, trots att agenten läser fältet ur configen. Nu är
+                    // det en riktig inmatningsruta.
+                    ListTile(
+                      dense: true,
+                      title: Text(tr('settings.rollback_timeout.title'), style: const TextStyle(color: Colors.white, fontSize: 12)),
+                      subtitle: Text(tr('settings.rollback_timeout.body'), style: const TextStyle(fontSize: 11)),
+                      trailing: provider.isAdmin
+                          ? SizedBox(
+                              width: 132,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SizedBox(
+                                    width: 72,
+                                    child: TextField(
+                                      controller: _rollbackTimeoutController,
+                                      keyboardType: TextInputType.number,
+                                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                                      textAlign: TextAlign.right,
+                                      decoration: const InputDecoration(
+                                        isDense: true,
+                                        suffixText: 's',
+                                        suffixStyle: TextStyle(color: Colors.white54, fontSize: 12),
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                        border: OutlineInputBorder(),
+                                        enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF475569))),
+                                      ),
+                                      onChanged: (_) => setState(() {}),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.save, size: 18, color: Colors.cyanAccent),
+                                    tooltip: tr('settings.rollback_timeout.save'),
+                                    onPressed: _rollbackTimeoutDirty(provider) ? () => _saveRollbackTimeout(provider) : null,
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Text(
+                              '${(provider.runningConfig ?? provider.candidateConfig)?.settings.rollbackTimeoutSec ?? 30} s',
+                              style: const TextStyle(color: Colors.cyanAccent, fontSize: 13, fontWeight: FontWeight.bold),
+                            ),
+                    ),
+                    const Divider(color: Colors.white10),
+                    ListTile(
+                      dense: true,
+                      title: Text(tr('settings.wan_lock.title'), style: TextStyle(color: Colors.white, fontSize: 12)),
+                      subtitle: Text(tr('settings.wan_lock.body'), style: TextStyle(fontSize: 11)),
+                      trailing: const Icon(Icons.verified_user, color: Colors.tealAccent, size: 18),
+                    ),
+                  ],
+                ),
+              ),
+            );
+  }
+
+  Future<void> _loadTimezones(ConfigProvider provider) async {
+    if (_timezones.isNotEmpty || !provider.isAuthenticated || !provider.isAdmin) return;
+    final result = await provider.api.getTimezones();
+    if (!mounted) return;
+    setState(() {
+      _timezones = result.available;
+      _serverTimezone = result.current;
+    });
+  }
+
+  /// Tidszon på servern.
+  ///
+  /// Visar BÅDE vad konfigurationen säger och vad servern faktiskt står på.
+  /// De två kan skilja sig: värdet sätts först vid Applicera, och lyckas det
+  /// inte (t.ex. saknad polkit-regel) syns det som en varning i stället för
+  /// att tyst se ut att ha gått igenom.
+  Widget _buildTimezoneCard(ConfigProvider provider) {
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    final selected = cfg?.settings.timezone ?? '';
+    final differs = selected.isNotEmpty &&
+        _serverTimezone.isNotEmpty &&
+        selected != _serverTimezone;
+
+    return Card(
+      color: const Color(0xFF1E293B),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.schedule, color: Colors.cyanAccent, size: 22),
+                const SizedBox(width: 10),
+                Text(tr('settings.tidszon'),
+                    style: const TextStyle(color: Colors.cyanAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(tr('settings.tidszon_body'),
+                style: const TextStyle(color: Colors.white60, fontSize: 11.5)),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: _timezoneReadout(
+                      tr('settings.tidszon_nuvarande'),
+                      _serverTimezone.isEmpty ? '—' : _serverTimezone),
+                ),
+                Expanded(
+                  child: _timezoneReadout(
+                      tr('settings.tidszon_vald'),
+                      selected.isEmpty ? tr('settings.tidszon_ej_satt') : selected),
+                ),
+              ],
+            ),
+            if (differs) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 14, color: Colors.amberAccent),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(tr('settings.tidszon_avvikelse'),
+                        style: const TextStyle(color: Colors.amberAccent, fontSize: 11)),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 14),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.edit_calendar, size: 15),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
+              label: Text(tr('settings.tidszon_sok'), style: const TextStyle(fontSize: 12)),
+              onPressed: () => _pickTimezone(provider, selected),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.desktop_windows_outlined, size: 13, color: Colors.white38),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(tr('settings.tidszon_klientnotis'),
+                      style: const TextStyle(color: Colors.white38, fontSize: 10.5)),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _timezoneReadout(String label, String value) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label.toUpperCase(),
+              style: const TextStyle(
+                  color: Colors.grey, fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+          const SizedBox(height: 3),
+          Text(value, style: const TextStyle(color: Colors.white, fontSize: 12.5)),
+        ],
+      );
+
+  /// Sökbar väljare. Listan är ~600 zoner lång — en vanlig dropdown är
+  /// oanvändbar där, man måste kunna skriva "stock" och få träffen.
+  Future<void> _pickTimezone(ConfigProvider provider, String current) async {
+    final searchCtrl = TextEditingController();
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final query = searchCtrl.text.trim().toLowerCase();
+          final matches = _timezones
+              .where((z) => query.isEmpty || z.toLowerCase().contains(query))
+              .toList();
+          return AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
+            title: Text(tr('settings.tidszon'),
+                style: const TextStyle(color: Colors.white, fontSize: 14)),
+            content: SizedBox(
+              width: 420,
+              height: 420,
+              child: Column(
+                children: [
+                  TextField(
+                    controller: searchCtrl,
+                    autofocus: true,
+                    onChanged: (_) => setDialogState(() {}),
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                    decoration: InputDecoration(
+                      isDense: true,
+                      prefixIcon: const Icon(Icons.search, size: 16, color: Colors.grey),
+                      labelText: tr('settings.tidszon_sok'),
+                      labelStyle: const TextStyle(fontSize: 11, color: Colors.grey),
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: matches.isEmpty
+                        ? Center(
+                            child: Text(tr('settings.tidszon_ej_satt'),
+                                style: const TextStyle(color: Colors.white38, fontSize: 12)))
+                        : ListView.builder(
+                            itemCount: matches.length,
+                            itemBuilder: (_, i) {
+                              final zone = matches[i];
+                              final isCurrent = zone == current;
+                              return ListTile(
+                                dense: true,
+                                visualDensity: VisualDensity.compact,
+                                leading: Icon(
+                                    isCurrent ? Icons.radio_button_checked : Icons.radio_button_off,
+                                    size: 15,
+                                    color: isCurrent ? Colors.cyanAccent : Colors.grey),
+                                title: Text(zone,
+                                    style: TextStyle(
+                                        color: isCurrent ? Colors.cyanAccent : Colors.white,
+                                        fontSize: 12)),
+                                onTap: () => Navigator.of(ctx).pop(zone),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: Text(tr('main.cancel'))),
+            ],
+          );
+        },
+      ),
+    );
+    searchCtrl.dispose();
+    if (picked == null) return;
+
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    if (cfg == null) return;
+    await provider.updateCandidate(
+        cfg.copyWith(settings: cfg.settings.copyWith(timezone: picked)));
   }
 
   Widget _buildLanguageCard(ConfigProvider provider) {
@@ -1057,7 +1267,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Expanded(
                         child: Text(
-                          archivedAt != null ? trp('settings.saved_at', {'date': archivedAt}) : '',
+                          archivedAt != null ? trp('settings.saved_at', {'date': formatServerTime(archivedAt)}) : '',
                           style: const TextStyle(color: Colors.white54, fontSize: 11),
                         ),
                       ),
@@ -1143,7 +1353,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       Expanded(
                         child: Text(
-                          archivedAt != null ? trp('settings.saved_at', {'date': archivedAt}) : '',
+                          archivedAt != null ? trp('settings.saved_at', {'date': formatServerTime(archivedAt)}) : '',
                           style: const TextStyle(color: Colors.white54, fontSize: 11),
                         ),
                       ),

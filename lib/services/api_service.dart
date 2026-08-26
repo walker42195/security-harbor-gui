@@ -807,4 +807,21 @@ class ApiService {
     } catch (_) {}
     return [];
   }
+
+  /// Serverns tillgängliga tidszoner och den som gäller just nu.
+  /// Tom lista om servern inte kunde svara — GUI:t faller då tillbaka på ett
+  /// fritextfält i stället för en väljare.
+  Future<({String current, List<String> available})> getTimezones() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/system/timezones'), headers: _headers);
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        return (
+          current: (data['current'] ?? '').toString(),
+          available: List<String>.from(data['available'] ?? const []),
+        );
+      }
+    } catch (_) {}
+    return (current: '', available: <String>[]);
+  }
 }

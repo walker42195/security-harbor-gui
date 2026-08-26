@@ -7,6 +7,7 @@ import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import '../localization.dart';
 import '../log_filter.dart';
+import '../time_format.dart';
 
 /// En rad i loggvyn — läst direkt ur brandväggens kärnlogg (både
 /// tillåten OCH nekad trafik loggas numera med ett policynamns-bärande
@@ -868,7 +869,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       ),
         [_FilterTarget(action.toUpperCase(), _simpleActions('action', action))],
       ),
-      Text(r.timestamp.isEmpty ? '—' : r.timestamp, style: _cellStyle, overflow: TextOverflow.ellipsis),
+      Text(r.timestamp.isEmpty ? '—' : formatServerTime(r.timestamp), style: _cellStyle, overflow: TextOverflow.ellipsis),
       Row(
         mainAxisSize: MainAxisSize.min,
         children: [

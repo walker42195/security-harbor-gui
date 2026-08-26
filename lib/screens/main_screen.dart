@@ -84,9 +84,11 @@ class _MainScreenState extends State<MainScreen> {
     final screens = <Widget>[
       const DashboardScreen(),
       const InterfacesScreen(),
-      const RoutesScreen(),
       const PoliciesScreen(),
       const ObjectsScreen(),
+      // Routing ligger under Objekt: det är en sällan rörd inställning, och
+      // Policies/Objekt är det man arbetar i dagligen.
+      const RoutesScreen(),
       if (!isHostMode) const SniRoutesScreen(),
       if (!isHostMode) const VpnScreen(),
       if (!isHostMode) const DnsScreen(),
@@ -101,9 +103,9 @@ class _MainScreenState extends State<MainScreen> {
     final destinations = <NavigationRailDestination>[
       NavigationRailDestination(icon: const Icon(Icons.dashboard_outlined), selectedIcon: const Icon(Icons.dashboard), label: Text(tr('nav.dashboard'))),
       NavigationRailDestination(icon: const Icon(Icons.router_outlined), selectedIcon: const Icon(Icons.router), label: Text(tr('nav.interfaces'))),
-      NavigationRailDestination(icon: const Icon(Icons.route_outlined), selectedIcon: const Icon(Icons.route), label: Text(tr('nav.routing'))),
       NavigationRailDestination(icon: const Icon(Icons.shield_outlined), selectedIcon: const Icon(Icons.shield), label: Text(tr('nav.policies'))),
       NavigationRailDestination(icon: const Icon(Icons.category_outlined), selectedIcon: const Icon(Icons.category), label: Text(tr('nav.objects'))),
+      NavigationRailDestination(icon: const Icon(Icons.route_outlined), selectedIcon: const Icon(Icons.route), label: Text(tr('nav.routing'))),
       if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.alt_route_outlined), selectedIcon: const Icon(Icons.alt_route), label: Text(tr('nav.sni'))),
       if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.vpn_lock_outlined), selectedIcon: const Icon(Icons.vpn_lock), label: Text(tr('nav.vpn'))),
       if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.dns_outlined), selectedIcon: const Icon(Icons.dns), label: Text(tr('nav.dns'))),
@@ -236,6 +238,36 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   ),
                 ),
+                // WAN-adressen bredvid anslutningsindikatorn. Den är det man
+                // oftast behöver läsa av snabbt (DNS-pekare, port forwards,
+                // "har ISP:n bytt adress?") och låg annars begravd under
+                // Gränssnitt. Adressen fylls i av agenten från kortets
+                // faktiska tillstånd, även när WAN kör DHCP.
+                if (_wanAddress(provider) case final wan?) ...[
+                  const SizedBox(width: 8),
+                  Tooltip(
+                    message: tr('main.wan_ip_tooltip'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E293B),
+                        border: Border.all(color: const Color(0xFF334155)),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.public, size: 11, color: Colors.cyanAccent),
+                          const SizedBox(width: 5),
+                          Text(
+                            isNarrow ? wan : '${tr('main.wan_ip')} $wan',
+                            style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 4),
                 if (provider.isAuthenticated)
                   IconButton(
@@ -667,4 +699,18 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
+}
+
+/// WAN-gränssnittets adress, utan CIDR-suffix — toppraden ska visa adressen,
+/// inte nätmasken. Returnerar null om ingen WAN-zon är konfigurerad eller om
+/// kortet ännu inte fått någon adress (t.ex. DHCP som inte svarat).
+String? _wanAddress(ConfigProvider provider) {
+  final cfg = provider.runningConfig ?? provider.candidateConfig;
+  for (final iface in cfg?.interfaces ?? const <InterfaceModel>[]) {
+    if (!iface.enabled || iface.zone.toUpperCase() != 'WAN') continue;
+    final ip = iface.ipv4.trim();
+    if (ip.isEmpty) continue;
+    return ip.split('/').first;
+  }
+  return null;
 }

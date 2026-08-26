@@ -1191,6 +1191,11 @@ class SettingsModel {
   // kodgranskning 2026-08-25.
   final int rollbackTimeoutSec;
   final List<String> allowedManagementLan;
+  /// Serverns tidszon i IANA-format. Tomt = rör inte systemets nuvarande
+  /// inställning. Måste ligga med här av samma skäl som fälten ovan: GUI:t
+  /// skriver tillbaka HELA configen vid varje sparning, så ett fält som
+  /// saknas i modellen nollställs tyst på servern.
+  final String timezone;
 
   SettingsModel({
     required this.hostname,
@@ -1198,6 +1203,7 @@ class SettingsModel {
     this.mode = '',
     this.rollbackTimeoutSec = 30,
     this.allowedManagementLan = const [],
+    this.timezone = '',
   });
 
   bool get isHostMode => mode == 'host';
@@ -1209,6 +1215,7 @@ class SettingsModel {
       mode: json['mode'] ?? '',
       rollbackTimeoutSec: json['rollback_timeout_sec'] ?? 30,
       allowedManagementLan: List<String>.from(json['allowed_management_lan'] ?? const []),
+      timezone: json['timezone'] ?? '',
     );
   }
 
@@ -1218,15 +1225,17 @@ class SettingsModel {
         'mode': mode,
         'rollback_timeout_sec': rollbackTimeoutSec,
         'allowed_management_lan': allowedManagementLan,
+        'timezone': timezone,
       };
 
-  SettingsModel copyWith({String? hostname, int? apiPort, String? mode, int? rollbackTimeoutSec, List<String>? allowedManagementLan}) =>
+  SettingsModel copyWith({String? hostname, int? apiPort, String? mode, int? rollbackTimeoutSec, List<String>? allowedManagementLan, String? timezone}) =>
       SettingsModel(
         hostname: hostname ?? this.hostname,
         apiPort: apiPort ?? this.apiPort,
         mode: mode ?? this.mode,
         rollbackTimeoutSec: rollbackTimeoutSec ?? this.rollbackTimeoutSec,
         allowedManagementLan: allowedManagementLan ?? this.allowedManagementLan,
+        timezone: timezone ?? this.timezone,
       );
 }
 

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
+import '../services/config_export.dart';
 import '../localization.dart';
 
 class VpnScreen extends StatefulWidget {
@@ -493,6 +494,11 @@ PersistentKeepalive = 25
                       );
                     },
                   ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.save_alt, size: 14, color: Colors.cyanAccent),
+                    label: Text(tr('vpn.spara_till_fil'), style: const TextStyle(color: Colors.cyanAccent)),
+                    onPressed: () => _saveClientConfig('${_safeFileName(peer.name)}.conf', clientConfig),
+                  ),
                   const SizedBox(width: 8),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.cyanAccent, foregroundColor: Colors.black),
@@ -772,6 +778,33 @@ PersistentKeepalive = 25
     }
   }
 
+  /// Filnamn av ett klient-/peer-namn. Namnet är fritext från GUI:t och
+  /// hamnar i en sökväg — snedstreck och liknande måste bort, annars skulle
+  /// "hem/laptop" försöka skriva i en katalog som inte finns.
+  static String _safeFileName(String name) {
+    final cleaned = name.trim().replaceAll(RegExp(r'[^A-Za-z0-9_.-]+'), '_');
+    return cleaned.isEmpty ? 'klient' : cleaned;
+  }
+
+  /// Sparar konfigurationen till fil och kvitterar var den hamnade.
+  ///
+  /// Filen innehåller klientens PRIVATA nyckel — därför sätts 0600 på
+  /// desktop/mobil (se config_export_io.dart), och därför säger kvittensen
+  /// var filen ligger: den ska flyttas till klienten och inte bli kvar.
+  Future<void> _saveClientConfig(String filename, String content) async {
+    final saved = await saveTextFile(filename, content);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(saved == null
+            ? tr('vpn.spara_misslyckades')
+            : trp('vpn.sparad_till', {'path': saved})),
+        backgroundColor: saved == null ? Colors.red : Colors.teal,
+        duration: const Duration(seconds: 6),
+      ),
+    );
+  }
+
   void _showOpenVpnConfigDialog(OpenVPNClientModel client, String ovpnConfig) {
     showDialog(
       context: context,
@@ -826,6 +859,11 @@ PersistentKeepalive = 25
                         SnackBar(content: Text(tr('vpn.ovpn_innehall_kopierat')), backgroundColor: Colors.teal),
                       );
                     },
+                  ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.save_alt, size: 14, color: Colors.cyanAccent),
+                    label: Text(tr('vpn.spara_ovpn'), style: const TextStyle(color: Colors.cyanAccent)),
+                    onPressed: () => _saveClientConfig('${_safeFileName(client.name)}.ovpn', ovpnConfig),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
