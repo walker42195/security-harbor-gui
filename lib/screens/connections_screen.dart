@@ -95,8 +95,17 @@ class _TrafficRow {
 String _classifyDirection(_TrafficRow r, Map<String, String> deviceZone) {
   final inZone = (deviceZone[r.inIface] ?? '').toUpperCase();
   final outZone = (deviceZone[r.outIface] ?? '').toUpperCase();
+
+  // Riktningen avgörs av VILKET KORT trafiken passerar, inte av vad den
+  // interna zonen råkar heta.
+  //
+  // Villkoret krävde tidigare att källzonen hette exakt "LAN". En klient på
+  // ett VLAN — vars zon heter t.ex. "VLAN 9" — klassades därför som
+  // "Internt" trots att trafiken gick ut på WAN-kortet. I praktiken fick
+  // bara 10.0.0.0/24 rätt riktning, och all VLAN-trafik mot internet såg ut
+  // att stanna i huset (rapporterat 2026-08-26).
   if (inZone == 'WAN') return 'IN';
-  if (inZone == 'LAN' && outZone == 'WAN') return 'OUT';
+  if (outZone == 'WAN') return 'OUT';
   return 'INTERNAL';
 }
 
