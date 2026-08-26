@@ -4,6 +4,7 @@ import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import '../widgets/dialog_helpers.dart';
 import '../localization.dart';
+import '../object_filter.dart';
 
 class ObjectsScreen extends StatefulWidget {
   const ObjectsScreen({super.key});
@@ -13,6 +14,16 @@ class ObjectsScreen extends StatefulWidget {
 }
 
 class _ObjectsScreenState extends State<ObjectsScreen> {
+  final TextEditingController _search = TextEditingController();
+  /// null = alla kategorier.
+  ObjectCategory? _category;
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
   final Set<String> _refreshingIds = {};
 
   @override
@@ -65,7 +76,11 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+            if (cfg != null && cfg.objects.isNotEmpty) ...[
+              _buildSearchAndFilter(cfg.objects),
+              const SizedBox(height: 12),
+            ],
             if (cfg != null && cfg.objects.isEmpty)
               Card(
                 color: Color(0xFF1E293B),
@@ -74,15 +89,116 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                   child: Center(child: Text(tr('objects.inga_sparade_natverksobjekt_annu'), style: TextStyle(color: Colors.grey, fontSize: 12))),
                 ),
               )
-            else if (cfg != null)
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: cfg.objects.length,
-                itemBuilder: (context, idx) => _buildObjectCard(context, provider, cfg.objects[idx]),
-              ),
+            else if (cfg != null) ...[
+              if (_visibleObjects(cfg.objects).isEmpty)
+                Card(
+                  color: const Color(0xFF1E293B),
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Center(
+                      child: Text(tr('objects.inga_traffar'),
+                          style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    ),
+                  ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _visibleObjects(cfg.objects).length,
+                  itemBuilder: (context, idx) =>
+                      _buildObjectCard(context, provider, _visibleObjects(cfg.objects)[idx]),
+                ),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  List<ObjectModel> _visibleObjects(List<ObjectModel> objects) =>
+      filterAndSortObjects(objects, query: _search.text, category: _category);
+
+  /// Sökfält plus kategoriknappar med antal.
+  ///
+  /// Räknarna beräknas på den SÖKFILTRERADE listan, inte på allt: siffran ska
+  /// visa vad ett kategoribyte faktiskt skulle ge, inte hur många objekt som
+  /// finns totalt.
+  Widget _buildSearchAndFilter(List<ObjectModel> objects) {
+    final matching = filterAndSortObjects(objects, query: _search.text);
+    final counts = countByCategory(matching);
+
+    Widget chip(ObjectCategory? cat, String label, IconData icon) {
+      final selected = _category == cat;
+      final count = cat == null ? matching.length : (counts[cat] ?? 0);
+      return Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: ElevatedButton.icon(
+          icon: Icon(icon, size: 14),
+          label: Text('$label ($count)',
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: selected ? Colors.cyanAccent : const Color(0xFF1E293B),
+            foregroundColor: selected ? Colors.black : Colors.white70,
+            side: BorderSide(color: selected ? Colors.cyanAccent : const Color(0xFF334155)),
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          onPressed: () => setState(() => _category = selected ? null : cat),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        border: Border.all(color: const Color(0xFF334155)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 36,
+            child: TextField(
+              controller: _search,
+              onChanged: (_) => setState(() {}),
+              style: const TextStyle(fontSize: 12, color: Colors.white),
+              decoration: InputDecoration(
+                isDense: true,
+                prefixIcon: const Icon(Icons.search, size: 16, color: Colors.grey),
+                prefixIconConstraints: const BoxConstraints(minWidth: 34),
+                labelText: tr('objects.sok'),
+                labelStyle: const TextStyle(fontSize: 11, color: Colors.grey),
+                hintText: tr('objects.sok_hint'),
+                hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                border: const OutlineInputBorder(),
+                suffixIcon: _search.text.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.clear, size: 15, color: Colors.grey),
+                        onPressed: () => setState(() => _search.clear()),
+                      ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                chip(null, tr('objects.kat_alla'), Icons.select_all),
+                chip(ObjectCategory.group, tr('objects.kat_grupper'), Icons.workspaces_outline),
+                chip(ObjectCategory.network, tr('objects.kat_nat'), Icons.lan_outlined),
+                chip(ObjectCategory.host, tr('objects.kat_hostar'), Icons.dns_outlined),
+                chip(ObjectCategory.geoip, tr('objects.kat_geoip'), Icons.public),
+                chip(ObjectCategory.threatFeed, tr('objects.kat_hotlistor'), Icons.shield_outlined),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -323,11 +439,18 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                     onPressed: () {
               final cfg = provider.candidateConfig ?? provider.runningConfig;
               if (cfg != null) {
+                final savedValues =
+                    valCtrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
                 final savedObj = ObjectModel(
                   id: existing?.id ?? 'obj_${DateTime.now().millisecondsSinceEpoch}',
                   name: nameCtrl.text,
-                  type: existing?.type ?? 'host',
-                  values: valCtrl.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+                  // Typen härleds ur värdena i stället för att alltid bli
+                  // "host". Ett objekt med enbart CIDR ÄR ett nät, och ska
+                  // kategoriseras som ett — grupper behåller sin typ.
+                  type: existing?.type == 'group'
+                      ? 'group'
+                      : inferObjectType(savedValues, fallback: existing?.type ?? 'host'),
+                  values: savedValues,
                   description: existing?.description ?? tr('objects.skapad_i_gui'),
                 );
                 final updatedObjs = existing != null
