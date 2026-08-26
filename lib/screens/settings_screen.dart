@@ -171,6 +171,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (provider.isAuthenticated && provider.isAdmin) ...[
             const SizedBox(height: 16),
             _buildTimezoneCard(provider),
+            const SizedBox(height: 16),
+            _buildNtpCard(provider),
           ],
 
           if (provider.isAuthenticated) ...[
@@ -487,6 +489,111 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// NTP-server. Ligger bredvid tidszonskortet — samma ämne.
+  ///
+  /// Näten visas men går inte att redigera: de härleds ur de aktiverade
+  /// interna gränssnittens subnät, så ett nytt VLAN får NTP automatiskt och
+  /// listan kan inte komma ur synk med verkligheten.
+  Widget _buildNtpCard(ConfigProvider provider) {
+    final cfg = provider.candidateConfig ?? provider.runningConfig;
+    final ntp = cfg?.ntp ?? NTPConfigModel();
+    final networks = [
+      for (final iface in cfg?.interfaces ?? const <InterfaceModel>[])
+        if (iface.enabled && iface.zone.toUpperCase() != 'WAN' && iface.ipv4.trim().isNotEmpty)
+          iface.ipv4.trim(),
+    ];
+
+    void save(NTPConfigModel next) {
+      if (cfg == null) return;
+      provider.updateCandidate(cfg.copyWith(ntp: next));
+    }
+
+    return Card(
+      color: AppColors.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.access_time, color: AppColors.accent, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(tr('settings.ntp_titel'),
+                      style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 15)),
+                ),
+                Switch(
+                  value: ntp.enabled,
+                  activeThumbColor: AppColors.ok,
+                  onChanged: (v) => save(ntp.copyWith(enabled: v)),
+                ),
+                Text(ntp.enabled ? tr('settings.ntp_aktiv') : tr('settings.ntp_av'),
+                    style: TextStyle(
+                        color: ntp.enabled ? AppColors.ok : AppColors.textFaint, fontSize: 11)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(tr('settings.ntp_body'), style: TextStyle(color: AppColors.textMuted, fontSize: 11.5)),
+            if (ntp.enabled) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Checkbox(
+                    value: ntp.serveWhenUnsynced,
+                    activeColor: AppColors.accent,
+                    onChanged: (v) => save(ntp.copyWith(serveWhenUnsynced: v ?? true)),
+                  ),
+                  Expanded(
+                    child: Tooltip(
+                      message: tr('settings.ntp_unsynced_hjalp'),
+                      child: Text(tr('settings.ntp_unsynced'),
+                          style: TextStyle(color: AppColors.text, fontSize: 12)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(tr('settings.ntp_nat').toUpperCase(),
+                  style: TextStyle(
+                      color: AppColors.textFaint, fontSize: 9.5, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final n in networks)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceDeep,
+                        border: Border.all(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Text(n,
+                          style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontFamily: 'monospace')),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.shield_outlined, size: 13, color: AppColors.warn),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(tr('settings.ntp_wan_notis'),
+                        style: TextStyle(color: AppColors.warn, fontSize: 10.5)),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

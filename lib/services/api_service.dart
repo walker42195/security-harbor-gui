@@ -824,4 +824,18 @@ class ApiService {
     } catch (_) {}
     return (current: '', available: <String>[]);
   }
+
+  /// De regler agenten genererar själv (loopback, etablerade anslutningar,
+  /// VPN-portar, WAN-drop, DNS, NTP). Tom lista om agenten är för gammal för
+  /// endpointen — då visas inga låsta rader, vilket är bättre än ett fel.
+  Future<List<ImplicitRuleModel>> getImplicitRules() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/policies/implicit'), headers: _headers);
+      if (res.statusCode == 200) {
+        final list = jsonDecode(res.body) as List;
+        return list.map((e) => ImplicitRuleModel.fromJson(e)).toList();
+      }
+    } catch (_) {}
+    return [];
+  }
 }

@@ -11,6 +11,7 @@ class ConfigModel {
   final WireGuardConfigModel? wireguard;
   final OpenVPNConfigModel? openvpn;
   final DNSConfigModel? dns;
+  final NTPConfigModel? ntp;
   final SyslogConfigModel? syslog;
   final IDSConfigModel? ids;
   final List<SNIRouteModel> sniRoutes;
@@ -29,6 +30,7 @@ class ConfigModel {
     this.wireguard,
     this.openvpn,
     this.dns,
+    this.ntp,
     this.syslog,
     this.ids,
     this.sniRoutes = const [],
@@ -49,6 +51,7 @@ class ConfigModel {
       wireguard: json['wireguard'] != null ? WireGuardConfigModel.fromJson(json['wireguard']) : null,
       openvpn: json['openvpn'] != null ? OpenVPNConfigModel.fromJson(json['openvpn']) : null,
       dns: json['dns'] != null ? DNSConfigModel.fromJson(json['dns']) : null,
+      ntp: json['ntp'] != null ? NTPConfigModel.fromJson(json['ntp']) : null,
       syslog: json['syslog'] != null ? SyslogConfigModel.fromJson(json['syslog']) : null,
       ids: json['ids'] != null ? IDSConfigModel.fromJson(json['ids']) : null,
       sniRoutes: (json['sni_routes'] as List? ?? []).map((e) => SNIRouteModel.fromJson(e)).toList(),
@@ -81,6 +84,7 @@ class ConfigModel {
     WireGuardConfigModel? wireguard,
     OpenVPNConfigModel? openvpn,
     DNSConfigModel? dns,
+    NTPConfigModel? ntp,
     SyslogConfigModel? syslog,
     IDSConfigModel? ids,
     List<SNIRouteModel>? sniRoutes,
@@ -99,6 +103,7 @@ class ConfigModel {
         wireguard: wireguard ?? this.wireguard,
         openvpn: openvpn ?? this.openvpn,
         dns: dns ?? this.dns,
+        ntp: ntp ?? this.ntp,
         syslog: syslog ?? this.syslog,
         ids: ids ?? this.ids,
         sniRoutes: sniRoutes ?? this.sniRoutes,
@@ -118,6 +123,7 @@ class ConfigModel {
         if (wireguard != null) 'wireguard': wireguard!.toJson(),
         if (openvpn != null) 'openvpn': openvpn!.toJson(),
         if (dns != null) 'dns': dns!.toJson(),
+        if (ntp != null) 'ntp': ntp!.toJson(),
         if (syslog != null) 'syslog': syslog!.toJson(),
         if (ids != null) 'ids': ids!.toJson(),
         'sni_routes': sniRoutes.map((e) => e.toJson()).toList(),
@@ -1236,6 +1242,65 @@ class SettingsModel {
         rollbackTimeoutSec: rollbackTimeoutSec ?? this.rollbackTimeoutSec,
         allowedManagementLan: allowedManagementLan ?? this.allowedManagementLan,
         timezone: timezone ?? this.timezone,
+      );
+}
+
+/// En regel som agenten genererar själv och som inte finns som Policy.
+/// Visas som en låst rad i Policies — allt som släpper in trafik ska gå att
+/// se i gränssnittet.
+/// Brandväggen som NTP-server för de interna näten.
+class NTPConfigModel {
+  final bool enabled;
+  final bool serveWhenUnsynced;
+
+  NTPConfigModel({this.enabled = false, this.serveWhenUnsynced = true});
+
+  factory NTPConfigModel.fromJson(Map<String, dynamic> json) => NTPConfigModel(
+        enabled: json['enabled'] ?? false,
+        serveWhenUnsynced: json['serve_when_unsynced'] ?? true,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'enabled': enabled,
+        'serve_when_unsynced': serveWhenUnsynced,
+      };
+
+  NTPConfigModel copyWith({bool? enabled, bool? serveWhenUnsynced}) => NTPConfigModel(
+        enabled: enabled ?? this.enabled,
+        serveWhenUnsynced: serveWhenUnsynced ?? this.serveWhenUnsynced,
+      );
+}
+
+class ImplicitRuleModel {
+  final String name;
+  final String chain;
+  final String action;
+  final String service;
+  final String from;
+  final String to;
+  final bool logged;
+  final String reason;
+
+  ImplicitRuleModel({
+    required this.name,
+    required this.chain,
+    required this.action,
+    required this.service,
+    required this.from,
+    required this.to,
+    required this.logged,
+    required this.reason,
+  });
+
+  factory ImplicitRuleModel.fromJson(Map<String, dynamic> json) => ImplicitRuleModel(
+        name: json['name'] ?? '',
+        chain: json['chain'] ?? '',
+        action: json['action'] ?? 'accept',
+        service: json['service'] ?? 'ANY',
+        from: json['from'] ?? '',
+        to: json['to'] ?? 'SELF',
+        logged: json['logged'] ?? false,
+        reason: json['reason'] ?? '',
       );
 }
 

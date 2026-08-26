@@ -28,6 +28,10 @@ const double _policyColMinWidth = 28;
 const double _policyResizeHandleWidth = 14;
 
 class _PoliciesScreenState extends State<PoliciesScreen> {
+  /// Regler agenten genererar själv. Hämtas en gång; de ändras bara när en
+  /// funktion slås på eller av, vilket ändå kräver en applicering.
+  List<ImplicitRuleModel> _implicitRules = const [];
+
   int? _selectedRowIndex;
   int? _hoveredResizeHandle;
   // Sätts under en aktiv resize-dragning (mellan onPointerDown och
@@ -46,7 +50,15 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   @override
   void initState() {
     super.initState();
+    _loadImplicitRules();
     _loadHitCounts();
+  }
+
+  Future<void> _loadImplicitRules() async {
+    final provider = Provider.of<ConfigProvider>(context, listen: false);
+    final rules = await provider.api.getImplicitRules();
+    if (!mounted) return;
+    setState(() => _implicitRules = rules);
   }
 
   @override
@@ -257,6 +269,9 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                                     footer: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        if (_implicitRules.isNotEmpty)
+                                          _buildImplicitHeader(),
+                                        ..._implicitRules.map((r) => _buildImplicitRow(widths, r)),
                                         _buildDefaultDenyRow(
                                           widths,
                                           name: tr('pol.deny_wan_name'),
@@ -475,6 +490,91 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
   // hitKey: nftables-nyckeln för träffräknare (t.ex. "DefaultDeny"); null när
   // regeln inte loggas (den hårda WAN-dropen är tyst med flit, se
   // pkg/adapter/nftables Input 3) och därför saknar räknare.
+  /// Rubrik över de automatiska reglerna, så de inte förväxlas med egna
+  /// policyer.
+  Widget _buildImplicitHeader() => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(10, 12, 10, 6),
+        child: Row(
+          children: [
+            Icon(Icons.settings_suggest_outlined, size: 14, color: AppColors.textFaint),
+            const SizedBox(width: 6),
+            Text(tr('pol.implicita_regler'),
+                style: TextStyle(
+                    color: AppColors.textFaint,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(tr('pol.implicita_beskrivning'),
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: AppColors.textFaint, fontSize: 10)),
+            ),
+          ],
+        ),
+      );
+
+  /// En automatisk regel som låst rad, i samma kolumnform som policyerna.
+  Widget _buildImplicitRow(List<double> widths, ImplicitRuleModel rule) {
+    final isDeny = rule.action != 'accept';
+    final color = isDeny ? AppColors.danger : AppColors.ok;
+
+    final cells = <Widget>[
+      Tooltip(
+        message: rule.reason,
+        child: Icon(Icons.settings_suggest_outlined, size: 13, color: AppColors.textFaint),
+      ),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(isDeny ? Icons.block : Icons.check_circle, size: 15, color: color),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(isDeny ? tr('pol.deny') : tr('pol.allow_short'),
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+      Tooltip(
+        message: rule.reason,
+        child: Text(rule.name,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: AppColors.text, fontSize: 11, fontWeight: FontWeight.w600)),
+      ),
+      Text(rule.from, overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: AppColors.accent, fontSize: 11)),
+      Text(rule.to, overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: AppColors.warn, fontSize: 11)),
+      Text(rule.service, overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: AppColors.warn, fontSize: 11)),
+      // Att en regel INTE loggas är information värd att visa: annars undrar
+      // man varför den aldrig syns i trafikloggen.
+      rule.logged
+          ? Icon(Icons.lock_outline, size: 14, color: AppColors.textFaint)
+          : Tooltip(
+              message: tr('pol.loggas_ej_tooltip'),
+              child: Text(tr('pol.loggas_ej'),
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: AppColors.textFaint, fontSize: 10, fontStyle: FontStyle.italic)),
+            ),
+    ];
+
+    return Container(
+      color: isDeny ? AppColors.dangerSurface : AppColors.surfaceDeep,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          for (int i = 0; i < widths.length; i++) ...[
+            SizedBox(width: widths[i], child: i < cells.length ? cells[i] : const SizedBox()),
+            const SizedBox(width: _policyResizeHandleWidth),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildDefaultDenyRow(
     List<double> widths, {
     required String name,
