@@ -790,7 +790,15 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     }
 
     final widgets = <Widget>[];
-    for (final value in object.values) {
+
+    // En hot-lista kan ha över hundratusen värden (AbuseIPDB: 126 616). En
+    // widget per värde låser gränssnittet — samma klass av problem som gjorde
+    // loggfiltret oanvändbart. Visa en handfull och räkna resten.
+    const maxShown = 50;
+    final values = object.values;
+    final shown = values.length > maxShown ? values.take(maxShown) : values;
+
+    for (final value in shown) {
       final member = object.type == 'group' ? _objectFor(cfg, value) : null;
       if (member != null) {
         widgets.add(Padding(
@@ -816,6 +824,19 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         child: SelectableText(
           value,
           style: TextStyle(color: AppColors.textMuted, fontSize: 11.5, fontFamily: 'monospace'),
+        ),
+      ));
+    }
+
+    if (values.length > maxShown) {
+      widgets.add(Padding(
+        padding: EdgeInsets.only(left: depth * 14.0 + 19, top: 4),
+        child: Text(
+          trp('pol.visar_av_totalt', {
+            'shown': '$maxShown',
+            'total': '${values.length}',
+          }),
+          style: TextStyle(color: AppColors.textFaint, fontSize: 11, fontStyle: FontStyle.italic),
         ),
       ));
     }

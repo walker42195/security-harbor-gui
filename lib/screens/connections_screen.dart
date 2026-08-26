@@ -9,6 +9,7 @@ import '../providers/config_provider.dart';
 import '../localization.dart';
 import '../log_filter.dart';
 import '../time_format.dart';
+import '../object_index.dart';
 
 /// En rad i loggvyn — läst direkt ur brandväggens kärnlogg (både
 /// tillåten OCH nekad trafik loggas numera med ett policynamns-bärande
@@ -105,45 +106,6 @@ String _classifyDirection(_TrafficRow r, Map<String, String> deviceZone) {
 /// Grov men tillräcklig avgörning av IP-version: en IPv6-adress innehåller
 /// alltid ":", en IPv4-adress (eller en IPv4:port-sträng) aldrig.
 bool _isIPv6(String ip) => ip.contains(':');
-
-String? _resolveObjectName(List<ObjectModel> objects, String ip) {
-  if (ip.isEmpty) return null;
-  for (final obj in objects) {
-    for (final value in obj.values) {
-      if (value == ip) return obj.name;
-      if (value.contains('/') && _ipInCidr(ip, value)) return obj.name;
-    }
-  }
-  return null;
-}
-
-bool _ipInCidr(String ip, String cidr) {
-  try {
-    final parts = cidr.split('/');
-    if (parts.length != 2) return false;
-    final base = _ipToInt(parts[0]);
-    final prefix = int.parse(parts[1]);
-    final target = _ipToInt(ip);
-    if (base == null || target == null || prefix < 0 || prefix > 32) return false;
-    if (prefix == 0) return true;
-    final mask = 0xFFFFFFFF << (32 - prefix);
-    return (base & mask) == (target & mask);
-  } catch (_) {
-    return false;
-  }
-}
-
-int? _ipToInt(String ip) {
-  final octets = ip.split('.');
-  if (octets.length != 4) return null;
-  int result = 0;
-  for (final o in octets) {
-    final v = int.tryParse(o);
-    if (v == null || v < 0 || v > 255) return null;
-    result = (result << 8) | v;
-  }
-  return result;
-}
 
 class ConnectionsScreen extends StatefulWidget {
   const ConnectionsScreen({super.key});
@@ -248,6 +210,9 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     final cfg = provider.candidateConfig ?? provider.runningConfig;
     final objects = cfg?.objects ?? [];
     final deviceZone = <String, String>{for (final iface in cfg?.interfaces ?? <InterfaceModel>[]) iface.device: iface.zone};
+    // Byggs EN gång per omritning i stället för att sökas linjärt sex gånger
+    // per rad. Se lib/object_index.dart för varför det spelar roll.
+    final nameIndex = ObjectNameIndex.build(objects);
 
     List<_TrafficRow> rows = _entries.map(_TrafficRow.fromFirewallLog).toList();
 
@@ -285,8 +250,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     final nameFilter = _nameController.text.trim().toLowerCase();
     if (nameFilter.isNotEmpty) {
       rows = rows.where((r) {
-        final srcName = _resolveObjectName(objects, r.srcIp)?.toLowerCase() ?? '';
-        final dstName = _resolveObjectName(objects, r.dstIp)?.toLowerCase() ?? '';
+        final srcName = nameIndex.lookup(r.srcIp)?.toLowerCase() ?? '';
+        final dstName = nameIndex.lookup(r.dstIp)?.toLowerCase() ?? '';
         final policyName = r.policyName.toLowerCase();
         return srcName.contains(nameFilter) || dstName.contains(nameFilter) || policyName.contains(nameFilter);
       }).toList();
@@ -306,8 +271,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         rows = rows.where((r) {
           final direction = _classifyDirection(r, deviceZone);
           return filter.matches(r.filterFields(
-            _resolveObjectName(objects, r.srcIp),
-            _resolveObjectName(objects, r.dstIp),
+            nameIndex.lookup(r.srcIp),
+            nameIndex.lookup(r.dstIp),
             direction,
           ));
         }).toList();
@@ -389,7 +354,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             const SizedBox(height: 10),
             _buildFilterBar(),
             const SizedBox(height: 10),
-            Expanded(child: _buildTable(rows, objects, deviceZone)),
+            Expanded(child: _buildTable(rows, nameIndex, deviceZone)),
           ],
         ),
       ),
@@ -850,9 +815,9 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     );
   }
 
-  Widget _buildDataRow(_TrafficRow r, List<ObjectModel> objects, Map<String, String> deviceZone, List<double> widths) {
-    final srcName = _resolveObjectName(objects, r.srcIp);
-    final dstName = _resolveObjectName(objects, r.dstIp);
+  Widget _buildDataRow(_TrafficRow r, ObjectNameIndex nameIndex, Map<String, String> deviceZone, List<double> widths) {
+    final srcName = nameIndex.lookup(r.srcIp);
+    final dstName = nameIndex.lookup(r.dstIp);
     final direction = _classifyDirection(r, deviceZone);
     final action = r.accepted ? 'accept' : 'deny';
     final cells = <Widget>[
@@ -965,7 +930,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   /// Se kommentaren i _buildTable: SelectionArea överallt UTOM på web.
   Widget _maybeSelectable(Widget child) => kIsWeb ? child : SelectionArea(child: child);
 
-  Widget _buildTable(List<_TrafficRow> rows, List<ObjectModel> objects, Map<String, String> deviceZone) {
+  Widget _buildTable(List<_TrafficRow> rows, ObjectNameIndex nameIndex, Map<String, String> deviceZone) {
     // SelectionArea runt raderna gör hela loggen musmarkerbar — man kan dra
     // över flera celler och kopiera med Ctrl+C. Cellerna förblir vanliga
     // Text-widgetar, så kolumnernas baseline är kvar (SelectableText per
@@ -1015,7 +980,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                             ListView.builder(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               itemCount: rows.length,
-                              itemBuilder: (context, i) => _buildDataRow(rows[i], objects, deviceZone, widths),
+                              itemBuilder: (context, i) => _buildDataRow(rows[i], nameIndex, deviceZone, widths),
                             ),
                           ),
                   ),
