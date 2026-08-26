@@ -8,6 +8,7 @@ import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import '../localization.dart';
 import '../log_filter.dart';
+import '../log_filter_prefs.dart';
 import '../time_format.dart';
 import '../object_index.dart';
 
@@ -148,7 +149,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   /// Hur långt bakåt loggen hämtas. Tidigare hämtades alltid de 500 senaste
   /// raderna, vilket med brandväggens loggvolym (~680 rader/minut) motsvarade
   /// omkring 45 sekunder — man kunde inte titta på något som hänt nyss.
-  String _window = '15m';
+  String _window = LogFilterPrefs.defaults.window;
   /// True när agenten klippte svaret vid sitt tak. Måste synas: annars tror
   /// man att det inte fanns mer trafik, i stället för att man bad om för
   /// mycket.
@@ -172,16 +173,16 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   final TextEditingController _ipController = TextEditingController();
   final TextEditingController _macController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
-  String _directionFilterField = 'ANY'; // ANY, FROM, TO — för IP-fältet ovan
-  String _actionFilter = 'ALL'; // ALL, ACCEPT, DENY
+  String _directionFilterField = LogFilterPrefs.defaults.directionField; // ANY, FROM, TO — för IP-fältet ovan
+  String _actionFilter = LogFilterPrefs.defaults.action; // ALL, ACCEPT, DENY
   // IPv4 aktivt som default — det är i praktiken all trafik i det här
   // nätet idag, så IPv6 (om något någonsin dyker upp) eller "Alla" får
   // väljas medvetet istället för att blanda in i vyn från start.
-  String _ipVersionFilter = 'IPV4'; // ALL, IPV4, IPV6
+  String _ipVersionFilter = LogFilterPrefs.defaults.ipVersion; // ALL, IPV4, IPV6
   // Riktning relativt brandväggen (WAN/LAN-zonbaserad, se
   // _classifyDirection) — separat från _directionFilterField ovan, som
   // bara styr IP-fältets Från/Till-tolkning.
-  String _trafficDirectionFilter = 'ALL'; // ALL, IN, OUT, INTERNAL
+  String _trafficDirectionFilter = LogFilterPrefs.defaults.trafficDirection; // ALL, IN, OUT, INTERNAL
 
   // Paus fryser den automatiska uppdateringen så listan slutar rulla på
   // (manuell uppdatering via knappen fungerar ändå).
@@ -193,11 +194,59 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   @override
   void initState() {
     super.initState();
-    _poll();
-    _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!_paused) _poll();
+    // Filtren läses INNAN första hämtningen. Tidsfönstret styr vad som
+    // hämtas, så en hämtning med standardvärdet först hade inneburit ett
+    // bortkastat anrop — och en synlig blink där listan visar fel period.
+    _restoreFilters().then((_) {
+      if (!mounted) return;
+      _poll();
+      _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+        if (!_paused) _poll();
+      });
     });
   }
+
+  /// Återställer filtren från förra besöket.
+  Future<void> _restoreFilters() async {
+    final saved = await LogFilterPrefs.load();
+    if (!mounted) return;
+    setState(() {
+      _exprController.text = saved.expression;
+      _ipController.text = saved.ip;
+      _macController.text = saved.mac;
+      _nameController.text = saved.name;
+      _directionFilterField = saved.directionField;
+      _trafficDirectionFilter = saved.trafficDirection;
+      _actionFilter = saved.action;
+      _ipVersionFilter = saved.ipVersion;
+      _window = saved.window;
+      _hideDefaultDeny = saved.hideDefaultDeny;
+    });
+  }
+
+  /// Kallas vid varje filterändring: uppdaterar vyn och sparar valen.
+  ///
+  /// Sparandet är avsiktligt inte fördröjt. Skrivningen är liten och sker på
+  /// tangenttryck som ändå utlöser en omritning; en debounce hade bara
+  /// riskerat att tappa de sista tecknen om man byter vy direkt efter att ha
+  /// skrivit dem.
+  void _onFilterChanged([VoidCallback? mutate]) {
+    setState(() => mutate?.call());
+    _currentFilters().save();
+  }
+
+  LogFilterPrefs _currentFilters() => LogFilterPrefs(
+        expression: _exprController.text,
+        ip: _ipController.text,
+        mac: _macController.text,
+        name: _nameController.text,
+        directionField: _directionFilterField,
+        trafficDirection: _trafficDirectionFilter,
+        action: _actionFilter,
+        ipVersion: _ipVersionFilter,
+        window: _window,
+        hideDefaultDeny: _hideDefaultDeny,
+      );
 
   @override
   void dispose() {
@@ -350,7 +399,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                       icon: Icon(_hideDefaultDeny ? Icons.visibility_off : Icons.visibility, size: 15, color: _hideDefaultDeny ? AppColors.caution : AppColors.textMuted),
                       label: Text(_hideDefaultDeny ? tr('conn.defaultdeny_dold') : tr('conn.dolj_defaultdeny'),
                           style: TextStyle(fontSize: 11, color: _hideDefaultDeny ? AppColors.caution : AppColors.textMuted)),
-                      onPressed: () => setState(() => _hideDefaultDeny = !_hideDefaultDeny),
+                      onPressed: () => _onFilterChanged(() => _hideDefaultDeny = !_hideDefaultDeny),
                     ),
                     const SizedBox(width: 4),
                     // Pausa/återuppta den automatiska uppdateringen.
@@ -420,18 +469,18 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             'ANY': tr('conn.fran_till'),
             'FROM': tr('conn.fran_kalla'),
             'TO': tr('conn.till_mal'),
-          }, (v) => setState(() => _directionFilterField = v)),
+          }, (v) => _onFilterChanged(() => _directionFilterField = v)),
           _buildDropdown(tr('conn.riktning'), _trafficDirectionFilter, {
             'ALL': tr('conn.alla'),
             'IN': tr('conn.inkommande'),
             'OUT': tr('conn.utgaende'),
             'INTERNAL': tr('conn.internt_lokalt'),
-          }, (v) => setState(() => _trafficDirectionFilter = v)),
+          }, (v) => _onFilterChanged(() => _trafficDirectionFilter = v)),
           _buildDropdown(tr('conn.col_atgard'), _actionFilter, {
             'ALL': tr('conn.alla'),
             'ACCEPT': tr('conn.endast_accept'),
             'DENY': tr('conn.endast_deny'),
-          }, (v) => setState(() => _actionFilter = v)),
+          }, (v) => _onFilterChanged(() => _actionFilter = v)),
           // Tidsfönstret hör till HÄMTNINGEN, inte till filtreringen — därför
           // laddas loggen om när det ändras, till skillnad från de andra
           // fälten som bara filtrerar det som redan hämtats.
@@ -443,27 +492,30 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
             '24h': '24 timmar',
             '7d': '7 dagar',
           }, (v) {
-            setState(() => _window = v);
+            _onFilterChanged(() => _window = v);
             _poll();
           }),
           _buildDropdown(tr('conn.ip_version'), _ipVersionFilter, {
             'ALL': tr('conn.alla'),
             'IPV4': tr('conn.endast_ipv4'),
             'IPV6': tr('conn.endast_ipv6'),
-          }, (v) => setState(() => _ipVersionFilter = v)),
+          }, (v) => _onFilterChanged(() => _ipVersionFilter = v)),
           TextButton.icon(
             icon: Icon(Icons.clear, size: 14, color: AppColors.textMuted),
             label: Text(tr('conn.rensa_filter'), style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-            onPressed: () => setState(() {
+            // Rensar även det SPARADE filtret: LogFilterPrefs.save() tar
+            // bort posten när allt står på standard, så nästa besök börjar
+            // rent i stället för att återuppliva det man just rensade bort.
+            onPressed: () => _onFilterChanged(() {
               _exprController.clear();
               _exprError = null;
               _ipController.clear();
               _macController.clear();
               _nameController.clear();
-              _directionFilterField = 'ANY';
-              _trafficDirectionFilter = 'ALL';
-              _actionFilter = 'ALL';
-              _ipVersionFilter = 'IPV4';
+              _directionFilterField = LogFilterPrefs.defaults.directionField;
+              _trafficDirectionFilter = LogFilterPrefs.defaults.trafficDirection;
+              _actionFilter = LogFilterPrefs.defaults.action;
+              _ipVersionFilter = LogFilterPrefs.defaults.ipVersion;
             }),
           ),
         ],
@@ -484,7 +536,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
           height: 36,
           child: TextField(
             controller: _exprController,
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) => _onFilterChanged(),
             style: TextStyle(fontSize: 12, color: AppColors.text, fontFamily: 'monospace'),
             decoration: InputDecoration(
               isDense: true,
@@ -506,7 +558,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                     IconButton(
                       icon: Icon(Icons.clear, size: 15, color: AppColors.textMuted),
                       tooltip: tr('conn.rensa_filter'),
-                      onPressed: () => setState(() {
+                      onPressed: () => _onFilterChanged(() {
                         _exprController.clear();
                         _exprError = null;
                       }),
@@ -649,7 +701,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   void _addFilterTerm(String term, {bool exclude = false}) {
     final addition = exclude ? 'not $term' : term;
     final current = _exprController.text.trim();
-    setState(() {
+    _onFilterChanged(() {
       _exprController.text = current.isEmpty ? addition : '$current and $addition';
     });
   }
@@ -744,7 +796,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       height: 34,
       child: TextField(
         controller: controller,
-        onChanged: (_) => setState(() {}),
+        onChanged: (_) => _onFilterChanged(),
         style: TextStyle(fontSize: 12, color: AppColors.text),
         decoration: InputDecoration(
           isDense: true,
