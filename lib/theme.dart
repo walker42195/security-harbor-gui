@@ -154,6 +154,24 @@ class AppColors {
   /// Blått — DNAT/port forward.
   static Color get info => _d ? Colors.lightBlueAccent : const Color(0xFF1D4ED8);
 
+  /// Tonad bakgrund för de LÅSTA default-deny-raderna i policylistan.
+  /// Låg tidigare hårdkodad som 0xFF2A1518 och missades i den första
+  /// temaomskrivningen — raderna förblev mörka mitt i det ljusa temat.
+  static Color get dangerSurface =>
+      _d ? const Color(0xFF2A1518) : const Color(0xFFFBE9E7);
+
+  // Tonade banderollbakgrunder. I mörkt läge mörka mättade toner, i ljust
+  // läge bleka toner av samma färg — texten ovanpå är [text], som vänder med
+  // temat, så bakgrunden måste vända åt andra hållet.
+  static Color get warnSurface =>
+      _d ? const Color(0xFF78350F) : const Color(0xFFFEF3C7);
+  static Color get dangerBanner =>
+      _d ? const Color(0xFF7F1D1D) : const Color(0xFFFEE2E2);
+  static Color get infoSurface =>
+      _d ? const Color(0xFF0284C7) : const Color(0xFFDBEAFE);
+  static Color get cautionSurface =>
+      _d ? const Color(0xFF9A3412) : const Color(0xFFFFEDD5);
+
   /// Text ovanpå en statusfärgad knapp. Statusfärgerna är LJUSA i mörkt läge
   /// och MÖRKA i ljust, så förgrunden måste vända med dem.
   static Color get onStatus => _d ? Colors.black : Colors.white;

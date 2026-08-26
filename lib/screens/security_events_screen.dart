@@ -263,7 +263,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
           child: TextField(
             controller: c,
             onChanged: (_) => setState(() {}),
-            style: const TextStyle(fontSize: 11, color: Colors.white),
+            style: TextStyle(fontSize: 11, color: AppColors.text),
             decoration: InputDecoration(
               isDense: true,
               labelText: label,
@@ -291,7 +291,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                 child: DropdownButton<String>(
                   value: _fSeverity,
                   dropdownColor: AppColors.surface,
-                  style: const TextStyle(fontSize: 11, color: Colors.white),
+                  style: TextStyle(fontSize: 11, color: AppColors.text),
                   items: [
                     DropdownMenuItem(value: 'ALL', child: Text(tr('sec.allvarlighet_alla'))),
                     DropdownMenuItem(value: '1', child: Text(tr('sec.allvarlighet_1_hog'))),

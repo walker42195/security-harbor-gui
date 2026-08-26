@@ -328,7 +328,7 @@ class _MainScreenState extends State<MainScreen> {
           // Ska synas — annars försvinner det tyst i agentloggen.
           if ((provider.systemStatus?['degraded_backends'] as List?)?.isNotEmpty ?? false)
             Container(
-              color: const Color(0xFF78350F),
+              color: AppColors.warnSurface,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,7 +350,7 @@ class _MainScreenState extends State<MainScreen> {
 
           if (_failedServices.isNotEmpty)
             Container(
-              color: const Color(0xFF7F1D1D),
+              color: AppColors.dangerBanner,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
@@ -373,7 +373,7 @@ class _MainScreenState extends State<MainScreen> {
                   OutlinedButton.icon(
                     icon: const Icon(Icons.build_circle_outlined, size: 14),
                     label: Text(tr('main.show_services'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                    style: OutlinedButton.styleFrom(foregroundColor: AppColors.text, side: const BorderSide(color: Colors.white), padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
+                    style: OutlinedButton.styleFrom(foregroundColor: AppColors.text, side: BorderSide(color: AppColors.text), padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4)),
                     onPressed: () {
                       final idx = screens.indexWhere((w) => w is ServicesScreen);
                       if (idx >= 0) setState(() => _selectedIndex = idx);
@@ -386,14 +386,14 @@ class _MainScreenState extends State<MainScreen> {
           // Loading Status Banner
           if (provider.isLoading && provider.statusMessage != null)
             Container(
-              color: const Color(0xFF0284C7),
+              color: AppColors.infoSurface,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               child: Row(
                 children: [
-                  const SizedBox(
+                  SizedBox(
                     width: 14,
                     height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.text),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -414,7 +414,7 @@ class _MainScreenState extends State<MainScreen> {
           // (upptäckt 2026-08-24).
           if (provider.applyStatus == ApplyStatus.unconfirmed)
             Container(
-              color: const Color(0xFF9A3412),
+              color: AppColors.cautionSurface,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,7 +455,7 @@ class _MainScreenState extends State<MainScreen> {
                       OutlinedButton.icon(
                         icon: const Icon(Icons.undo, size: 14),
                         label: Text(tr('main.rollback'), style: const TextStyle(fontSize: 11)),
-                        style: OutlinedButton.styleFrom(foregroundColor: AppColors.text, side: const BorderSide(color: Colors.white), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        style: OutlinedButton.styleFrom(foregroundColor: AppColors.text, side: BorderSide(color: AppColors.text), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
                         onPressed: () async {
                           await provider.rollbackChanges();
                           if (context.mounted) {

@@ -291,7 +291,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                       isExpanded: true,
                       value: selectedDevice,
                       dropdownColor: AppColors.surface,
-                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                      style: TextStyle(fontSize: 12, color: AppColors.text),
                       items: ifaces
                           .map((i) => DropdownMenuItem(value: i.device, child: Text('${i.device}${i.zone.isNotEmpty ? ' (${i.zone})' : ''}')))
                           .toList(),
@@ -360,7 +360,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
           height: 36,
           child: TextField(
             controller: ctrl,
-            style: const TextStyle(fontSize: 12, color: Colors.white),
+            style: TextStyle(fontSize: 12, color: AppColors.text),
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: AppColors.textFaint, fontSize: 12),
@@ -583,7 +583,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                     child: TextField(
                       controller: _search,
                       onChanged: (_) => setState(() {}),
-                      style: const TextStyle(fontSize: 12, color: Colors.white),
+                      style: TextStyle(fontSize: 12, color: AppColors.text),
                       decoration: InputDecoration(
                         isDense: true,
                         prefixIcon: Icon(Icons.search, size: 16, color: AppColors.textMuted),
@@ -603,7 +603,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                         child: DropdownButton<String>(
                           value: _ifaceFilter,
                           dropdownColor: AppColors.surface,
-                          style: const TextStyle(fontSize: 12, color: Colors.white),
+                          style: TextStyle(fontSize: 12, color: AppColors.text),
                           items: [
                             DropdownMenuItem(value: 'ALL', child: Text(tr('dhcp.granssnitt_alla'))),
                             ..._interfaces.map((i) => DropdownMenuItem(value: i, child: Text(trp('dhcp.granssnitt_colon', {'name': i})))),

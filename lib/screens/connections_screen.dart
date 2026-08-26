@@ -675,7 +675,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
         items.add(PopupMenuItem<VoidCallback>(
           height: 32,
           value: action.$2,
-          child: Text(action.$1, style: const TextStyle(fontSize: 12, color: Colors.white)),
+          child: Text(action.$1, style: TextStyle(fontSize: 12, color: AppColors.text)),
         ));
       }
     }
@@ -735,7 +735,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       child: TextField(
         controller: controller,
         onChanged: (_) => setState(() {}),
-        style: const TextStyle(fontSize: 12, color: Colors.white),
+        style: TextStyle(fontSize: 12, color: AppColors.text),
         decoration: InputDecoration(
           isDense: true,
           labelText: label,
@@ -760,7 +760,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
           child: DropdownButton<String>(
             value: value,
             dropdownColor: AppColors.surface,
-            style: const TextStyle(fontSize: 12, color: Colors.white),
+            style: TextStyle(fontSize: 12, color: AppColors.text),
             items: options.entries
                 .map((e) => DropdownMenuItem(value: e.key, child: Text('$label: ${e.value}')))
                 .toList(),

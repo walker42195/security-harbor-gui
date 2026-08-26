@@ -53,7 +53,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
                 ),
                 OutlinedButton.icon(
                   icon: Icon(Icons.add, size: 16, color: AppColors.accent),
-                  label: Text(tr('routes.ny_rutt'), style: TextStyle(fontSize: 12, color: Colors.white)),
+                  label: Text(tr('routes.ny_rutt'), style: TextStyle(fontSize: 12, color: AppColors.text)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     side: BorderSide(color: AppColors.accent),
@@ -206,7 +206,7 @@ class _RoutesScreenState extends State<RoutesScreen> {
           height: 34,
           child: TextField(
             controller: ctrl,
-            style: const TextStyle(fontSize: 12, color: Colors.white),
+            style: TextStyle(fontSize: 12, color: AppColors.text),
             decoration: InputDecoration(
               isDense: true,
               hintText: hint,

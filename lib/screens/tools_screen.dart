@@ -145,7 +145,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                       const SizedBox(width: 8),
                       ElevatedButton.icon(
                         icon: _isTracerouteLoading
-                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.text))
                             : const Icon(Icons.alt_route, size: 14),
                         label: Text(tr('tools.kor_traceroute'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
@@ -288,7 +288,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           height: 36,
                           child: TextField(
                             controller: _digServerController,
-                            style: const TextStyle(fontSize: 12, color: Colors.white),
+                            style: TextStyle(fontSize: 12, color: AppColors.text),
                             decoration: InputDecoration(
                               hintText: tr('tools.dns_server_valfritt_t_ex_1'),
                               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -386,7 +386,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
                           height: 36,
                           child: TextField(
                             controller: _tcpdumpFilterController,
-                            style: const TextStyle(fontSize: 12, color: Colors.white),
+                            style: TextStyle(fontSize: 12, color: AppColors.text),
                             decoration: InputDecoration(
                               hintText: tr('tools.valfritt_bpf_filter_t_ex_port'),
                               contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -622,7 +622,7 @@ class _ToolsScreenState extends State<ToolsScreen> {
         items: interfaces
             .map((i) => DropdownMenuItem(
                   value: i.device,
-                  child: Text('${i.device} (${i.zone})', style: const TextStyle(fontSize: 12, color: Colors.white)),
+                  child: Text('${i.device} (${i.zone})', style: TextStyle(fontSize: 12, color: AppColors.text)),
                 ))
             .toList(),
         onChanged: (v) => setState(() => _tcpdumpInterface = v),

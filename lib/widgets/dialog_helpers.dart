@@ -41,7 +41,7 @@ Widget dialogField(TextEditingController controller, String label, {String? hint
     height: 56,
     child: TextField(
       controller: controller,
-      style: const TextStyle(fontSize: 12, color: Colors.white),
+      style: TextStyle(fontSize: 12, color: AppColors.text),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,

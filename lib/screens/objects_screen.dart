@@ -165,7 +165,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
             child: TextField(
               controller: _search,
               onChanged: (_) => setState(() {}),
-              style: const TextStyle(fontSize: 12, color: Colors.white),
+              style: TextStyle(fontSize: 12, color: AppColors.text),
               decoration: InputDecoration(
                 isDense: true,
                 prefixIcon: Icon(Icons.search, size: 16, color: AppColors.textMuted),
@@ -642,7 +642,7 @@ class _ObjectsScreenState extends State<ObjectsScreen> {
                   DropdownButtonFormField<String>(
                     initialValue: kind,
                     dropdownColor: AppColors.surface,
-                    style: const TextStyle(fontSize: 12, color: Colors.white),
+                    style: TextStyle(fontSize: 12, color: AppColors.text),
                     decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
                     items: [
                       DropdownMenuItem(value: 'spamhaus_drop', child: Text(tr('objects.spamhaus_drop_kanda_spam_botnat_nat'))),

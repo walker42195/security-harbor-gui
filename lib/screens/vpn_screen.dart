@@ -246,7 +246,7 @@ class _VpnScreenState extends State<VpnScreen> with SingleTickerProviderStateMix
           height: 34,
           child: TextField(
             controller: ctrl,
-            style: const TextStyle(fontSize: 12, color: Colors.white),
+            style: TextStyle(fontSize: 12, color: AppColors.text),
             decoration: InputDecoration(
               isDense: true,
               hintText: hint,
@@ -607,7 +607,7 @@ PersistentKeepalive = 25
           child: DropdownButtonFormField<String>(
             initialValue: ovpn.protocol,
             dropdownColor: AppColors.surface,
-            style: const TextStyle(fontSize: 12, color: Colors.white),
+            style: TextStyle(fontSize: 12, color: AppColors.text),
             decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
             items: [
               DropdownMenuItem(value: 'udp', child: Text(tr('vpn.udp'))),

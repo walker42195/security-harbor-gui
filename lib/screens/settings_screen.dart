@@ -368,7 +368,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                         suffixStyle: TextStyle(color: AppColors.textMuted, fontSize: 12),
                                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                                         border: OutlineInputBorder(),
-                                        enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF475569))),
+                                        enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: AppColors.border)),
                                       ),
                                       onChanged: (_) => setState(() {}),
                                     ),
@@ -1685,7 +1685,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 10),
             ElevatedButton.icon(
               icon: _isFactoryResetting
-                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.text))
                   : const Icon(Icons.delete_forever, size: 16),
               label: Text(tr('settings.fabriksaterstall_brandvaggen'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),

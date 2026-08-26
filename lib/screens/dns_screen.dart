@@ -418,7 +418,7 @@ class _DnsScreenState extends State<DnsScreen> {
                 DropdownButtonFormField<String>(
                   initialValue: kind,
                   dropdownColor: AppColors.surface,
-                  style: const TextStyle(fontSize: 12, color: Colors.white),
+                  style: TextStyle(fontSize: 12, color: AppColors.text),
                   decoration: const InputDecoration(isDense: true, contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
                   items: [
                     DropdownMenuItem(value: 'stevenblack_hosts', child: Text(tr('dns.stevenblack_hosts_ads_malware_tracking'))),
@@ -504,7 +504,7 @@ class _DnsScreenState extends State<DnsScreen> {
           height: 34,
           child: TextField(
             controller: ctrl,
-            style: const TextStyle(fontSize: 12, color: Colors.white),
+            style: TextStyle(fontSize: 12, color: AppColors.text),
             decoration: InputDecoration(
               isDense: true,
               hintText: hint,

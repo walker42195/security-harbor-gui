@@ -490,7 +490,7 @@ class BandwidthGraphPainter extends CustomPainter {
     final tp = TextPainter(
       text: TextSpan(
         text: text,
-        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 8, fontWeight: FontWeight.bold),
+        style: TextStyle(color: AppColors.textFaint, fontSize: 8, fontWeight: FontWeight.bold),
       ),
       textDirection: TextDirection.ltr,
     );

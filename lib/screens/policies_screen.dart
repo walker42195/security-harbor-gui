@@ -179,7 +179,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 ),
                 OutlinedButton.icon(
                   icon: Icon(Icons.add, size: 16, color: AppColors.accent),
-                  label: Text(tr('pol.ny_policy'), style: TextStyle(fontSize: 12, color: Colors.white)),
+                  label: Text(tr('pol.ny_policy'), style: TextStyle(fontSize: 12, color: AppColors.text)),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     side: BorderSide(color: AppColors.accent),
@@ -193,7 +193,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                 if (!(cfg?.settings.isHostMode ?? false))
                   OutlinedButton.icon(
                     icon: Icon(Icons.input, size: 16, color: AppColors.info),
-                    label: Text(tr('pol.port_forwarding_dnat'), style: TextStyle(fontSize: 12, color: Colors.white)),
+                    label: Text(tr('pol.port_forwarding_dnat'), style: TextStyle(fontSize: 12, color: AppColors.text)),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       side: BorderSide(color: AppColors.info),
@@ -526,7 +526,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     return Container(
       // Diskret avvikande bakgrund så det syns att raden inte är en vanlig,
       // redigerbar policy.
-      color: const Color(0xFF2A1518),
+      color: AppColors.dangerSurface,
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
       child: Row(
         children: [
@@ -756,7 +756,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           height: 34,
           child: TextField(
             controller: ctrl,
-            style: const TextStyle(fontSize: 12, color: Colors.white),
+            style: TextStyle(fontSize: 12, color: AppColors.text),
             decoration: InputDecoration(isDense: true, hintText: tr('pol.hh_mm'), contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8), border: OutlineInputBorder()),
           ),
         ),
@@ -1203,13 +1203,13 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              Expanded(child: TextField(controller: extPortCtrl, style: TextStyle(fontSize: 11, color: Colors.white), decoration: InputDecoration(labelText: tr('pol.wan_port'), isDense: true))),
+                              Expanded(child: TextField(controller: extPortCtrl, style: TextStyle(fontSize: 11, color: AppColors.text), decoration: InputDecoration(labelText: tr('pol.wan_port'), isDense: true))),
                               const SizedBox(width: 8),
-                              Expanded(child: TextField(controller: intIpCtrl, style: TextStyle(fontSize: 11, color: Colors.white), decoration: InputDecoration(labelText: tr('pol.intern_ip'), isDense: true))),
+                              Expanded(child: TextField(controller: intIpCtrl, style: TextStyle(fontSize: 11, color: AppColors.text), decoration: InputDecoration(labelText: tr('pol.intern_ip'), isDense: true))),
                               const SizedBox(width: 8),
-                              Expanded(child: TextField(controller: intPortCtrl, style: TextStyle(fontSize: 11, color: Colors.white), decoration: InputDecoration(labelText: tr('pol.intern_port'), isDense: true))),
+                              Expanded(child: TextField(controller: intPortCtrl, style: TextStyle(fontSize: 11, color: AppColors.text), decoration: InputDecoration(labelText: tr('pol.intern_port'), isDense: true))),
                               const SizedBox(width: 8),
-                              Expanded(child: TextField(controller: protoCtrl, style: TextStyle(fontSize: 11, color: Colors.white), decoration: InputDecoration(labelText: tr('pol.protokoll'), isDense: true))),
+                              Expanded(child: TextField(controller: protoCtrl, style: TextStyle(fontSize: 11, color: AppColors.text), decoration: InputDecoration(labelText: tr('pol.protokoll'), isDense: true))),
                             ],
                           ),
                         ],
@@ -1496,7 +1496,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     ),
                     const SizedBox(width: 8),
                     OutlinedButton(
-                      style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
+                      style: OutlinedButton.styleFrom(foregroundColor: AppColors.text),
                       child: Text(tr('pol.cancel'), style: TextStyle(fontSize: 12)),
                       onPressed: () => Navigator.pop(ctx),
                     ),
@@ -1656,7 +1656,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                   child: TextField(
                     controller: searchCtrl,
                     autofocus: true,
-                    style: const TextStyle(fontSize: 11, color: Colors.white),
+                    style: TextStyle(fontSize: 11, color: AppColors.text),
                     decoration: InputDecoration(
                       hintText: tr('pol.sok'),
                       prefixIcon: Icon(Icons.search, size: 14, color: AppColors.textMuted),
@@ -1702,7 +1702,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                         height: 30,
                         child: TextField(
                           controller: customCtrl,
-                          style: const TextStyle(fontSize: 11, color: Colors.white),
+                          style: TextStyle(fontSize: 11, color: AppColors.text),
                           decoration: InputDecoration(
                             hintText: tr('pol.ange_egen_ip_eller_subnet_t'),
                             contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1759,7 +1759,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                     ),
                     const SizedBox(width: 8),
                     OutlinedButton(
-                      style: OutlinedButton.styleFrom(foregroundColor: Colors.white),
+                      style: OutlinedButton.styleFrom(foregroundColor: AppColors.text),
                       onPressed: () => Navigator.pop(ctx, null),
                       child: Text(tr('pol.cancel'), style: TextStyle(fontSize: 11)),
                     ),

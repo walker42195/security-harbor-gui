@@ -295,7 +295,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
             icon: restarting
                 ? SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.warn))
                 : Icon(Icons.restart_alt, size: 14, color: AppColors.warn),
-            label: Text(restarting ? 'Startar om...' : 'Starta om', style: const TextStyle(fontSize: 11, color: Colors.white)),
+            label: Text(restarting ? 'Startar om...' : 'Starta om', style: TextStyle(fontSize: 11, color: AppColors.text)),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               side: BorderSide(color: AppColors.warn),
