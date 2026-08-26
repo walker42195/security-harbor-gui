@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../localization.dart';
+import '../config_diff.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import 'dashboard_screen.dart';
@@ -531,6 +532,16 @@ class _MainScreenState extends State<MainScreen> {
                           }
                         },
                       ),
+                      // Visa ändringar FÖRE Applicera. Att applicera en
+                      // brandväggskonfiguration är en handling med
+                      // konsekvenser — GUI:t visade tidigare bara ATT det
+                      // fanns oapplicerade ändringar, aldrig vilka.
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.difference_outlined, size: 14),
+                        label: Text(tr('main.show_changes'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        style: OutlinedButton.styleFrom(foregroundColor: Colors.cyanAccent, side: const BorderSide(color: Colors.cyanAccent), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+                        onPressed: () => _showPendingChanges(context, provider),
+                      ),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.play_arrow, size: 14),
                         label: Text(tr('main.apply_safe'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
@@ -713,4 +724,160 @@ String? _wanAddress(ConfigProvider provider) {
     return ip.split('/').first;
   }
   return null;
+}
+
+/// Overlay som visar skillnaden mellan körande config och kandidaten.
+///
+/// Grupperas per sektion (Gränssnitt, Policyer, ...) med posten som rubrik
+/// och fälten under. Före/efter visas sida vid sida — vid en ändring är det
+/// nästan alltid det gamla värdet man behöver för att avgöra om det nya är
+/// rätt.
+void _showPendingChanges(BuildContext context, ConfigProvider provider) {
+  final changes = diffConfigs(
+    provider.runningConfig?.toJson(),
+    provider.candidateConfig?.toJson(),
+  );
+
+  showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: const Color(0xFF1E293B),
+      title: Row(
+        children: [
+          const Icon(Icons.difference_outlined, size: 18, color: Colors.cyanAccent),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(tr('main.changes_title'),
+                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+          ),
+          if (changes.isNotEmpty)
+            Text(trp('main.changes_count', {'n': '${changes.length}'}),
+                style: const TextStyle(color: Colors.white54, fontSize: 11)),
+        ],
+      ),
+      content: SizedBox(
+        width: 720,
+        child: changes.isEmpty
+            ? Text(tr('main.changes_none'),
+                style: const TextStyle(color: Colors.white60, fontSize: 12))
+            : SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    for (final section in _groupBySection(changes).entries) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10, bottom: 6),
+                        child: Text(
+                          (sectionLabels[section.key] ?? section.key).toUpperCase(),
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.6),
+                        ),
+                      ),
+                      ...section.value.map(_changeRow),
+                    ],
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        const Icon(Icons.info_outline, size: 13, color: Colors.amberAccent),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(tr('main.changes_apply_hint'),
+                              style: const TextStyle(color: Colors.amberAccent, fontSize: 11)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
+      ],
+    ),
+  );
+}
+
+/// Behåller sektionernas ordning från diffen (viktigast först) i stället för
+/// att sortera om dem alfabetiskt.
+Map<String, List<ConfigChange>> _groupBySection(List<ConfigChange> changes) {
+  final grouped = <String, List<ConfigChange>>{};
+  for (final c in changes) {
+    grouped.putIfAbsent(c.section, () => []).add(c);
+  }
+  return grouped;
+}
+
+Widget _changeRow(ConfigChange c) {
+  final (color, label) = switch (c.kind) {
+    ChangeKind.added => (Colors.tealAccent, tr('main.change_added')),
+    ChangeKind.removed => (Colors.redAccent, tr('main.change_removed')),
+    ChangeKind.modified => (Colors.amberAccent, tr('main.change_modified')),
+  };
+
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 6, left: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 78,
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: Text(label,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text.rich(TextSpan(children: [
+                if (c.item.isNotEmpty)
+                  TextSpan(
+                      text: c.item,
+                      style: const TextStyle(
+                          color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w600)),
+                if (c.field.isNotEmpty)
+                  TextSpan(
+                      text: '${c.item.isEmpty ? '' : ' · '}${fieldLabels[c.field] ?? c.field}',
+                      style: const TextStyle(color: Colors.cyanAccent, fontSize: 11.5)),
+              ])),
+              if (c.kind == ChangeKind.modified)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text.rich(TextSpan(children: [
+                    TextSpan(
+                        text: (c.before?.isEmpty ?? true) ? '—' : c.before,
+                        style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                            decoration: TextDecoration.lineThrough)),
+                    const TextSpan(
+                        text: '  →  ',
+                        style: TextStyle(color: Colors.white38, fontSize: 11)),
+                    TextSpan(
+                        text: (c.after?.isEmpty ?? true) ? '—' : c.after,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 11, fontFamily: 'monospace')),
+                  ])),
+                )
+              else if ((c.after ?? c.before ?? '').isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(c.after ?? c.before ?? '',
+                      style: const TextStyle(
+                          color: Colors.white54, fontSize: 11, fontFamily: 'monospace')),
+                ),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }
