@@ -961,6 +961,29 @@ const Map<String, String> _sv = {
   'objects.uppdaterad_colon': 'Uppdaterad: {time}',
   'objects.var_x_timme': 'Var {hours}:e timme',
   'objects.fel_colon': 'Fel: {err}',
+  'nav.ids_rules': 'IDS-regler',
+  // --- IDS-regelurval ---
+  'sec.tysta_signaturen': 'Tysta signaturen',
+  'sec.tysta': 'Tysta',
+  'sec.tysta_signaturen_forklaring':
+      'Signaturen stängs av i Suricata och larmar inte längre. Regeluppdateringen tar ungefär en minut och körs i bakgrunden. Du kan slå på den igen under IDS-regler.',
+  'sec.signaturen_tystas_regeluppdatering_pagar': 'Signaturen tystas — regeluppdatering pågår.',
+  'sec.kunde_inte_tysta': 'Kunde inte tysta signaturen',
+  'idsrules.titel': 'IDS-regler',
+  'idsrules.kategorier': 'Regelkategorier',
+  'idsrules.tystade_signaturer': 'Tystade signaturer',
+  'idsrules.beskrivning':
+      'Stäng av hela kategorier eller enskilda signaturer. Ändringar skrivs till Suricatas regelurval och laddas om live — det tar ungefär en minut.',
+  'idsrules.regler': 'regler',
+  'idsrules.aktiva': 'aktiva',
+  'idsrules.avstangd': 'Avstängd',
+  'idsrules.uppdatering_pagar': 'Regeluppdatering pågår…',
+  'idsrules.inga_tystade': 'Inga tystade signaturer.',
+  'idsrules.slå_pa_igen': 'Slå på igen',
+  'idsrules.inga_kategorier':
+      'Inga regler hittades. Kör Suricatas regeluppdatering först.',
+  'idsrules.andring_sparad': 'Ändringen sparad — regeluppdatering pågår.',
+  'idsrules.kunde_inte_spara': 'Kunde inte spara ändringen',
 };
 
 // ---------------------------------------------------------------------
@@ -1887,4 +1910,26 @@ const Map<String, String> _en = {
   'objects.uppdaterad_colon': 'Updated: {time}',
   'objects.var_x_timme': 'Every {hours} hour(s)',
   'objects.fel_colon': 'Error: {err}',
+  'nav.ids_rules': 'IDS rules',
+  // --- IDS rule selection ---
+  'sec.tysta_signaturen': 'Silence signature',
+  'sec.tysta': 'Silence',
+  'sec.tysta_signaturen_forklaring':
+      'The signature is disabled in Suricata and will no longer alert. The rule update takes about a minute and runs in the background. You can re-enable it under IDS rules.',
+  'sec.signaturen_tystas_regeluppdatering_pagar': 'Silencing signature — rule update in progress.',
+  'sec.kunde_inte_tysta': 'Could not silence signature',
+  'idsrules.titel': 'IDS rules',
+  'idsrules.kategorier': 'Rule categories',
+  'idsrules.tystade_signaturer': 'Silenced signatures',
+  'idsrules.beskrivning':
+      'Disable whole categories or individual signatures. Changes are written to Suricata\'s rule selection and reloaded live — this takes about a minute.',
+  'idsrules.regler': 'rules',
+  'idsrules.aktiva': 'active',
+  'idsrules.avstangd': 'Disabled',
+  'idsrules.uppdatering_pagar': 'Rule update in progress…',
+  'idsrules.inga_tystade': 'No silenced signatures.',
+  'idsrules.slå_pa_igen': 'Re-enable',
+  'idsrules.inga_kategorier': 'No rules found. Run the Suricata rule update first.',
+  'idsrules.andring_sparad': 'Change saved — rule update in progress.',
+  'idsrules.kunde_inte_spara': 'Could not save the change',
 };

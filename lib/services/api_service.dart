@@ -453,6 +453,52 @@ class ApiService {
     return [];
   }
 
+  // --- IDS-regelurval (kategorier + tystade signaturer) ---
+
+  /// Hämtar alla regelkategorier med antal regler, hur många som är aktiva,
+  /// och listan över enskilt tystade signaturer.
+  Future<IdsRulesModel?> getIdsRules() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/ids/rules'), headers: _headers);
+      if (res.statusCode == 200) {
+        return IdsRulesModel.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Skickar EN ändring i taget som ett delta — aldrig hela listan. Två admins
+  /// som har vyn öppen samtidigt ska inte kunna radera varandras val genom att
+  /// skicka en lista som var färsk när deras vy laddades.
+  ///
+  /// Returnerar felmeddelande vid fel, null vid lyckat anrop. Regeluppdateringen
+  /// kör sedan i bakgrunden i ~40–60 s; följ den med [getIdsRuleUpdateStatus].
+  Future<String?> postIdsRuleChange(Map<String, dynamic> delta) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/ids/rules'),
+        headers: {..._headers, 'Content-Type': 'application/json'},
+        body: jsonEncode(delta),
+      );
+      if (res.statusCode == 200 || res.statusCode == 202) return null;
+      return res.body.trim().isEmpty ? 'HTTP ${res.statusCode}' : res.body.trim();
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  /// "activating"/"active" = uppdateringen pågår, "inactive" = klar,
+  /// "failed" = misslyckades.
+  Future<String> getIdsRuleUpdateStatus() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/ids/rules/status'), headers: _headers);
+      if (res.statusCode == 200) {
+        return (jsonDecode(res.body) as Map<String, dynamic>)['status'] as String? ?? 'unknown';
+      }
+    } catch (_) {}
+    return 'unknown';
+  }
+
   Future<List<DhcpLeaseModel>> getDhcpLeases() async {
     try {
       final res = await _client.get(Uri.parse('$baseUrl/api/v1/dhcp/leases'), headers: _headers);

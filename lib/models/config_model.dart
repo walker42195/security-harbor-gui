@@ -1401,6 +1401,9 @@ class SecurityEventModel {
   final String timestamp;
   final int severity; // 1 (högst) - 3 (lägst)
   final String signature;
+  /// Suricatas signatur-ID. 0 om larmet saknar det (äldre agentversioner).
+  /// Nyckeln som skickas till POST /api/v1/ids/rules för att tysta signaturen.
+  final int sid;
   final String category;
   final String srcIp;
   final int srcPort;
@@ -1412,6 +1415,7 @@ class SecurityEventModel {
     required this.timestamp,
     required this.severity,
     required this.signature,
+    this.sid = 0,
     this.category = '',
     required this.srcIp,
     this.srcPort = 0,
@@ -1425,6 +1429,7 @@ class SecurityEventModel {
       timestamp: json['timestamp'] ?? '',
       severity: json['severity'] ?? 3,
       signature: json['signature'] ?? '',
+      sid: json['sid'] ?? 0,
       category: json['category'] ?? '',
       srcIp: json['src_ip'] ?? '',
       srcPort: json['src_port'] ?? 0,
@@ -1433,6 +1438,90 @@ class SecurityEventModel {
       protocol: json['protocol'] ?? '',
     );
   }
+}
+
+/// En Suricata-regelkategori, härledd ur regelns msg-prefix ("ET MALWARE",
+/// "GPL ATTACK_RESPONSE", "SURICATA"). ET Open levereras som EN sammanslagen
+/// regelfil, så det finns ingen filstruktur att gruppera på — prefixet är det
+/// som faktiskt bär betydelse för en människa.
+class IdsCategoryModel {
+  final String name;
+
+  /// Regler i kategorin totalt, oavsett status.
+  final int total;
+
+  /// Aktiva regler enligt regelfilen just nu. Avstängda regler tas inte bort
+  /// av suricata-update utan kommenteras ut, så [enabled] kan vara mindre än
+  /// [total] även för en kategori som inte är avstängd här — ET Open levererar
+  /// en hel del regler avstängda från början.
+  final int enabled;
+
+  /// Speglar konfigurationen, INTE regelfilen. Efter en ändring tar det
+  /// ~40–60 s innan suricata-update skrivit om filen, och vyn ska visa
+  /// användarens val direkt.
+  final bool disabled;
+
+  IdsCategoryModel({
+    required this.name,
+    required this.total,
+    required this.enabled,
+    required this.disabled,
+  });
+
+  factory IdsCategoryModel.fromJson(Map<String, dynamic> json) => IdsCategoryModel(
+        name: json['name'] ?? '',
+        total: json['total'] ?? 0,
+        enabled: json['enabled'] ?? 0,
+        disabled: json['disabled'] ?? false,
+      );
+}
+
+/// En enskild tystad signatur.
+class IdsDisabledSignatureModel {
+  final int sid;
+  final String signature;
+  final String disabledAt;
+
+  IdsDisabledSignatureModel({
+    required this.sid,
+    this.signature = '',
+    this.disabledAt = '',
+  });
+
+  factory IdsDisabledSignatureModel.fromJson(Map<String, dynamic> json) =>
+      IdsDisabledSignatureModel(
+        sid: json['sid'] ?? 0,
+        signature: json['signature'] ?? '',
+        disabledAt: json['disabled_at'] ?? '',
+      );
+}
+
+/// Svaret från GET /api/v1/ids/rules.
+class IdsRulesModel {
+  final List<IdsCategoryModel> categories;
+  final List<IdsDisabledSignatureModel> disabledSignatures;
+
+  /// "activating"/"active" = regeluppdateringen pågår, "inactive" = klar,
+  /// "failed" = misslyckades.
+  final String updateStatus;
+
+  IdsRulesModel({
+    required this.categories,
+    required this.disabledSignatures,
+    required this.updateStatus,
+  });
+
+  bool get isUpdating => updateStatus == 'activating' || updateStatus == 'active';
+
+  factory IdsRulesModel.fromJson(Map<String, dynamic> json) => IdsRulesModel(
+        categories: ((json['categories'] ?? []) as List)
+            .map((e) => IdsCategoryModel.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        disabledSignatures: ((json['disabled_signatures'] ?? []) as List)
+            .map((e) => IdsDisabledSignatureModel.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        updateStatus: json['update_status'] ?? 'unknown',
+      );
 }
 
 /// En aktiv DHCP-utlåning (Kea) berikad med gränssnitt/zon — se

@@ -318,6 +318,41 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     );
   }
 
+  /// Bekräftar och tystar EN signatur. Regeluppdateringen tar ~40–60 s och
+  /// kör i bakgrunden på brandväggen — vyn behöver inte vänta in den.
+  Future<void> _confirmSilence(SecurityEventModel e) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(tr('sec.tysta_signaturen'), style: TextStyle(color: AppColors.text, fontSize: 15)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(e.signature, style: TextStyle(color: AppColors.text, fontSize: 12)),
+            const SizedBox(height: 8),
+            Text('SID ${e.sid}', style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+            const SizedBox(height: 12),
+            Text(tr('sec.tysta_signaturen_forklaring'),
+                style: TextStyle(color: AppColors.textMuted, fontSize: 11, height: 1.4)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dctx, false), child: Text(tr('main.cancel'), style: TextStyle(color: AppColors.textMuted))),
+          TextButton(onPressed: () => Navigator.pop(dctx, true), child: Text(tr('sec.tysta'), style: TextStyle(color: AppColors.accent))),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    final err = await context.read<ConfigProvider>().api.postIdsRuleChange({'silence_sid': e.sid});
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(err == null ? tr('sec.signaturen_tystas_regeluppdatering_pagar') : '${tr('sec.kunde_inte_tysta')}: $err'),
+    ));
+  }
+
   void _showEventDetail(SecurityEventModel e) {
     Widget row(String k, String v, {Color? valueColor}) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
@@ -356,6 +391,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                 row(tr('sec.signatur'), e.signature),
                 row(tr('sec.allvarlighet'), '${e.severity}  (${e.severity == 1 ? tr('sec.hog') : e.severity == 2 ? tr('sec.medel') : tr('sec.lag')})', valueColor: _severityColor(e.severity)),
                 row(tr('sec.kategori'), e.category),
+                if (e.sid > 0) row('SID', '${e.sid}'),
                 row(tr('sec.tidpunkt'), e.timestamp),
                 row(tr('sec.protokoll'), e.protocol),
                 row(tr('sec.kalla'), '${e.srcIp}${e.srcPort != 0 ? ":${e.srcPort}" : ""}'),
@@ -381,13 +417,27 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    icon: Icon(Icons.open_in_new, size: 14, color: AppColors.accent),
-                    label: Text(tr('sec.sok_signaturen_pa_suricata_io'), style: TextStyle(color: AppColors.accent, fontSize: 11)),
-                    onPressed: _openSuricata,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // Tysta bara om vi har ett SID och användaren är admin.
+                    // Äldre agentversioner skickar inget SID, och då finns
+                    // ingen nyckel att stänga av på.
+                    if (e.sid > 0 && context.read<ConfigProvider>().isAdmin)
+                      TextButton.icon(
+                        icon: Icon(Icons.notifications_off_outlined, size: 14, color: AppColors.textMuted),
+                        label: Text(tr('sec.tysta_signaturen'), style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                        onPressed: () {
+                          Navigator.pop(dctx);
+                          _confirmSilence(e);
+                        },
+                      ),
+                    TextButton.icon(
+                      icon: Icon(Icons.open_in_new, size: 14, color: AppColors.accent),
+                      label: Text(tr('sec.sok_signaturen_pa_suricata_io'), style: TextStyle(color: AppColors.accent, fontSize: 11)),
+                      onPressed: _openSuricata,
+                    ),
+                  ],
                 ),
               ],
             ),

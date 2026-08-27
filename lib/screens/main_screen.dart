@@ -18,6 +18,7 @@ import 'vpn_screen.dart';
 import 'dns_screen.dart';
 import 'dns_devices_screen.dart';
 import 'dhcp_screen.dart';
+import 'ids_rules_screen.dart';
 import 'security_events_screen.dart';
 import 'services_screen.dart';
 
@@ -98,6 +99,7 @@ class _MainScreenState extends State<MainScreen> {
       if (!isHostMode) const DhcpScreen(),
       const ConnectionsScreen(),
       if (!isHostMode) const SecurityEventsScreen(),
+      if (!isHostMode) const IdsRulesScreen(),
       const ServicesScreen(),
       const ToolsScreen(),
       const SettingsScreen(),
@@ -115,6 +117,7 @@ class _MainScreenState extends State<MainScreen> {
       if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.devices_other_outlined), selectedIcon: const Icon(Icons.devices_other), label: Text(tr('nav.dhcp'))),
       NavigationRailDestination(icon: const Icon(Icons.list_alt_outlined), selectedIcon: const Icon(Icons.list_alt), label: Text(tr('nav.logging'))),
       if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.gpp_maybe_outlined), selectedIcon: const Icon(Icons.gpp_maybe), label: Text(tr('nav.ids'))),
+      if (!isHostMode) NavigationRailDestination(icon: const Icon(Icons.rule_outlined), selectedIcon: const Icon(Icons.rule), label: Text(tr('nav.ids_rules'))),
       NavigationRailDestination(icon: const Icon(Icons.miscellaneous_services_outlined), selectedIcon: const Icon(Icons.miscellaneous_services), label: Text(tr('nav.services'))),
       NavigationRailDestination(icon: const Icon(Icons.build_circle_outlined), selectedIcon: const Icon(Icons.build_circle), label: Text(tr('nav.tools'))),
       NavigationRailDestination(icon: const Icon(Icons.settings_outlined), selectedIcon: const Icon(Icons.settings), label: Text(tr('nav.settings'))),
