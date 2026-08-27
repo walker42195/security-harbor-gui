@@ -482,6 +482,18 @@ class ApiService {
     return [];
   }
 
+  /// [res] är "1h" eller "1d". Tom [ip] ger hela nätet.
+  Future<TrafficTypesModel?> getTrafficTypes({String res = '1h', String ip = '', int domains = 20}) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/v1/dashboard/traffic-types?res=$res&ip=$ip&domains=$domains');
+      final r = await _client.get(uri, headers: _headers);
+      if (r.statusCode == 200) {
+        return TrafficTypesModel.fromJson(jsonDecode(r.body) as Map<String, dynamic>);
+      }
+    } catch (_) {}
+    return null;
+  }
+
   // --- IDS-regelurval (kategorier + tystade signaturer) ---
 
   /// Hämtar alla regelkategorier med antal regler, hur många som är aktiva,

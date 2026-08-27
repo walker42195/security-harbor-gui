@@ -1583,6 +1583,76 @@ class DashboardDataModel {
   }
 }
 
+/// Byte per trafikkategori.
+class TrafficCategoryModel {
+  final String category;
+  final int rx;
+  final int tx;
+
+  TrafficCategoryModel({required this.category, required this.rx, required this.tx});
+
+  int get total => rx + tx;
+
+  factory TrafficCategoryModel.fromJson(Map<String, dynamic> j) => TrafficCategoryModel(
+        category: j['category'] ?? '',
+        rx: j['rx'] ?? 0,
+        tx: j['tx'] ?? 0,
+      );
+}
+
+/// En domän i topplistan.
+class TrafficDomainModel {
+  final String domain;
+  final int bytes;
+
+  TrafficDomainModel({required this.domain, required this.bytes});
+
+  factory TrafficDomainModel.fromJson(Map<String, dynamic> j) => TrafficDomainModel(
+        domain: j['domain'] ?? '',
+        bytes: j['bytes'] ?? 0,
+      );
+}
+
+/// Svaret från GET /api/v1/dashboard/traffic-types.
+class TrafficTypesModel {
+  final List<TrafficCategoryModel> categories;
+  final Map<String, List<TrafficCategoryModel>> perDevice;
+  final List<TrafficDomainModel> topDomains;
+  final String resolution;
+
+  /// Falskt när Suricata lyssnar på WAN-kortet. Då finns ingen klassificerbar
+  /// trafik alls — allt syns efter NAT med brandväggens egen adress som
+  /// källa. Vyn ska säga det rakt ut i stället för att visas tom.
+  final bool idsOnInside;
+
+  TrafficTypesModel({
+    required this.categories,
+    required this.perDevice,
+    required this.topDomains,
+    required this.resolution,
+    required this.idsOnInside,
+  });
+
+  factory TrafficTypesModel.fromJson(Map<String, dynamic> j) {
+    final per = (j['per_device'] ?? {}) as Map<String, dynamic>;
+    return TrafficTypesModel(
+      categories: ((j['categories'] ?? []) as List)
+          .map((e) => TrafficCategoryModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      perDevice: per.map((k, v) => MapEntry(
+          k,
+          ((v ?? []) as List)
+              .map((e) => TrafficCategoryModel.fromJson(e as Map<String, dynamic>))
+              .toList())),
+      topDomains: ((j['top_domains'] ?? []) as List)
+          .map((e) => TrafficDomainModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      resolution: j['resolution'] ?? '1h',
+      idsOnInside: j['ids_on_inside'] ?? false,
+    );
+  }
+}
+
 /// En Suricata-regelkategori, härledd ur regelns msg-prefix ("ET MALWARE",
 /// "GPL ATTACK_RESPONSE", "SURICATA"). ET Open levereras som EN sammanslagen
 /// regelfil, så det finns ingen filstruktur att gruppera på — prefixet är det
