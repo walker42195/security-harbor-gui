@@ -117,17 +117,20 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
       _fSeverity != 'ALL' ||
       [_fTid, _fSignatur, _fKategori, _fKalla, _fMal, _fProtokoll].any((c) => c.text.trim().isNotEmpty);
 
-  void _clearFilters() => setState(() {
-        _fTid.clear();
-        _fSignatur.clear();
-        _fKategori.clear();
-        _fKalla.clear();
-        _fMal.clear();
-        _fProtokoll.clear();
-        _fSeverity = 'ALL';
-        _timeWindow = 'ALL';
-        _onlyAutoBlockCandidates = false;
-      });
+  void _clearFilters() {
+    setState(() {
+      _fTid.clear();
+      _fSignatur.clear();
+      _fKategori.clear();
+      _fKalla.clear();
+      _fMal.clear();
+      _fProtokoll.clear();
+      _fSeverity = 'ALL';
+      _timeWindow = 'ALL';
+      _onlyAutoBlockCandidates = false;
+    });
+    _poll();
+  }
 
   @override
   void initState() {
@@ -156,13 +159,20 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     final provider = Provider.of<ConfigProvider>(context, listen: false);
     if (!provider.isAuthenticated) return;
     setState(() => _loading = true);
+    String? sevParam;
+    if (_onlyAutoBlockCandidates) {
+      sevParam = 'blocking';
+    } else if (_fSeverity != 'ALL') {
+      sevParam = _fSeverity;
+    }
     final events = await provider.api.getSecurityEvents(
       source: _source,
       limit: _source == 'history' ? 2000 : 1000,
+      severity: sevParam,
     );
     if (!mounted) return;
     setState(() {
-      _events = events.reversed.toList(); // nyast först
+      _events = _source == 'history' ? events : events.reversed.toList();
       _loading = false;
     });
   }
@@ -483,7 +493,10 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                 ],
               ),
               InkWell(
-                onTap: () => setState(() => _onlyAutoBlockCandidates = !_onlyAutoBlockCandidates),
+                onTap: () {
+                  setState(() => _onlyAutoBlockCandidates = !_onlyAutoBlockCandidates);
+                  _poll();
+                },
                 borderRadius: BorderRadius.circular(4),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
@@ -540,7 +553,10 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                         DropdownMenuItem(value: '2', child: Text(tr('sec.allvarlighet_2_medel'))),
                         DropdownMenuItem(value: '3', child: Text(tr('sec.allvarlighet_3_lag'))),
                       ],
-                      onChanged: (v) => setState(() => _fSeverity = v ?? 'ALL'),
+                      onChanged: (v) {
+                        setState(() => _fSeverity = v ?? 'ALL');
+                        _poll();
+                      },
                     ),
                   ),
                 ),
