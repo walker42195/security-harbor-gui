@@ -42,12 +42,12 @@ class MainScreen extends StatefulWidget {
 const double _kNarrowBreakpoint = 700;
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
-
-  /// Enhets-dashboarden nås BARA via loggan och ligger därför utanför
-  /// menyn. Ett negativt index betyder "ingen menypost markerad" —
+  /// Enhets-dashboarden är STARTVYN och nås därefter via loggan. Den ligger
+  /// utanför menyn, så ett negativt index betyder "ingen menypost markerad" —
   /// NavigationRail tar null som selectedIndex för just det.
   static const int _kDeviceDashboardIndex = -1;
+
+  int _selectedIndex = _kDeviceDashboardIndex;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Larmbanner för tjänster i "failed"-läge — pollas globalt här (inte bara
