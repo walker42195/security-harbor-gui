@@ -812,7 +812,13 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     Future<void> save(IDSConfigModel updated) async {
       if (cfg == null) return;
       setState(() => _isSavingIds = true);
-      await provider.updateCandidate(cfg.copyWith(ids: updated));
+      final runningSigs = provider.runningConfig?.ids?.disabledSignatures ?? [];
+      final runningCats = provider.runningConfig?.ids?.disabledCategories ?? [];
+      final fullUpdated = updated.copyWith(
+        disabledSignatures: updated.disabledSignatures.isNotEmpty ? updated.disabledSignatures : runningSigs,
+        disabledCategories: updated.disabledCategories.isNotEmpty ? updated.disabledCategories : runningCats,
+      );
+      await provider.updateCandidate(cfg.copyWith(ids: fullUpdated));
       if (mounted) setState(() => _isSavingIds = false);
     }
 
