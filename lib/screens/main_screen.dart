@@ -637,14 +637,24 @@ class _MainScreenState extends State<MainScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 8.0),
                               child: Column(
                                 children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(5),
-                                    child: Image.asset(
-                                      'assets/logo.png',
-                                      width: 24,
-                                      height: 24,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => Icon(Icons.shield, color: AppColors.accent, size: 22),
+                                  // Loggan är en genväg tillbaka till
+                                  // dashboarden, samma konvention som en
+                                  // hem-knapp i en webbtjänst.
+                                  Tooltip(
+                                    message: tr('nav.dashboard'),
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(5),
+                                      onTap: () => setState(() => _selectedIndex = 0),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(5),
+                                        child: Image.asset(
+                                          'assets/logo.png',
+                                          width: 24,
+                                          height: 24,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) => Icon(Icons.shield, color: AppColors.accent, size: 22),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ],

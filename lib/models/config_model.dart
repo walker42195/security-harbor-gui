@@ -1440,6 +1440,149 @@ class SecurityEventModel {
   }
 }
 
+/// En punkt i en trafiktidsserie. Rx = nedladdat, Tx = uppladdat, alltid sett
+/// ur ENHETENS perspektiv — inte brandväggens.
+class TrafficPointModel {
+  final int timestamp;
+  final int rx;
+  final int tx;
+
+  TrafficPointModel({required this.timestamp, required this.rx, required this.tx});
+
+  factory TrafficPointModel.fromJson(Map<String, dynamic> j) => TrafficPointModel(
+        timestamp: j['t'] ?? 0,
+        rx: j['rx'] ?? 0,
+        tx: j['tx'] ?? 0,
+      );
+}
+
+/// En enhet i dashboardens tabell.
+class DeviceStatModel {
+  final String ip;
+  final String mac;
+  final String hostname;
+  final String vendor;
+  final String interfaceName;
+  final String zone;
+  final bool online;
+
+  /// MAC-adressens lokalt-administrerade bit är satt — nästan alltid en modern
+  /// mobil eller laptop med integritetsskydd. En upplysning, inte ett påstående
+  /// om anslutningstyp: brandväggen kan inte se skillnad på wifi och kabel.
+  final bool randomizedMac;
+
+  final int firstSeen;
+  final int lastSeen;
+
+  /// Ögonblicksbandbredd i byte per sekund.
+  final int rxBps;
+  final int txBps;
+
+  /// Totalt under det valda fönstret.
+  final int rxBytes;
+  final int txBytes;
+
+  final int blockedConnections;
+  final int idsAlerts;
+  final bool isNew;
+  final List<TrafficPointModel> sparkline;
+
+  DeviceStatModel({
+    required this.ip,
+    this.mac = '',
+    this.hostname = '',
+    this.vendor = '',
+    this.interfaceName = '',
+    this.zone = '',
+    this.online = false,
+    this.randomizedMac = false,
+    this.firstSeen = 0,
+    this.lastSeen = 0,
+    this.rxBps = 0,
+    this.txBps = 0,
+    this.rxBytes = 0,
+    this.txBytes = 0,
+    this.blockedConnections = 0,
+    this.idsAlerts = 0,
+    this.isNew = false,
+    this.sparkline = const [],
+  });
+
+  /// Namnet som visas: värdnamn om DHCP gav ett, annars tillverkare, annars IP.
+  String get displayName {
+    if (hostname.isNotEmpty) return hostname;
+    if (vendor.isNotEmpty) return vendor;
+    return ip;
+  }
+
+  factory DeviceStatModel.fromJson(Map<String, dynamic> j) => DeviceStatModel(
+        ip: j['ip'] ?? '',
+        mac: j['mac'] ?? '',
+        hostname: j['hostname'] ?? '',
+        vendor: j['vendor'] ?? '',
+        interfaceName: j['interface'] ?? '',
+        zone: j['zone'] ?? '',
+        online: j['online'] ?? false,
+        randomizedMac: j['randomized_mac'] ?? false,
+        firstSeen: j['first_seen'] ?? 0,
+        lastSeen: j['last_seen'] ?? 0,
+        rxBps: j['rx_bps'] ?? 0,
+        txBps: j['tx_bps'] ?? 0,
+        rxBytes: j['rx_bytes'] ?? 0,
+        txBytes: j['tx_bytes'] ?? 0,
+        blockedConnections: j['blocked_connections'] ?? 0,
+        idsAlerts: j['ids_alerts'] ?? 0,
+        isNew: j['is_new'] ?? false,
+        sparkline: ((j['sparkline'] ?? []) as List)
+            .map((e) => TrafficPointModel.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+}
+
+/// Svaret från GET /api/v1/dashboard/devices.
+class DashboardDataModel {
+  final List<DeviceStatModel> devices;
+
+  /// Summa per zon, så man ser vilket nätsegment som drar mest.
+  final Map<String, TrafficPointModel> zones;
+
+  final int totalRx;
+  final int totalTx;
+  final int totalRxBps;
+  final int totalTxBps;
+  final String resolution;
+  final int sampledAt;
+
+  DashboardDataModel({
+    required this.devices,
+    required this.zones,
+    required this.totalRx,
+    required this.totalTx,
+    required this.totalRxBps,
+    required this.totalTxBps,
+    required this.resolution,
+    required this.sampledAt,
+  });
+
+  factory DashboardDataModel.fromJson(Map<String, dynamic> j) {
+    final zonesRaw = (j['zones'] ?? {}) as Map<String, dynamic>;
+    final totals = (j['totals'] ?? {}) as Map<String, dynamic>;
+    return DashboardDataModel(
+      devices: ((j['devices'] ?? []) as List)
+          .map((e) => DeviceStatModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      zones: zonesRaw.map((k, v) =>
+          MapEntry(k, TrafficPointModel.fromJson(v as Map<String, dynamic>))),
+      totalRx: totals['rx'] ?? 0,
+      totalTx: totals['tx'] ?? 0,
+      totalRxBps: j['total_rx_bps'] ?? 0,
+      totalTxBps: j['total_tx_bps'] ?? 0,
+      resolution: j['resolution'] ?? '5m',
+      sampledAt: j['sampled_at'] ?? 0,
+    );
+  }
+}
+
 /// En Suricata-regelkategori, härledd ur regelns msg-prefix ("ET MALWARE",
 /// "GPL ATTACK_RESPONSE", "SURICATA"). ET Open levereras som EN sammanslagen
 /// regelfil, så det finns ingen filstruktur att gruppera på — prefixet är det

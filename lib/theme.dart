@@ -145,6 +145,19 @@ class AppColors {
   // information. Ett test vaktar att de inte kollapsar.
   static Color get ok => _d ? Colors.tealAccent : const Color(0xFF15803D);
   static Color get warn => _d ? Colors.amberAccent : const Color(0xFF8A6A00);
+  /// Kategoripalett för cirkeldiagram (enhets-dashboarden). Färgerna ska gå
+  /// att skilja åt bredvid varandra i både ljust och mörkt tema, och används
+  /// cykliskt om det finns fler skivor än färger.
+  static const List<Color> piePalette = [
+    Color(0xFF4FC3F7), Color(0xFF81C784), Color(0xFFFFB74D), Color(0xFFE57373),
+    Color(0xFFBA68C8), Color(0xFF4DD0E1), Color(0xFFFFF176), Color(0xFFA1887F),
+    Color(0xFF90A4AE), Color(0xFFF06292),
+  ];
+
+  /// Reserverad för "Övriga"-skivan, som ska läsas som en samlingspost och
+  /// aldrig förväxlas med en enskild enhet.
+  static const Color pieOther = Color(0xFF546E7A);
+
   static Color get danger => _d ? Colors.redAccent : const Color(0xFFB3261E);
 
   /// Orange — "reject" och återställningsknappen. Egen färg, inte samma som

@@ -453,6 +453,35 @@ class ApiService {
     return [];
   }
 
+  // --- Dashboard: trafik per enhet ---
+
+  /// [res] är "1m" | "5m" | "1h" | "1d". [spark] är antal minutpunkter för
+  /// minigrafen i varje rad (0-60, 0 = ingen).
+  Future<DashboardDataModel?> getDashboardDevices({String res = '5m', int spark = 0}) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/v1/dashboard/devices?res=$res&spark=$spark');
+      final r = await _client.get(uri, headers: _headers);
+      if (r.statusCode == 200) {
+        return DashboardDataModel.fromJson(jsonDecode(r.body) as Map<String, dynamic>);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<List<TrafficPointModel>> getDeviceHistory(String ip,
+      {String res = '1m', int points = 120}) async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/v1/dashboard/device-history?ip=$ip&res=$res&points=$points');
+      final r = await _client.get(uri, headers: _headers);
+      if (r.statusCode == 200) {
+        return (jsonDecode(r.body) as List)
+            .map((e) => TrafficPointModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (_) {}
+    return [];
+  }
+
   // --- IDS-regelurval (kategorier + tystade signaturer) ---
 
   /// Hämtar alla regelkategorier med antal regler, hur många som är aktiva,
