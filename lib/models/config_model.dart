@@ -336,6 +336,8 @@ class IDSConfigModel {
   final bool autoBlock;
   final String autoBlockObjectId;
   final int autoBlockSeverity;
+  final List<DisabledSignatureModel> disabledSignatures;
+  final List<String> disabledCategories;
 
   IDSConfigModel({
     required this.enabled,
@@ -343,15 +345,30 @@ class IDSConfigModel {
     this.autoBlock = false,
     this.autoBlockObjectId = '',
     this.autoBlockSeverity = 2,
+    this.disabledSignatures = const [],
+    this.disabledCategories = const [],
   });
 
   factory IDSConfigModel.fromJson(Map<String, dynamic> json) {
+    var rawSigs = json['disabled_signatures'];
+    List<DisabledSignatureModel> sigs = [];
+    if (rawSigs is List) {
+      sigs = rawSigs.map((s) => DisabledSignatureModel.fromJson(s as Map<String, dynamic>)).toList();
+    }
+    var rawCats = json['disabled_categories'];
+    List<String> cats = [];
+    if (rawCats is List) {
+      cats = rawCats.map((c) => '$c').toList();
+    }
+
     return IDSConfigModel(
       enabled: json['enabled'] ?? false,
       interfaceDevice: json['interface'] ?? '',
       autoBlock: json['auto_block'] ?? false,
       autoBlockObjectId: json['auto_block_object_id'] ?? '',
       autoBlockSeverity: json['auto_block_severity'] ?? 2,
+      disabledSignatures: sigs,
+      disabledCategories: cats,
     );
   }
 
@@ -361,6 +378,8 @@ class IDSConfigModel {
     bool? autoBlock,
     String? autoBlockObjectId,
     int? autoBlockSeverity,
+    List<DisabledSignatureModel>? disabledSignatures,
+    List<String>? disabledCategories,
   }) =>
       IDSConfigModel(
         enabled: enabled ?? this.enabled,
@@ -368,6 +387,8 @@ class IDSConfigModel {
         autoBlock: autoBlock ?? this.autoBlock,
         autoBlockObjectId: autoBlockObjectId ?? this.autoBlockObjectId,
         autoBlockSeverity: autoBlockSeverity ?? this.autoBlockSeverity,
+        disabledSignatures: disabledSignatures ?? this.disabledSignatures,
+        disabledCategories: disabledCategories ?? this.disabledCategories,
       );
 
   Map<String, dynamic> toJson() => {
@@ -376,6 +397,32 @@ class IDSConfigModel {
         'auto_block': autoBlock,
         'auto_block_object_id': autoBlockObjectId,
         'auto_block_severity': autoBlockSeverity,
+        if (disabledSignatures.isNotEmpty) 'disabled_signatures': disabledSignatures.map((s) => s.toJson()).toList(),
+        if (disabledCategories.isNotEmpty) 'disabled_categories': disabledCategories,
+      };
+}
+
+class DisabledSignatureModel {
+  final int sid;
+  final String signature;
+  final String disabledAt;
+
+  DisabledSignatureModel({
+    required this.sid,
+    this.signature = '',
+    this.disabledAt = '',
+  });
+
+  factory DisabledSignatureModel.fromJson(Map<String, dynamic> json) => DisabledSignatureModel(
+        sid: json['sid'] ?? 0,
+        signature: json['signature'] ?? '',
+        disabledAt: json['disabled_at'] ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'sid': sid,
+        if (signature.isNotEmpty) 'signature': signature,
+        if (disabledAt.isNotEmpty) 'disabled_at': disabledAt,
       };
 }
 
