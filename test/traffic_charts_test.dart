@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:security_harbor_gui/widgets/traffic_charts.dart';
 
@@ -60,6 +62,55 @@ void main() {
       expect(formatBps(125), '1.0 kbit/s');
       expect(formatBps(1250000), '10.0 Mbit/s');
       expect(formatBps(0), '0 bps');
+    });
+  });
+
+  group('sliceIndexAt', () {
+    // Fyra lika stora skivor: uppe till höger, nere till höger, nere till
+    // vänster, uppe till vänster — i den ordningen, medurs från klockan tolv.
+    final quarters = [
+      const PieSlice('a', 25, Color(0xFF000001)),
+      const PieSlice('b', 25, Color(0xFF000002)),
+      const PieSlice('c', 25, Color(0xFF000003)),
+      const PieSlice('d', 25, Color(0xFF000004)),
+    ];
+    const size = 100.0;
+    const c = 50.0;
+
+    test('börjar i klockan tolv, inte klockan tre', () {
+      // Rakt uppåt från mitten, ute i ringen.
+      expect(sliceIndexAt(quarters, const Offset(c, 5), size), 0);
+      // Rakt åt höger = andra skivan när man börjar i tolv.
+      expect(sliceIndexAt(quarters, const Offset(95, c), size), 1);
+      expect(sliceIndexAt(quarters, const Offset(c, 95), size), 2);
+      expect(sliceIndexAt(quarters, const Offset(5, c), size), 3);
+    });
+
+    test('mitthålet är inte träffbart', () {
+      expect(sliceIndexAt(quarters, const Offset(c, c), size), -1);
+    });
+
+    test('utanför cirkeln är inte träffbart', () {
+      // Hörnet ligger innanför widgetens kvadrat men utanför ringen.
+      expect(sliceIndexAt(quarters, const Offset(0, 0), size), -1);
+    });
+
+    test('tomt diagram ger -1', () {
+      expect(sliceIndexAt([], const Offset(c, 5), size), -1);
+      expect(sliceIndexAt([const PieSlice('x', 0, Color(0xFF000005))], const Offset(c, 5), size), -1);
+    });
+
+    test('olika stora skivor delas i rätt proportion', () {
+      final uneven = [
+        const PieSlice('stor', 75, Color(0xFF000001)),
+        const PieSlice('liten', 25, Color(0xFF000002)),
+      ];
+      // Tre fjärdedelar medurs från tolv: uppe, höger och nere tillhör den stora.
+      expect(sliceIndexAt(uneven, const Offset(c, 5), size), 0);
+      expect(sliceIndexAt(uneven, const Offset(95, c), size), 0);
+      expect(sliceIndexAt(uneven, const Offset(c, 95), size), 0);
+      // Vänstra kvarten är den lilla.
+      expect(sliceIndexAt(uneven, const Offset(5, c), size), 1);
     });
   });
 }

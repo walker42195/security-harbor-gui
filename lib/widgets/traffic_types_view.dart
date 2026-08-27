@@ -162,15 +162,10 @@ class _TrafficTypesViewState extends State<TrafficTypesView> {
                 style: TextStyle(color: AppColors.textFaint, fontSize: 11))
           else
             Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-              SizedBox(
-                width: 140,
-                height: 140,
-                child: Stack(alignment: Alignment.center, children: [
-                  CustomPaint(size: const Size(140, 140), painter: PieChartPainter(slices)),
-                  Text(formatBytes(total),
-                      style: TextStyle(
-                          color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
-                ]),
+              InteractivePieChart(
+                slices: slices,
+                size: 140,
+                centerLabel: formatBytes(total),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -258,7 +253,8 @@ class _TrafficTypesViewState extends State<TrafficTypesView> {
             Text(tr('traftype.ingen_trafik'),
                 style: TextStyle(color: AppColors.textFaint, fontSize: 11))
           else
-            for (final e in entries) _deviceRow(e.key, e.value),
+            for (final e in entries)
+              _deviceRow(d.deviceNames[e.key] ?? e.key, e.key, e.value),
         ],
       ),
     );
@@ -266,17 +262,23 @@ class _TrafficTypesViewState extends State<TrafficTypesView> {
 
   /// Staplad andelsstapel per enhet: färgerna följer kategoriernas ordning i
   /// legenden ovan, så samma färg betyder samma sak i hela vyn.
-  Widget _deviceRow(String ip, List<TrafficCategoryModel> cats) {
+  Widget _deviceRow(String name, String ip, List<TrafficCategoryModel> cats) {
     final total = cats.fold<int>(0, (a, c) => a + c.total);
     if (total == 0) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(children: [
         SizedBox(
-            width: 120,
-            child: Text(ip,
+          width: 150,
+          // IP:n i verktygstipset så den fortfarande går att se när ett namn
+          // visas i stället.
+          child: Tooltip(
+            message: ip,
+            child: Text(name,
                 style: TextStyle(color: AppColors.text, fontSize: 11),
-                overflow: TextOverflow.ellipsis)),
+                overflow: TextOverflow.ellipsis),
+          ),
+        ),
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(3),

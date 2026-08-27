@@ -40,7 +40,13 @@ List<PieSlice> buildSlices(
 
 class PieChartPainter extends CustomPainter {
   final List<PieSlice> slices;
-  PieChartPainter(this.slices);
+
+  /// Index på skivan under muspekaren, eller -1. Den ritas tjockare och något
+  /// utanför de andra, så det syns vilken som är vald även när färgerna
+  /// ligger nära varandra.
+  final int highlighted;
+
+  PieChartPainter(this.slices, {this.highlighted = -1});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -57,9 +63,12 @@ class PieChartPainter extends CustomPainter {
       ..strokeWidth = stroke;
 
     var start = -math.pi / 2; // börja i klockan tolv
-    for (final s in slices) {
+    for (var i = 0; i < slices.length; i++) {
+      final s = slices[i];
       final sweep = 2 * math.pi * (s.value / total);
+      final isHot = i == highlighted;
       paint.color = s.color;
+      paint.strokeWidth = isHot ? stroke * 1.18 : stroke;
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius - stroke / 2),
         start,
@@ -73,7 +82,8 @@ class PieChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant PieChartPainter old) => old.slices != slices;
+  bool shouldRepaint(covariant PieChartPainter old) =>
+      old.slices != slices || old.highlighted != highlighted;
 }
 
 /// Minigraf för en tabellrad: nedladdning uppåt, uppladdning nedåt, med en
@@ -152,4 +162,136 @@ String formatBps(int bytesPerSecond) {
     i++;
   }
   return '${v.toStringAsFixed(v >= 100 ? 0 : 1)} ${units[i]}';
+}
+
+/// Vilken skiva ligger under punkten [p] i ett diagram med sidan [size]?
+/// Returnerar -1 utanför ringen, i mitthålet eller när diagrammet är tomt.
+///
+/// Bruten ut ur widgeten för att kunna testas: träffdetektering på vinkel och
+/// radie är precis den sortens geometri som blir tyst fel — ett diagram som
+/// börjar i klockan tolv men mäts från klockan tre pekar ut fel skiva utan att
+/// något kraschar.
+int sliceIndexAt(List<PieSlice> slices, Offset p, double size) {
+  final total = slices.fold<int>(0, (a, s) => a + s.value);
+  if (total <= 0) return -1;
+
+  final r = size / 2;
+  final d = p - Offset(r, r);
+  final dist = d.distance;
+  final stroke = r * 0.42;
+  // Bara själva ringen är träffbar — inte hålet i mitten och inte hörnen
+  // utanför cirkeln.
+  if (dist > r || dist < r - stroke) return -1;
+
+  // atan2 ger -pi..pi med noll åt höger; diagrammet börjar i klockan tolv.
+  var angle = math.atan2(d.dy, d.dx) + math.pi / 2;
+  if (angle < 0) angle += 2 * math.pi;
+
+  var start = 0.0;
+  for (var i = 0; i < slices.length; i++) {
+    final sweep = 2 * math.pi * (slices[i].value / total);
+    if (angle >= start && angle < start + sweep) return i;
+    start += sweep;
+  }
+  return -1;
+}
+
+/// Cirkeldiagram som lyfter fram skivan under muspekaren och visar dess
+/// etikett, mängd och andel.
+///
+/// CustomPaint har ingen träffdetektering, så pekarens position räknas om till
+/// vinkel och radie och jämförs mot skivornas gränser. Det är enda sättet att
+/// veta vilken skiva som pekas på utan att lägga en widget per skiva.
+class InteractivePieChart extends StatefulWidget {
+  final List<PieSlice> slices;
+  final double size;
+
+  /// Visas mitt i ringen när ingen skiva pekas på — typiskt totalsumman.
+  final String centerLabel;
+
+  /// Formaterar en skivas värde. Bytes som standard.
+  final String Function(int) formatValue;
+
+  const InteractivePieChart({
+    super.key,
+    required this.slices,
+    required this.size,
+    required this.centerLabel,
+    this.formatValue = formatBytes,
+  });
+
+  @override
+  State<InteractivePieChart> createState() => _InteractivePieChartState();
+}
+
+class _InteractivePieChartState extends State<InteractivePieChart> {
+  int _hovered = -1;
+  Offset _cursor = Offset.zero;
+
+  int _sliceAt(Offset p) => sliceIndexAt(widget.slices, p, widget.size);
+
+  @override
+  Widget build(BuildContext context) {
+    final total = widget.slices.fold<int>(0, (a, s) => a + s.value);
+    final hovered = _hovered >= 0 && _hovered < widget.slices.length ? widget.slices[_hovered] : null;
+
+    return MouseRegion(
+      onHover: (e) {
+        final i = _sliceAt(e.localPosition);
+        if (i != _hovered || _cursor != e.localPosition) {
+          setState(() {
+            _hovered = i;
+            _cursor = e.localPosition;
+          });
+        }
+      },
+      onExit: (_) => setState(() => _hovered = -1),
+      child: SizedBox(
+        width: widget.size,
+        height: widget.size,
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            CustomPaint(
+              size: Size(widget.size, widget.size),
+              painter: PieChartPainter(widget.slices, highlighted: _hovered),
+            ),
+            // Mitten byter till den pekade skivans andel: informationen hamnar
+            // där blicken redan är, utan att ett verktygstips skymmer ringen.
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: widget.size * 0.18),
+              child: Text(
+                hovered == null
+                    ? widget.centerLabel
+                    : '${(100 * hovered.value / (total == 0 ? 1 : total)).toStringAsFixed(hovered.value * 100 / (total == 0 ? 1 : total) < 10 ? 1 : 0)} %',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: hovered == null ? AppColors.text : hovered.color,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold),
+              ),
+            ),
+            if (hovered != null)
+              Positioned(
+                left: _cursor.dx + 12,
+                top: _cursor.dy + 12,
+                child: IgnorePointer(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceDeep,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: hovered.color),
+                    ),
+                    child: Text('${hovered.label}: ${widget.formatValue(hovered.value)}',
+                        style: TextStyle(color: AppColors.text, fontSize: 11)),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 }

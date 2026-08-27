@@ -1618,6 +1618,11 @@ class TrafficTypesModel {
   final List<TrafficCategoryModel> categories;
   final Map<String, List<TrafficCategoryModel>> perDevice;
   final List<TrafficDomainModel> topDomains;
+
+  /// IP -> visningsnamn. Statistiken är nycklad på IP eftersom det är vad
+  /// flödena innehåller, men en adress säger sällan någon någonting.
+  final Map<String, String> deviceNames;
+
   final String resolution;
 
   /// Falskt när Suricata lyssnar på WAN-kortet. Då finns ingen klassificerbar
@@ -1629,6 +1634,7 @@ class TrafficTypesModel {
     required this.categories,
     required this.perDevice,
     required this.topDomains,
+    required this.deviceNames,
     required this.resolution,
     required this.idsOnInside,
   });
@@ -1647,6 +1653,8 @@ class TrafficTypesModel {
       topDomains: ((j['top_domains'] ?? []) as List)
           .map((e) => TrafficDomainModel.fromJson(e as Map<String, dynamic>))
           .toList(),
+      deviceNames: ((j['device_names'] ?? {}) as Map<String, dynamic>)
+          .map((k, v) => MapEntry(k, v?.toString() ?? '')),
       resolution: j['resolution'] ?? '1h',
       idsOnInside: j['ids_on_inside'] ?? false,
     );

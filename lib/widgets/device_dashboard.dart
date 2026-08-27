@@ -284,18 +284,7 @@ class _DeviceDashboardState extends State<DeviceDashboard> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    width: 110,
-                    height: 110,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CustomPaint(size: const Size(110, 110), painter: PieChartPainter(slices)),
-                        Text(centerLabel,
-                            style: TextStyle(color: AppColors.text, fontSize: 11, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
+                  InteractivePieChart(slices: slices, size: 110, centerLabel: centerLabel),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
