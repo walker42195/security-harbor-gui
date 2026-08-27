@@ -1508,12 +1508,12 @@ class DeviceStatModel {
     this.sparkline = const [],
   });
 
-  /// Namnet som visas: värdnamn om DHCP gav ett, annars tillverkare, annars IP.
-  String get displayName {
-    if (hostname.isNotEmpty) return hostname;
-    if (vendor.isNotEmpty) return vendor;
-    return ip;
-  }
+  /// Namnet som visas: DNS-/DHCP-värdnamn om det finns, annars IP-adressen.
+  ///
+  /// Tillverkaren används medvetet INTE som reserv — den har en egen kolumn,
+  /// och att upprepa den i namnkolumnen gjorde att flera olika enheter från
+  /// samma tillverkare såg identiska ut i både tabellen och cirkeldiagrammen.
+  String get displayName => hostname.isNotEmpty ? hostname : ip;
 
   factory DeviceStatModel.fromJson(Map<String, dynamic> j) => DeviceStatModel(
         ip: j['ip'] ?? '',

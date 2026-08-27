@@ -981,12 +981,13 @@ const Map<String, String> _sv = {
   'devdash.nu': 'nu',
   'devdash.totalt': 'totalt',
   'devdash.senaste_timmen': 'Senaste timmen',
-  'devdash.blockerat': 'Blockerat',
+  'devdash.blockerat_fw': 'Blockerat FW',
   'devdash.ids_larm': 'IDS-larm',
   'devdash.sok': 'Sök enhet, IP, MAC…',
   'devdash.ny_enhet_tooltip': 'Sedd första gången det senaste dygnet',
-  'devdash.slumpad_mac_tooltip':
-      'Slumpad MAC-adress (integritetsskydd). Säger inget om wifi eller kabel — brandväggen kan inte se skillnad.',
+  'devdash.slumpad_mac_tooltip': 'Slumpad MAC-adress (integritetsskydd).',
+  'devdash.underrubrik':
+      'Realtidsbandbredd, historik och säkerhetssignaler per enhet på nätet.',
   'nav.ids_rules': 'IDS-regler',
   // --- IDS-regelurval ---
   'sec.tysta_signaturen': 'Tysta signaturen',
@@ -1956,12 +1957,13 @@ const Map<String, String> _en = {
   'devdash.nu': 'now',
   'devdash.totalt': 'total',
   'devdash.senaste_timmen': 'Last hour',
-  'devdash.blockerat': 'Blocked',
+  'devdash.blockerat_fw': 'Blocked FW',
   'devdash.ids_larm': 'IDS alerts',
   'devdash.sok': 'Search device, IP, MAC…',
   'devdash.ny_enhet_tooltip': 'First seen within the last 24 hours',
-  'devdash.slumpad_mac_tooltip':
-      'Randomized MAC address (privacy feature). Says nothing about Wi-Fi vs cable — the firewall cannot tell them apart.',
+  'devdash.slumpad_mac_tooltip': 'Randomized MAC address (privacy feature).',
+  'devdash.underrubrik':
+      'Real-time bandwidth, history and security signals per device on the network.',
   'nav.ids_rules': 'IDS rules',
   // --- IDS rule selection ---
   'sec.tysta_signaturen': 'Silence signature',

@@ -1,6 +1,5 @@
 import 'dart:async';
 import '../theme.dart';
-import '../widgets/device_dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/config_provider.dart';
@@ -227,20 +226,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             }),
             const SizedBox(height: 16),
-
-            // Trafik per ENHET. Ligger före interface-graferna nedan eftersom
-            // "vilken pryl drar bandbredden" är den fråga man faktiskt har när
-            // man öppnar dashboarden — vilket nätverkskort den kom in på är
-            // uppföljningsfrågan.
-            Row(children: [
-              Icon(Icons.devices_other, size: 14, color: AppColors.accent),
-              const SizedBox(width: 6),
-              Text(tr('devdash.rubrik'),
-                  style: TextStyle(color: AppColors.text, fontSize: 13, fontWeight: FontWeight.bold)),
-            ]),
-            const SizedBox(height: 8),
-            const DeviceDashboard(),
-            const SizedBox(height: 20),
 
             // Realtids Bandbreddsgrafer per Nätverkskort & VLAN (Uppdateras 1 ggr/sek)
             Row(

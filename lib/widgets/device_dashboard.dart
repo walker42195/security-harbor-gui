@@ -162,21 +162,25 @@ class _DeviceDashboardState extends State<DeviceDashboard> {
   Widget _buildHeader(DashboardDataModel d) {
     final online = d.devices.where((e) => e.online).length;
     final newDevices = d.devices.where((e) => e.isNew).length;
-    return Row(
+
+    // Wrap i stället för Row med Expanded: fyra Expanded plus fönsterväljaren
+    // i samma rad pressade korten till någon enstaka teckens bredd på smalare
+    // fönster, och texten radbröts lodrätt till oläslighet. Med fasta bredder
+    // flyttas kort som inte får plats ned på nästa rad i stället.
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      crossAxisAlignment: WrapCrossAlignment.start,
       children: [
-        Expanded(child: _stat(tr('devdash.enheter'), '${d.devices.length}',
+        SizedBox(width: 190, child: _stat(tr('devdash.enheter'), '${d.devices.length}',
             '$online ${tr('devdash.online')}', Icons.devices, AppColors.accent)),
-        const SizedBox(width: 10),
-        Expanded(child: _stat(tr('devdash.ned_nu'), formatBps(d.totalRxBps),
+        SizedBox(width: 190, child: _stat(tr('devdash.ned_nu'), formatBps(d.totalRxBps),
             formatBytes(d.totalRx), Icons.download, AppColors.ok)),
-        const SizedBox(width: 10),
-        Expanded(child: _stat(tr('devdash.upp_nu'), formatBps(d.totalTxBps),
+        SizedBox(width: 190, child: _stat(tr('devdash.upp_nu'), formatBps(d.totalTxBps),
             formatBytes(d.totalTx), Icons.upload, AppColors.warn)),
-        const SizedBox(width: 10),
-        Expanded(child: _stat(tr('devdash.nya_enheter'), '$newDevices',
+        SizedBox(width: 190, child: _stat(tr('devdash.nya_enheter'), '$newDevices',
             tr('devdash.senaste_dygnet'), Icons.fiber_new,
             newDevices > 0 ? AppColors.warn : AppColors.textMuted)),
-        const SizedBox(width: 10),
         _buildResolutionPicker(),
       ],
     );
@@ -363,7 +367,7 @@ class _DeviceDashboardState extends State<DeviceDashboard> {
                 _col('↑ ${tr('devdash.totalt')}', _SortCol.tx, numeric: true),
                 DataColumn(label: Text(tr('devdash.senaste_timmen'),
                     style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
-                _col(tr('devdash.blockerat'), _SortCol.blocked, numeric: true),
+                _col(tr('devdash.blockerat_fw'), _SortCol.blocked, numeric: true),
                 _col(tr('devdash.ids_larm'), _SortCol.alerts, numeric: true),
               ],
               rows: rows.map(_row).toList(),

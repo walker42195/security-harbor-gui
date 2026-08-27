@@ -18,6 +18,7 @@ import 'vpn_screen.dart';
 import 'dns_screen.dart';
 import 'dns_devices_screen.dart';
 import 'dhcp_screen.dart';
+import 'device_dashboard_screen.dart';
 import 'ids_rules_screen.dart';
 import 'security_events_screen.dart';
 import 'services_screen.dart';
@@ -42,6 +43,11 @@ const double _kNarrowBreakpoint = 700;
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+
+  /// Enhets-dashboarden nås BARA via loggan och ligger därför utanför
+  /// menyn. Ett negativt index betyder "ingen menypost markerad" —
+  /// NavigationRail tar null som selectedIndex för just det.
+  static const int _kDeviceDashboardIndex = -1;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // Larmbanner för tjänster i "failed"-läge — pollas globalt här (inte bara
@@ -625,7 +631,7 @@ class _MainScreenState extends State<MainScreen> {
                       child: IntrinsicHeight(
                         child: NavigationRail(
                             backgroundColor: AppColors.surface,
-                            selectedIndex: _selectedIndex,
+                            selectedIndex: _selectedIndex < 0 ? null : _selectedIndex,
                             onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
                             labelType: NavigationRailLabelType.all,
                             minWidth: 56,
@@ -641,10 +647,10 @@ class _MainScreenState extends State<MainScreen> {
                                   // dashboarden, samma konvention som en
                                   // hem-knapp i en webbtjänst.
                                   Tooltip(
-                                    message: tr('nav.dashboard'),
+                                    message: tr('devdash.rubrik'),
                                     child: InkWell(
                                       borderRadius: BorderRadius.circular(5),
-                                      onTap: () => setState(() => _selectedIndex = 0),
+                                      onTap: () => setState(() => _selectedIndex = _kDeviceDashboardIndex),
                                       child: ClipRRect(
                                         borderRadius: BorderRadius.circular(5),
                                         child: Image.asset(
@@ -667,7 +673,11 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   VerticalDivider(thickness: 1, width: 1, color: AppColors.divider),
                 ],
-                Expanded(child: screens[_selectedIndex]),
+                Expanded(
+                  child: _selectedIndex < 0
+                      ? const DeviceDashboardScreen()
+                      : screens[_selectedIndex],
+                ),
               ],
             ),
           ),
