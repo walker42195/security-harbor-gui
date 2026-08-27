@@ -442,9 +442,12 @@ class ApiService {
     return (entries: <FirewallLogModel>[], truncated: false);
   }
 
-  Future<List<SecurityEventModel>> getSecurityEvents() async {
+  Future<List<SecurityEventModel>> getSecurityEvents({String source = 'live', int limit = 1000}) async {
     try {
-      final res = await _client.get(Uri.parse('$baseUrl/api/v1/diagnostics/security-events'), headers: _headers);
+      final res = await _client.get(
+        Uri.parse('$baseUrl/api/v1/diagnostics/security-events?source=$source&limit=$limit'),
+        headers: _headers,
+      );
       if (res.statusCode == 200) {
         final list = jsonDecode(res.body) as List;
         return list.map((e) => SecurityEventModel.fromJson(e)).toList();

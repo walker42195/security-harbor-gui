@@ -9,9 +9,8 @@ import '../providers/config_provider.dart';
 import '../localization.dart';
 
 /// Säkerhetshändelser (Fas 9) — visar Suricata-larm och låter admin styra
-/// IDS-läge/auto-block. Inline-IPS (aktiv realtidsblockering) byggs INTE
-/// här — bara passiv övervakning + valfri eftersläpande auto-block mot ett
-/// objekt användaren själv skapat, se IDSConfigModel.
+/// IDS-läge/auto-block. Ger möjlighet att växla mellan realtidslarm (eve.json)
+/// och larmhistorik (fast.log) med avancerad tids- och blockeringsfiltrering.
 class SecurityEventsScreen extends StatefulWidget {
   const SecurityEventsScreen({super.key});
 
@@ -24,12 +23,17 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
   bool _loading = false;
   Timer? _pollTimer;
 
+  // Källa: 'live' (eve.json) eller 'history' (fast.log)
+  String _source = 'live';
+
   final _ifaceController = TextEditingController();
   final _objectIdController = TextEditingController();
   int _autoBlockSeverity = 2;
   bool _isSavingIds = false;
 
-  // Filter (samma mönster som Loggning-sidan) — ett fält per kolumn.
+  // Filter — tidsfönster, autoblock och kolumnfilter.
+  String _timeWindow = 'ALL'; // ALL, 15m, 1h, 6h, 24h, 7d
+  bool _onlyAutoBlockCandidates = false;
   final _fTid = TextEditingController();
   final _fSignatur = TextEditingController();
   final _fKategori = TextEditingController();
@@ -38,6 +42,56 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
   final _fProtokoll = TextEditingController();
   String _fSeverity = 'ALL'; // ALL, 1, 2, 3
 
+  bool _matchesTimeWindow(String ts) {
+    if (_timeWindow == 'ALL') return true;
+    try {
+      DateTime? dt;
+      if (ts.contains('-') && ts.contains('T')) {
+        final clean = ts.replaceAllMapped(RegExp(r'([+-]\d{2})(\d{2})$'), (m) => '${m[1]}:${m[2]}');
+        dt = DateTime.tryParse(clean);
+      } else if (ts.length >= 19 && ts.contains('/')) {
+        final parts = ts.split('-');
+        final dateParts = parts[0].split('/');
+        if (dateParts.length == 3) {
+          final m = int.tryParse(dateParts[0]) ?? 1;
+          final d = int.tryParse(dateParts[1]) ?? 1;
+          final y = int.tryParse(dateParts[2]) ?? 2026;
+          final timeParts = parts[1].split(':');
+          final hh = int.tryParse(timeParts[0]) ?? 0;
+          final mm = int.tryParse(timeParts[1]) ?? 0;
+          final ssParts = timeParts[2].split('.');
+          final ss = int.tryParse(ssParts[0]) ?? 0;
+          dt = DateTime(y, m, d, hh, mm, ss);
+        }
+      }
+      if (dt == null) return true;
+      final now = DateTime.now();
+      Duration window;
+      switch (_timeWindow) {
+        case '15m':
+          window = const Duration(minutes: 15);
+          break;
+        case '1h':
+          window = const Duration(hours: 1);
+          break;
+        case '6h':
+          window = const Duration(hours: 6);
+          break;
+        case '24h':
+          window = const Duration(hours: 24);
+          break;
+        case '7d':
+          window = const Duration(days: 7);
+          break;
+        default:
+          return true;
+      }
+      return now.difference(dt) <= window;
+    } catch (_) {
+      return true;
+    }
+  }
+
   List<SecurityEventModel> get _filteredEvents {
     bool has(TextEditingController c, String v) {
       final f = c.text.trim().toLowerCase();
@@ -45,7 +99,9 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     }
 
     return _events.where((e) {
+      if (_onlyAutoBlockCandidates && e.severity > 2) return false;
       if (_fSeverity != 'ALL' && '${e.severity}' != _fSeverity) return false;
+      if (!_matchesTimeWindow(e.timestamp)) return false;
       return has(_fTid, e.timestamp) &&
           has(_fSignatur, e.signature) &&
           has(_fKategori, e.category) &&
@@ -56,6 +112,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
   }
 
   bool get _hasActiveFilter =>
+      _onlyAutoBlockCandidates ||
+      _timeWindow != 'ALL' ||
       _fSeverity != 'ALL' ||
       [_fTid, _fSignatur, _fKategori, _fKalla, _fMal, _fProtokoll].any((c) => c.text.trim().isNotEmpty);
 
@@ -67,13 +125,17 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
         _fMal.clear();
         _fProtokoll.clear();
         _fSeverity = 'ALL';
+        _timeWindow = 'ALL';
+        _onlyAutoBlockCandidates = false;
       });
 
   @override
   void initState() {
     super.initState();
     _poll();
-    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _poll());
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_source == 'live') _poll();
+    });
   }
 
   @override
@@ -94,12 +156,24 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
     final provider = Provider.of<ConfigProvider>(context, listen: false);
     if (!provider.isAuthenticated) return;
     setState(() => _loading = true);
-    final events = await provider.api.getSecurityEvents();
+    final events = await provider.api.getSecurityEvents(
+      source: _source,
+      limit: _source == 'history' ? 2000 : 1000,
+    );
     if (!mounted) return;
     setState(() {
       _events = events.reversed.toList(); // nyast först
       _loading = false;
     });
+  }
+
+  void _switchSource(String newSource) {
+    if (_source == newSource) return;
+    setState(() {
+      _source = newSource;
+      _events = [];
+    });
+    _poll();
   }
 
   Color _severityColor(int severity) {
@@ -140,13 +214,18 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
               ],
             ),
             const SizedBox(height: 4),
-            Text(tr('sec.passiv_overvakning_suricata_af_packet_lage'),
+            Text(
+              tr('sec.passiv_overvakning_suricata_af_packet_lage'),
               style: TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
             const SizedBox(height: 14),
 
             if (provider.isAdmin) _buildIdsSettingsCard(provider),
             const SizedBox(height: 14),
+
+            // Källväljare / Flikar: Realtid vs Historik
+            _buildSourceTabs(),
+            const SizedBox(height: 10),
 
             Container(
               width: double.infinity,
@@ -167,10 +246,40 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                           padding: const EdgeInsets.all(12),
                           child: Row(
                             children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: _source == 'live' ? AppColors.danger.withValues(alpha: 0.15) : AppColors.accent.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(color: _source == 'live' ? AppColors.danger : AppColors.accent),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _source == 'live' ? Icons.fiber_manual_record : Icons.history,
+                                      size: 11,
+                                      color: _source == 'live' ? AppColors.danger : AppColors.accent,
+                                    ),
+                                    const SizedBox(width: 5),
+                                    Text(
+                                      _source == 'live' ? tr('sec.mode_live') : tr('sec.mode_history'),
+                                      style: TextStyle(
+                                        color: _source == 'live' ? AppColors.danger : AppColors.accent,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
                               Text(
                                 _hasActiveFilter
                                     ? '${filtered.length} av ${_events.length} larm (filtrerat)'
-                                    : '${_events.length} larm (senaste 1000 raderna i eve.json)',
+                                    : _source == 'live'
+                                        ? '${_events.length} larm (realtidsström eve.json)'
+                                        : '${_events.length} larm (larmhistorik fast.log)',
                                 style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.bold),
                               ),
                               const Spacer(),
@@ -179,7 +288,7 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                                 onTap: () => _showIdsInfo(context),
                                 borderRadius: BorderRadius.circular(12),
                                 child: Padding(
-                                  padding: EdgeInsets.all(2),
+                                  padding: const EdgeInsets.all(2),
                                   child: Icon(Icons.help_outline, size: 18, color: AppColors.accent),
                                 ),
                               ),
@@ -189,21 +298,17 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                         Divider(color: AppColors.border, height: 1),
                         _buildIdsFilterBar(),
                         Divider(color: AppColors.border, height: 1),
-                        if (_events.isEmpty)
+                        if (_events.isEmpty && !_loading)
                           Padding(
-                            padding: EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(20),
                             child: Text(tr('sec.inga_larm_annu'), style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
                           )
-                        else if (filtered.isEmpty)
+                        else if (filtered.isEmpty && !_loading)
                           Padding(
-                            padding: EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(20),
                             child: Text(tr('sec.inga_larm_matchar_filtret'), style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
                           )
                         else
-                          // Samma skäl som i Loggning-vyn: man vill kunna
-                          // dra ut en IP-adress eller ett signaturnamn ur
-                          // tabellen med musen. SelectionArea hoppas över på
-                          // web, där den renderar tabellen som en tom ruta.
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: _maybeSelectable(DataTable(
@@ -225,14 +330,26 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                                         onSelectChanged: (_) => _showEventDetail(e),
                                         cells: [
                                           DataCell(Text(e.timestamp, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
-                                          DataCell(Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                            decoration: BoxDecoration(
-                                              color: _severityColor(e.severity).withValues(alpha: 0.15),
-                                              borderRadius: BorderRadius.circular(4),
-                                              border: Border.all(color: _severityColor(e.severity)),
-                                            ),
-                                            child: Text('${e.severity}', style: TextStyle(color: _severityColor(e.severity), fontSize: 11, fontWeight: FontWeight.bold)),
+                                          DataCell(Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: _severityColor(e.severity).withValues(alpha: 0.15),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                  border: Border.all(color: _severityColor(e.severity)),
+                                                ),
+                                                child: Text('${e.severity}', style: TextStyle(color: _severityColor(e.severity), fontSize: 11, fontWeight: FontWeight.bold)),
+                                              ),
+                                              if (e.severity <= 2) ...[
+                                                const SizedBox(width: 4),
+                                                Tooltip(
+                                                  message: tr('sec.autoblock_candidate'),
+                                                  child: Icon(Icons.shield, size: 13, color: e.severity == 1 ? AppColors.danger : AppColors.caution),
+                                                ),
+                                              ],
+                                            ],
                                           )),
                                           DataCell(SizedBox(width: 320, child: Text(e.signature, style: TextStyle(color: AppColors.text, fontSize: 11), overflow: TextOverflow.ellipsis))),
                                           DataCell(Text(e.category, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),
@@ -252,6 +369,56 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSourceTabs() {
+    Widget tab(String label, IconData icon, Color color, String mode) {
+      final active = _source == mode;
+      return InkWell(
+        onTap: () => _switchSource(mode),
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: active ? AppColors.surface : Colors.transparent,
+            border: Border.all(color: active ? AppColors.accent : Colors.transparent),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: active ? color : AppColors.textMuted),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  color: active ? AppColors.text : AppColors.textMuted,
+                  fontSize: 12,
+                  fontWeight: active ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.bg,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          tab(tr('sec.mode_live'), Icons.fiber_manual_record, AppColors.danger, 'live'),
+          const SizedBox(width: 4),
+          tab(tr('sec.mode_history'), Icons.history, AppColors.accent, 'history'),
+        ],
       ),
     );
   }
@@ -276,42 +443,119 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
 
     return Padding(
       padding: const EdgeInsets.all(10),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          field(tr('sec.tid'), _fTid, 150),
-          SizedBox(
-            height: 32,
-            child: DropdownButtonHideUnderline(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(4)),
-                child: DropdownButton<String>(
-                  value: _fSeverity,
-                  dropdownColor: AppColors.surface,
-                  style: TextStyle(fontSize: 11, color: AppColors.text),
-                  items: [
-                    DropdownMenuItem(value: 'ALL', child: Text(tr('sec.allvarlighet_alla'))),
-                    DropdownMenuItem(value: '1', child: Text(tr('sec.allvarlighet_1_hog'))),
-                    DropdownMenuItem(value: '2', child: Text(tr('sec.allvarlighet_2_medel'))),
-                    DropdownMenuItem(value: '3', child: Text(tr('sec.allvarlighet_3_lag'))),
-                  ],
-                  onChanged: (v) => setState(() => _fSeverity = v ?? 'ALL'),
+          // Rad 1: Tidsfönster & Auto-block snabbfilter
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('${tr('sec.time_window')}:', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                  const SizedBox(width: 6),
+                  SizedBox(
+                    height: 30,
+                    child: DropdownButtonHideUnderline(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(4)),
+                        child: DropdownButton<String>(
+                          value: _timeWindow,
+                          dropdownColor: AppColors.surface,
+                          style: TextStyle(fontSize: 11, color: AppColors.text),
+                          items: [
+                            DropdownMenuItem(value: 'ALL', child: Text(tr('sec.time_all'))),
+                            DropdownMenuItem(value: '15m', child: Text(tr('sec.time_15m'))),
+                            DropdownMenuItem(value: '1h', child: Text(tr('sec.time_1h'))),
+                            DropdownMenuItem(value: '6h', child: Text(tr('sec.time_6h'))),
+                            DropdownMenuItem(value: '24h', child: Text(tr('sec.time_24h'))),
+                            DropdownMenuItem(value: '7d', child: Text(tr('sec.time_7d'))),
+                          ],
+                          onChanged: (v) => setState(() => _timeWindow = v ?? 'ALL'),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              InkWell(
+                onTap: () => setState(() => _onlyAutoBlockCandidates = !_onlyAutoBlockCandidates),
+                borderRadius: BorderRadius.circular(4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: _onlyAutoBlockCandidates ? AppColors.caution.withValues(alpha: 0.15) : AppColors.surface,
+                    border: Border.all(color: _onlyAutoBlockCandidates ? AppColors.caution : AppColors.border),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _onlyAutoBlockCandidates ? Icons.shield : Icons.shield_outlined,
+                        size: 13,
+                        color: _onlyAutoBlockCandidates ? AppColors.caution : AppColors.textMuted,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        tr('sec.filter_autoblock_only'),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: _onlyAutoBlockCandidates ? AppColors.caution : AppColors.text,
+                          fontWeight: _onlyAutoBlockCandidates ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-          field(tr('sec.signatur'), _fSignatur, 220),
-          field(tr('sec.kategori'), _fKategori, 180),
-          field(tr('sec.kalla_ip_port'), _fKalla, 150),
-          field(tr('sec.mal_ip_port'), _fMal, 150),
-          field(tr('sec.protokoll'), _fProtokoll, 100),
-          TextButton.icon(
-            icon: Icon(Icons.clear, size: 14, color: AppColors.textMuted),
-            label: Text(tr('sec.rensa_filter'), style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-            onPressed: _hasActiveFilter ? _clearFilters : null,
+          const SizedBox(height: 8),
+
+          // Rad 2: Kolumnfilter
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              field(tr('sec.tid'), _fTid, 150),
+              SizedBox(
+                height: 32,
+                child: DropdownButtonHideUnderline(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(4)),
+                    child: DropdownButton<String>(
+                      value: _fSeverity,
+                      dropdownColor: AppColors.surface,
+                      style: TextStyle(fontSize: 11, color: AppColors.text),
+                      items: [
+                        DropdownMenuItem(value: 'ALL', child: Text(tr('sec.allvarlighet_alla'))),
+                        DropdownMenuItem(value: '1', child: Text(tr('sec.allvarlighet_1_hog'))),
+                        DropdownMenuItem(value: '2', child: Text(tr('sec.allvarlighet_2_medel'))),
+                        DropdownMenuItem(value: '3', child: Text(tr('sec.allvarlighet_3_lag'))),
+                      ],
+                      onChanged: (v) => setState(() => _fSeverity = v ?? 'ALL'),
+                    ),
+                  ),
+                ),
+              ),
+              field(tr('sec.signatur'), _fSignatur, 220),
+              field(tr('sec.kategori'), _fKategori, 180),
+              field(tr('sec.kalla_ip_port'), _fKalla, 150),
+              field(tr('sec.mal_ip_port'), _fMal, 150),
+              field(tr('sec.protokoll'), _fProtokoll, 100),
+              TextButton.icon(
+                icon: Icon(Icons.clear, size: 14, color: AppColors.textMuted),
+                label: Text(tr('sec.rensa_filter'), style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                onPressed: _hasActiveFilter ? _clearFilters : null,
+              ),
+            ],
           ),
         ],
       ),
@@ -420,9 +664,6 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    // Tysta bara om vi har ett SID och användaren är admin.
-                    // Äldre agentversioner skickar inget SID, och då finns
-                    // ingen nyckel att stänga av på.
                     if (e.sid > 0 && context.read<ConfigProvider>().isAdmin)
                       TextButton.icon(
                         icon: Icon(Icons.notifications_off_outlined, size: 14, color: AppColors.textMuted),
@@ -545,9 +786,6 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
       if (ids.autoBlockObjectId.isNotEmpty) {
         _objectIdController.text = ids.autoBlockObjectId;
       } else {
-        // Förifyll standard-objektet "IPS - Auto block" om det finns, så
-        // fältet är redo direkt (Auto-block är fortfarande avstängt tills
-        // användaren själv slår på det).
         final ips = (cfg?.objects ?? []).where((o) => o.name == 'IPS - Auto block');
         if (ips.isNotEmpty) _objectIdController.text = ips.first.id;
       }
@@ -595,8 +833,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
               isDense: true,
               decoration: InputDecoration(
                 labelText: tr('sec.granssnitt_att_overvaka'),
-                contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                border: OutlineInputBorder(),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                border: const OutlineInputBorder(),
               ),
               items: interfaces
                   .map((i) => DropdownMenuItem(value: i.device, child: Text('${i.device} (${i.zone})', style: const TextStyle(fontSize: 12))))
@@ -614,7 +852,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
               ),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(tr('sec.auto_block_kall_ip_n_fran'),
+                child: Text(
+                  tr('sec.auto_block_kall_ip_n_fran'),
                   style: TextStyle(color: AppColors.text, fontSize: 11),
                 ),
               ),
@@ -634,8 +873,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                   style: TextStyle(color: AppColors.text, fontSize: 12),
                   decoration: InputDecoration(
                     labelText: tr('sec.objekt_att_blockera_ip_i'),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    border: OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    border: const OutlineInputBorder(),
                     isDense: true,
                   ),
                   items: (cfg?.objects ?? <ObjectModel>[])
@@ -655,8 +894,8 @@ class _SecurityEventsScreenState extends State<SecurityEventsScreen> {
                   isDense: true,
                   decoration: InputDecoration(
                     labelText: tr('sec.max_allvarlighetsgrad'),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    border: OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    border: const OutlineInputBorder(),
                   ),
                   items: const [1, 2, 3].map((n) => DropdownMenuItem(value: n, child: Text('$n', style: const TextStyle(fontSize: 12)))).toList(),
                   onChanged: (v) => setState(() => _autoBlockSeverity = v ?? 2),
