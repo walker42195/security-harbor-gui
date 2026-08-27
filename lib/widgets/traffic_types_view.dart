@@ -142,6 +142,106 @@ class _TrafficTypesViewState extends State<TrafficTypesView> {
 
   String _catLabel(String c) => tr('traftype.cat_$c');
 
+  /// Kategoriernas ordning, delad av färgvalet och hjälprutan så att båda
+  /// alltid visar samma uppsättning i samma ordning.
+  static const List<String> _categoryOrder = [
+    'streaming', 'social', 'messaging', 'gaming', 'work',
+    'cloud', 'updates', 'smarthome', 'ads', 'web', 'other',
+  ];
+
+  /// Förklarar vad som räknas till vilken kategori. Listan i backend är
+  /// medvetet kort och kan aldrig bli komplett, så användaren behöver kunna
+  /// se vad den faktiskt bygger på i stället för att gissa.
+  void _showCategoryHelp() {
+    showDialog(
+      context: context,
+      builder: (dctx) => Dialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640, maxHeight: 620),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(children: [
+                  Icon(Icons.help_outline, size: 18, color: AppColors.accent),
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child: Text(tr('traftype.hjalp_titel'),
+                          style: TextStyle(
+                              color: AppColors.text, fontSize: 15, fontWeight: FontWeight.bold))),
+                  IconButton(
+                      icon: Icon(Icons.close, color: AppColors.textMuted, size: 18),
+                      onPressed: () => Navigator.pop(dctx)),
+                ]),
+                Divider(color: AppColors.border),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(tr('traftype.hjalp_metod'),
+                            style: TextStyle(
+                                color: AppColors.textMuted, fontSize: 11, height: 1.5)),
+                        const SizedBox(height: 14),
+                        for (final c in _categoryOrder)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 3),
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: BoxDecoration(
+                                        color: _colorForCategory(c),
+                                        borderRadius: BorderRadius.circular(2)),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(_catLabel(c),
+                                          style: TextStyle(
+                                              color: AppColors.text,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 2),
+                                      Text(tr('traftype.help_$c'),
+                                          style: TextStyle(
+                                              color: AppColors.textMuted,
+                                              fontSize: 11,
+                                              height: 1.45)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        Divider(color: AppColors.border),
+                        const SizedBox(height: 6),
+                        Text(tr('traftype.hjalp_okand'),
+                            style: TextStyle(
+                                color: AppColors.textFaint, fontSize: 11, height: 1.5)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildOverview(TrafficTypesModel d) {
     final slices = buildSlices(
       d.categories.map((c) => (label: _catLabel(c.category), value: c.total)).toList(),
@@ -154,8 +254,22 @@ class _TrafficTypesViewState extends State<TrafficTypesView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(tr('traftype.fordelning'),
-              style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
+          Row(children: [
+            Text(tr('traftype.fordelning'),
+                style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 6),
+            Tooltip(
+              message: tr('traftype.hjalp_titel'),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: _showCategoryHelp,
+                child: Padding(
+                  padding: const EdgeInsets.all(2),
+                  child: Icon(Icons.help_outline, size: 15, color: AppColors.accent),
+                ),
+              ),
+            ),
+          ]),
           const SizedBox(height: 10),
           if (slices.isEmpty)
             Text(tr('traftype.ingen_trafik'),
@@ -313,11 +427,7 @@ class _TrafficTypesViewState extends State<TrafficTypesView> {
   /// "streaming" har samma färg på varje rad även när enheter har olika många
   /// kategorier.
   Color _colorForCategory(String c) {
-    const order = [
-      'streaming', 'social', 'messaging', 'gaming', 'work',
-      'cloud', 'updates', 'smarthome', 'ads', 'web', 'other',
-    ];
-    final i = order.indexOf(c);
+    final i = _categoryOrder.indexOf(c);
     return i < 0 ? kPieOtherColor : kPiePalette[i % kPiePalette.length];
   }
 }
