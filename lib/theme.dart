@@ -13,14 +13,108 @@
 ///
 /// Priset är att getters inte är `const`. Där en färg låg i ett
 /// `const`-uttryck har det `const` tagits bort — det är en ren
-/// prestandadetalj i en app som ändå bygger om vid varje temabyte.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Vilket tema som är aktivt.
-enum AppThemeMode { dark, light }
+enum AppThemeMode {
+  dark,
+  modernLight,
+  emeraldLight,
+  sageLight,
+  watchguardLight,
+  checkpointLight,
+  tokyoNight,
+  oledBlack,
+}
+
+extension AppThemeModeExt on AppThemeMode {
+  Color get themeColor {
+    switch (this) {
+      case AppThemeMode.dark:
+        return const Color(0xFF18FFFF);
+      case AppThemeMode.modernLight:
+        return const Color(0xFF2563EB);
+      case AppThemeMode.emeraldLight:
+        return const Color(0xFF047857);
+      case AppThemeMode.sageLight:
+        return const Color(0xFF0F766E);
+      case AppThemeMode.watchguardLight:
+        return const Color(0xFFDC2626);
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFFE11D48);
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFF7AA2F7);
+      case AppThemeMode.oledBlack:
+        return const Color(0xFF00E5FF);
+    }
+  }
+
+  IconData get icon {
+    switch (this) {
+      case AppThemeMode.dark:
+        return Icons.nightlight_round;
+      case AppThemeMode.modernLight:
+        return Icons.wb_sunny_outlined;
+      case AppThemeMode.emeraldLight:
+        return Icons.eco_outlined;
+      case AppThemeMode.sageLight:
+        return Icons.spa_outlined;
+      case AppThemeMode.watchguardLight:
+        return Icons.shield_outlined;
+      case AppThemeMode.checkpointLight:
+        return Icons.security_outlined;
+      case AppThemeMode.tokyoNight:
+        return Icons.brightness_2_outlined;
+      case AppThemeMode.oledBlack:
+        return Icons.contrast;
+    }
+  }
+
+  String get translationKey {
+    switch (this) {
+      case AppThemeMode.dark:
+        return 'theme.dark';
+      case AppThemeMode.modernLight:
+        return 'theme.modern_light';
+      case AppThemeMode.emeraldLight:
+        return 'theme.emerald_light';
+      case AppThemeMode.sageLight:
+        return 'theme.sage_light';
+      case AppThemeMode.watchguardLight:
+        return 'theme.watchguard_light';
+      case AppThemeMode.checkpointLight:
+        return 'theme.checkpoint_light';
+      case AppThemeMode.tokyoNight:
+        return 'theme.tokyo_night';
+      case AppThemeMode.oledBlack:
+        return 'theme.oled_black';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case AppThemeMode.dark:
+        return 'Mörk klassisk marinblå stil';
+      case AppThemeMode.modernLight:
+        return 'Krispig vit SaaS med kungblå accenter';
+      case AppThemeMode.emeraldLight:
+        return 'Fräsch smaragdgrön stil på vit yta';
+      case AppThemeMode.sageLight:
+        return 'Dämpad salviagrön & skiffergrå';
+      case AppThemeMode.watchguardLight:
+        return 'Mörk sidebar & WatchGuard-röd accent';
+      case AppThemeMode.checkpointLight:
+        return 'Marinblå sidebar & Check Point Magenta';
+      case AppThemeMode.tokyoNight:
+        return 'Mörk nattpalett med pastell & lavendel';
+      case AppThemeMode.oledBlack:
+        return 'Kolsvart OLED med neonaccenter';
+    }
+  }
+}
 
 /// Global temastyrning. Notifierar så att hela appen byggs om vid byte.
 class AppTheme extends ChangeNotifier {
@@ -32,24 +126,29 @@ class AppTheme extends ChangeNotifier {
   /// Nuvarande läge. Statiskt så att [AppColors] kan läsa det utan context.
   static AppThemeMode mode = AppThemeMode.dark;
 
-  static bool get isDark => mode == AppThemeMode.dark;
+  static bool get isDark =>
+      mode == AppThemeMode.dark ||
+      mode == AppThemeMode.tokyoNight ||
+      mode == AppThemeMode.oledBlack;
 
-  /// Läser sparat val vid uppstart. Mörkt är standard — det är vad appen
-  /// alltid sett ut som, och ett tema ska inte byta av sig självt.
+  /// Läser sparat val vid uppstart. Mörkt är standard.
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final saved = prefs.getString(_prefsKey);
-      if (saved == AppThemeMode.light.name) {
-        mode = AppThemeMode.light;
+      if (saved != null) {
+        mode = AppThemeMode.values.firstWhere(
+          (e) => e.name == saved,
+          orElse: () => saved == 'light' ? AppThemeMode.modernLight : AppThemeMode.dark,
+        );
         notifyListeners();
       }
     } catch (_) {
-      // Kan inte läsa inställningen (t.ex. första starten): behåll mörkt.
+      // Kan inte läsa inställningen: behåll standard.
     }
   }
 
-  Future<void> toggle() => setMode(isDark ? AppThemeMode.light : AppThemeMode.dark);
+  Future<void> toggle() => setMode(isDark ? AppThemeMode.modernLight : AppThemeMode.dark);
 
   Future<void> setMode(AppThemeMode next) async {
     if (mode == next) return;
@@ -65,86 +164,274 @@ class AppTheme extends ChangeNotifier {
 }
 
 /// Färgerna som byter med temat.
-///
-/// Accentfärgerna (cyan, bärnsten, rött, grönt) är AVSIKTLIGT nästan
-/// oförändrade mellan temana: de bär betydelse i det här gränssnittet —
-/// rött är deny, grönt är accept, bärnsten är varning — och en färgkodning
-/// som byter innebörd mellan teman vore direkt farlig i en brandvägg.
-/// I ljust tema mörkas de bara så mycket att de får tillräcklig kontrast
-/// mot vit bakgrund.
 class AppColors {
   const AppColors._();
 
+  static AppThemeMode get _m => AppTheme.mode;
   static bool get _d => AppTheme.isDark;
 
-  // Det ljusa temat följer produktens egen grafiska profil (webbplatsen):
-  // varm gräddvit botten, nästan svart text, och varumärkets mint och gult
-  // som knappfärger. Det första ljusa temat var blågrått Material och kändes
-  // som en annan produkt.
-
-  /// Sidbakgrund — varm gräddvit, inte blågrå.
-  static Color get bg => _d ? const Color(0xFF0F172A) : const Color(0xFFF2F0E9);
+  /// Sidbakgrund.
+  static Color get bg {
+    switch (_m) {
+      case AppThemeMode.dark:
+        return const Color(0xFF0F172A);
+      case AppThemeMode.modernLight:
+        return const Color(0xFFFFFFFF);
+      case AppThemeMode.emeraldLight:
+        return const Color(0xFFFFFFFF);
+      case AppThemeMode.sageLight:
+        return const Color(0xFFF8FAFC);
+      case AppThemeMode.watchguardLight:
+        return const Color(0xFFF4F6F9);
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFFF8FAFC);
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFF1A1B26);
+      case AppThemeMode.oledBlack:
+        return const Color(0xFF000000);
+    }
+  }
 
   /// Kort- och panelyta.
-  static Color get surface => _d ? const Color(0xFF1E293B) : const Color(0xFFFBFAF6);
+  static Color get surface {
+    switch (_m) {
+      case AppThemeMode.dark:
+        return const Color(0xFF1E293B);
+      case AppThemeMode.modernLight:
+        return const Color(0xFFF8FAFC);
+      case AppThemeMode.emeraldLight:
+        return const Color(0xFFF8FAFC);
+      case AppThemeMode.sageLight:
+        return const Color(0xFFFFFFFF);
+      case AppThemeMode.watchguardLight:
+        return const Color(0xFFFFFFFF);
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFFFFFFFF);
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFF24283B);
+      case AppThemeMode.oledBlack:
+        return const Color(0xFF0C0D0E);
+    }
+  }
 
   /// Ytan en nivå djupare (kodrutor, inbäddade listor).
-  static Color get surfaceDeep => _d ? const Color(0xFF0F172A) : const Color(0xFFEDEBE2);
+  static Color get surfaceDeep {
+    switch (_m) {
+      case AppThemeMode.dark:
+        return const Color(0xFF0F172A);
+      case AppThemeMode.modernLight:
+        return const Color(0xFFF1F5F9);
+      case AppThemeMode.emeraldLight:
+        return const Color(0xFFF0FDF4);
+      case AppThemeMode.sageLight:
+        return const Color(0xFFF1F5F9);
+      case AppThemeMode.watchguardLight:
+        return const Color(0xFFE9ECEF);
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFFF1F5F9);
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFF16161E);
+      case AppThemeMode.oledBlack:
+        return const Color(0xFF000000);
+    }
+  }
+
+  /// Navigations-sidebar yta.
+  static Color get sidebarBg {
+    switch (_m) {
+      case AppThemeMode.watchguardLight:
+        return const Color(0xFF1E222D);
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFF0F172A);
+      default:
+        return surface;
+    }
+  }
 
   /// Ramar och avdelare.
-  static Color get border => _d ? const Color(0xFF334155) : const Color(0xFFD6D3C8);
+  static Color get border {
+    switch (_m) {
+      case AppThemeMode.dark:
+        return const Color(0xFF334155);
+      case AppThemeMode.modernLight:
+      case AppThemeMode.emeraldLight:
+      case AppThemeMode.sageLight:
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFFCBD5E1);
+      case AppThemeMode.watchguardLight:
+        return const Color(0xFFDEE2E6);
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFF3B4261);
+      case AppThemeMode.oledBlack:
+        return const Color(0xFF22262B);
+    }
+  }
 
   /// Svag avdelare.
-  static Color get divider => _d ? Colors.white10 : Colors.black12;
+  static Color get divider => _d ? Colors.white10 : const Color(0xFFE2E8F0);
 
-  /// Brödtext — nästan svart, som på webbplatsen.
-  static Color get text => _d ? Colors.white : const Color(0xFF1A1A1A);
+  /// Brödtext.
+  static Color get text {
+    switch (_m) {
+      case AppThemeMode.dark:
+        return Colors.white;
+      case AppThemeMode.modernLight:
+      case AppThemeMode.emeraldLight:
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFF0F172A);
+      case AppThemeMode.sageLight:
+        return const Color(0xFF1E293B);
+      case AppThemeMode.watchguardLight:
+        return const Color(0xFF212529);
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFFC0CAF5);
+      case AppThemeMode.oledBlack:
+        return const Color(0xFFFFFFFF);
+    }
+  }
 
   /// Sekundär text.
-  static Color get textMuted => _d ? Colors.white70 : const Color(0xFF4A4A45);
+  static Color get textMuted {
+    switch (_m) {
+      case AppThemeMode.dark:
+        return Colors.white70;
+      case AppThemeMode.modernLight:
+      case AppThemeMode.emeraldLight:
+      case AppThemeMode.checkpointLight:
+      case AppThemeMode.sageLight:
+        return const Color(0xFF475569);
+      case AppThemeMode.watchguardLight:
+        return const Color(0xFF495057);
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFF9AA5CE);
+      case AppThemeMode.oledBlack:
+        return const Color(0xFFAAAAAA);
+    }
+  }
 
-  /// Svag text (platshållare, "—", överstrukna gamla värden).
-  /// I ljust läge mörkare än man först tror: 0xFF94A3B8 mot vitt ger under
-  /// 3:1 i kontrast och blev i praktiken oläsligt.
-  static Color get textFaint => _d ? Colors.white38 : const Color(0xFF6B6B62);
+  /// Svag text.
+  static Color get textFaint {
+    switch (_m) {
+      case AppThemeMode.dark:
+        return Colors.white38;
+      case AppThemeMode.modernLight:
+      case AppThemeMode.emeraldLight:
+      case AppThemeMode.sageLight:
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFF64748B);
+      case AppThemeMode.watchguardLight:
+        return const Color(0xFF6C757D);
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFF7A84AA);
+      case AppThemeMode.oledBlack:
+        return const Color(0xFF777777);
+    }
+  }
 
   /// Platshållartext i inmatningsfält.
-  static Color get hint => _d ? const Color(0xFF64748B) : const Color(0xFF8A8A80);
+  static Color get hint => textFaint;
 
   /// Accent för TEXT och ikoner.
-  ///
-  /// Varumärkets mint (0xFF3DDC97) fungerar inte som textfärg — den ger runt
-  /// 1.9:1 mot gräddvitt. Här används därför en mörk variant i samma
-  /// hue-familj: det läses som samma färg, men går att läsa.
-  static Color get accent => _d ? Colors.cyanAccent : const Color(0xFF0B6E4F);
+  static Color get accent {
+    switch (_m) {
+      case AppThemeMode.dark:
+        return Colors.cyanAccent;
+      case AppThemeMode.modernLight:
+        return const Color(0xFF0369A1); // Sky 700
+      case AppThemeMode.emeraldLight:
+        return const Color(0xFF047857); // Deep Emerald
+      case AppThemeMode.sageLight:
+        return const Color(0xFF0F766E); // Deep Teal / Sage
+      case AppThemeMode.watchguardLight:
+        return const Color(0xFFB91C1C); // WatchGuard Red
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFFBE185D); // Check Point Magenta
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFF7DCFFF); // Tokyo Cyan
+      case AppThemeMode.oledBlack:
+        return const Color(0xFF00E5FF); // Electric Cyan
+    }
+  }
 
-  /// Text ovanpå accentfärgade knappar.
+  /// Text ovanpå accentfärgade knappar/badgar.
   static Color get onAccent => _d ? Colors.black : Colors.white;
 
-  /// PRIMÄRKNAPPENS bakgrund — varumärkets mint.
-  ///
-  /// Egen färg skild från [accent] just för att den bär text i stället för
-  /// att VARA text: på en knapp ligger färgen bakom svart text, precis som på
-  /// webbplatsen, och då är den ljusa minten rätt.
-  static Color get accentBg => _d ? Colors.cyanAccent : const Color(0xFF3DDC97);
-  static Color get onAccentBg => Colors.black;
+  /// PRIMÄRKNAPPENS bakgrund.
+  static Color get accentBg {
+    switch (_m) {
+      case AppThemeMode.dark:
+        return Colors.cyanAccent;
+      case AppThemeMode.modernLight:
+        return const Color(0xFF2563EB);
+      case AppThemeMode.emeraldLight:
+        return const Color(0xFF047857);
+      case AppThemeMode.sageLight:
+        return const Color(0xFF0F766E);
+      case AppThemeMode.watchguardLight:
+        return const Color(0xFFDC2626);
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFFE11D48);
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFF7AA2F7);
+      case AppThemeMode.oledBlack:
+        return const Color(0xFF00E676);
+    }
+  }
 
-  /// SEKUNDÄRKNAPPENS bakgrund — varumärkets gula.
+  static Color get onAccentBg {
+    switch (_m) {
+      case AppThemeMode.dark:
+      case AppThemeMode.tokyoNight:
+      case AppThemeMode.oledBlack:
+        return Colors.black;
+      case AppThemeMode.modernLight:
+      case AppThemeMode.emeraldLight:
+      case AppThemeMode.sageLight:
+      case AppThemeMode.watchguardLight:
+      case AppThemeMode.checkpointLight:
+        return Colors.white;
+    }
+  }
+
+  /// SEKUNDÄRKNAPPENS bakgrund.
   static Color get warnBg => _d ? Colors.amberAccent : const Color(0xFFFFE500);
   static Color get onWarnBg => Colors.black;
 
   /// Betydelsebärande statusfärger.
-  ///
-  /// Materials `*Accent`-nyanser är ljusa — de är gjorda för att lysa mot en
-  /// mörk yta. Mot vitt ger de under 2:1 i kontrast och blir närmast
-  /// osynliga (rapporterat 2026-08-26). I ljust läge används därför mörka
-  /// motsvarigheter med samma INNEBÖRD: grönt är fortfarande accept, rött
-  /// deny, bärnsten varning.
-  // Skilt från [accent], som också är grön i ljust läge: "accept" och
-  // UI-accenten får inte vara samma färg — då bär färgkodningen ingen
-  // information. Ett test vaktar att de inte kollapsar.
-  static Color get ok => _d ? Colors.tealAccent : const Color(0xFF15803D);
-  static Color get warn => _d ? Colors.amberAccent : const Color(0xFF8A6A00);
+  static Color get ok {
+    switch (_m) {
+      case AppThemeMode.dark:
+        return Colors.tealAccent;
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFF9ECE6A);
+      case AppThemeMode.oledBlack:
+        return const Color(0xFF00E676);
+      case AppThemeMode.modernLight:
+      case AppThemeMode.emeraldLight:
+      case AppThemeMode.sageLight:
+      case AppThemeMode.watchguardLight:
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFF15803D);
+    }
+  }
+
+  static Color get warn {
+    switch (_m) {
+      case AppThemeMode.dark:
+        return Colors.amberAccent;
+      case AppThemeMode.tokyoNight:
+        return const Color(0xFFE0AF68);
+      case AppThemeMode.oledBlack:
+        return const Color(0xFFFFD600);
+      case AppThemeMode.modernLight:
+      case AppThemeMode.emeraldLight:
+      case AppThemeMode.sageLight:
+      case AppThemeMode.watchguardLight:
+      case AppThemeMode.checkpointLight:
+        return const Color(0xFF8A6A00);
+    }
+  }
+
   /// Kategoripalett för cirkeldiagram (enhets-dashboarden). Färgerna ska gå
   /// att skilja åt bredvid varandra i både ljust och mörkt tema, och används
   /// cykliskt om det finns fler skivor än färger.

@@ -201,8 +201,113 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
 
           const SizedBox(height: 16),
+          _buildThemeCard(),
+          const SizedBox(height: 16),
           _buildLoginCard(context, provider),
         ],
+        ),
+      ),
+    );
+  }
+
+  /// Temaväljare för administrationsgränssnittet.
+  Widget _buildThemeCard() {
+    return Card(
+      color: AppColors.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.palette_outlined, color: AppColors.accent, size: 22),
+                const SizedBox(width: 10),
+                Text(
+                  tr('main.theme_toggle'),
+                  style: TextStyle(
+                    color: AppColors.accent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Välj vilket färgtema som ska användas i gränssnittet.',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: AppThemeMode.values.map((mode) {
+                final isSelected = AppTheme.mode == mode;
+                final color = mode.themeColor;
+                return InkWell(
+                  onTap: () => AppTheme.instance.setMode(mode),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 260,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? color.withValues(alpha: 0.12) : AppColors.surfaceDeep,
+                      border: Border.all(
+                        color: isSelected ? color : AppColors.border,
+                        width: isSelected ? 1.5 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(mode.icon, size: 18, color: color),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      tr(mode.translationKey),
+                                      style: TextStyle(
+                                        color: isSelected ? color : AppColors.text,
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected)
+                                    Icon(Icons.check_circle, size: 14, color: color),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                mode.description,
+                                style: TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ),
       ),
     );

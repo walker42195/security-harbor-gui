@@ -249,19 +249,29 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                   ),
                 ),
-                // Temaväxling i toppraden: den ska vara nåbar från varje vy,
-                // inte begravd i Inställningar.
+                // Temaväxling i toppraden: snabbåtkomst till alla teman.
                 const SizedBox(width: 8),
-                Tooltip(
-                  message: tr('main.theme_toggle'),
-                  child: IconButton(
-                    icon: Icon(AppTheme.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                        size: 17, color: AppColors.accent),
-                    splashRadius: 16,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    padding: EdgeInsets.zero,
-                    onPressed: () => AppTheme.instance.toggle(),
+                PopupMenuButton<AppThemeMode>(
+                  tooltip: tr('main.theme_toggle'),
+                  color: AppColors.surface,
+                  icon: Icon(
+                    AppTheme.isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                    size: 17,
+                    color: AppColors.accent,
                   ),
+                  splashRadius: 16,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  padding: EdgeInsets.zero,
+                  initialValue: AppTheme.mode,
+                  onSelected: (mode) => AppTheme.instance.setMode(mode),
+                  itemBuilder: (ctx) => AppThemeMode.values
+                      .map((mode) => _themeMenuItem(
+                            mode,
+                            tr(mode.translationKey),
+                            mode.icon,
+                            mode.themeColor,
+                          ))
+                      .toList(),
                 ),
                 // WAN-adressen bredvid anslutningsindikatorn. Den är det man
                 // oftast behöver läsa av snabbt (DNS-pekare, port forwards,
@@ -630,7 +640,7 @@ class _MainScreenState extends State<MainScreen> {
                     child: SingleChildScrollView(
                       child: IntrinsicHeight(
                         child: NavigationRail(
-                            backgroundColor: AppColors.surface,
+                            backgroundColor: AppColors.sidebarBg,
                             selectedIndex: _selectedIndex < 0 ? null : _selectedIndex,
                             onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
                             labelType: NavigationRailLabelType.all,
@@ -915,6 +925,38 @@ Widget _changeRow(ConfigChange c) {
             ],
           ),
         ),
+      ],
+    ),
+  );
+}
+
+PopupMenuItem<AppThemeMode> _themeMenuItem(
+  AppThemeMode mode,
+  String label,
+  IconData icon,
+  Color accentColor,
+) {
+  final isSelected = AppTheme.mode == mode;
+  return PopupMenuItem<AppThemeMode>(
+    value: mode,
+    child: Row(
+      children: [
+        Icon(icon, size: 16, color: accentColor),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: isSelected ? accentColor : AppColors.text,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+        if (isSelected) ...[
+          const SizedBox(width: 6),
+          Icon(Icons.check, size: 14, color: accentColor),
+        ],
       ],
     ),
   );
