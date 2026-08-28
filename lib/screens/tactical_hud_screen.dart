@@ -7,6 +7,36 @@ import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import '../theme.dart';
 
+/// Stjärnpartikel för 3D-rymdsimulering.
+class _WarpStar {
+  double x;
+  double y;
+  double z;
+  double prevZ;
+  double size;
+
+  _WarpStar({
+    required this.x,
+    required this.y,
+    required this.z,
+    required this.prevZ,
+    required this.size,
+  });
+
+  factory _WarpStar.random(math.Random rng) {
+    final x = (rng.nextDouble() * 2.0 - 1.0);
+    final y = (rng.nextDouble() * 2.0 - 1.0);
+    final z = rng.nextDouble() * 0.95 + 0.05;
+    return _WarpStar(
+      x: x,
+      y: y,
+      z: z,
+      prevZ: z + 0.05,
+      size: rng.nextDouble() * 1.5 + 0.5,
+    );
+  }
+}
+
 /// Taktisk Cyber-HUD & Cockpit-vy inspirerad av futuristiska rymdskepps-cockpits.
 /// Alla mätare, radarn, siktet och telemetrin drivs av realtidsdata från
 /// brandväggens kärna (Suricata, nftables, Unbound, Kea DHCP och gränssnittstrafik).
@@ -26,9 +56,14 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
   bool _isLoading = true;
   DeviceStatModel? _selectedRadarDevice;
 
+  late final List<_WarpStar> _stars;
+  final math.Random _rng = math.Random(42);
+
   @override
   void initState() {
     super.initState();
+    _stars = List.generate(95, (_) => _WarpStar.random(_rng));
+
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 6),
@@ -81,6 +116,18 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     if (bytes >= 1048576) return '${(bytes / 1048576).toStringAsFixed(1)} MB';
     if (bytes >= 1024) return '${(bytes / 1024).toStringAsFixed(1)} kB';
     return '$bytes B';
+  }
+
+  static String _getWarpFactor(int rxBps) {
+    final mbps = rxBps / 1000000.0;
+    final kbps = rxBps / 1000.0;
+    if (mbps >= 200.0) return 'HYPERSPACE (WARP 9.9)';
+    if (mbps >= 50.0) return 'WARP SPEED (WARP 8.2)';
+    if (mbps >= 10.0) return 'WARP FLIGHT (WARP 4.5)';
+    if (mbps >= 1.0) return 'WARP VECTOR (WARP 1.8)';
+    if (kbps >= 50.0) return 'IMPULSE DRIVE (0.7c)';
+    if (kbps >= 1.0) return 'SUB-LIGHT CRUISE (0.2c)';
+    return 'STELLAR DRIFT (IDLE)';
   }
 
   @override
@@ -334,11 +381,14 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     );
   }
 
-  /// MITTPANEL: RETIKEL / HASTIGHET / AKTIV MÅLTRAFIK
+  /// MITTPANEL: RETIKEL / HASTIGHET / AKTIV MÅLTRAFIK / 3D WARP STJÄRNFÄLT
   Widget _buildCenterTargetPanel(ConfigProvider provider) {
-    final downRate = _formatBps(_dashboardData?.totalRxBps ?? 0);
-    final upRate = _formatBps(_dashboardData?.totalTxBps ?? 0);
+    final rxBps = _dashboardData?.totalRxBps ?? 0;
+    final txBps = _dashboardData?.totalTxBps ?? 0;
+    final downRate = _formatBps(rxBps);
+    final upRate = _formatBps(txBps);
     final totalVol = _formatBytes((_dashboardData?.totalRx ?? 0) + (_dashboardData?.totalTx ?? 0));
+    final warpFactor = _getWarpFactor(rxBps);
 
     return _buildCockpitContainer(
       title: 'TRAFFIC VELOCITY & TARGETING',
@@ -346,24 +396,33 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
       icon: Icons.track_changes,
       child: Column(
         children: [
-          // Cockpit Crosshair Reticle (Sikte med roterande HUD-element)
+          // Cockpit Observation Window med 3D Warp Starfield & Sikte
           Expanded(
             flex: 5,
-            child: Center(
-              child: AnimatedBuilder(
-                animation: _animController,
-                builder: (context, _) {
-                  return CustomPaint(
-                    size: const Size(260, 260),
-                    painter: _CrosshairReticlePainter(
-                      animValue: _animController.value,
-                      accentColor: AppColors.accent,
-                      okColor: AppColors.ok,
-                      borderColor: AppColors.border,
-                      centerLabel: 'VELOCITY: $downRate',
-                    ),
-                  );
-                },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                color: AppColors.surfaceDeep,
+                child: AnimatedBuilder(
+                  animation: _animController,
+                  builder: (context, _) {
+                    return CustomPaint(
+                      size: Size.infinite,
+                      painter: _WarpStarfieldReticlePainter(
+                        stars: _stars,
+                        rng: _rng,
+                        rxBps: rxBps,
+                        animValue: _animController.value,
+                        accentColor: AppColors.accent,
+                        okColor: AppColors.ok,
+                        borderColor: AppColors.border,
+                        textColor: AppColors.text,
+                        centerLabel: 'VELOCITY: $downRate',
+                        warpLabel: warpFactor,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -918,30 +977,84 @@ class _ShieldGaugePainter extends CustomPainter {
   bool shouldRepaint(covariant _ShieldGaugePainter oldDelegate) => true;
 }
 
-/// Sikte / Crosshair Reticle Målare
-class _CrosshairReticlePainter extends CustomPainter {
+/// Sikte / Crosshair Reticle & 3D Warp Starfield Målare
+class _WarpStarfieldReticlePainter extends CustomPainter {
+  final List<_WarpStar> stars;
+  final math.Random rng;
+  final int rxBps;
   final double animValue;
   final Color accentColor;
   final Color okColor;
   final Color borderColor;
+  final Color textColor;
   final String centerLabel;
+  final String warpLabel;
 
-  _CrosshairReticlePainter({
+  _WarpStarfieldReticlePainter({
+    required this.stars,
+    required this.rng,
+    required this.rxBps,
     required this.animValue,
     required this.accentColor,
     required this.okColor,
     required this.borderColor,
+    required this.textColor,
     required this.centerLabel,
+    required this.warpLabel,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 15;
+    final maxRadius = math.min(size.width, size.height) / 2;
 
-    // Yttre koncentriska cirklar
+    // 1. Beräkna Warp Speed baserat på Download BPS
+    final kbps = rxBps / 1000.0;
+    final mbps = kbps / 1000.0;
+    // Grundhastighet (långsam drift) -> Ökar kraftigt vid nedladdning
+    final speed = 0.005 + math.min(0.065, (mbps / 100.0) * 0.045 + (kbps > 5.0 ? 0.008 : 0.0));
+
+    // 2. Simulera och rita 3D Warp Starfield
+    for (final star in stars) {
+      star.prevZ = star.z;
+      star.z -= speed;
+
+      if (star.z <= 0.02) {
+        star.z = 1.0;
+        star.prevZ = 1.0;
+        star.x = (rng.nextDouble() * 2.0 - 1.0);
+        star.y = (rng.nextDouble() * 2.0 - 1.0);
+      }
+
+      // 3D -> 2D Projektion från centrum
+      final px = center.dx + (star.x / star.prevZ) * (size.width * 0.55);
+      final py = center.dy + (star.y / star.prevZ) * (size.height * 0.55);
+      final sx = center.dx + (star.x / star.z) * (size.width * 0.55);
+      final sy = center.dy + (star.y / star.z) * (size.height * 0.55);
+
+      if (sx >= 0 && sx <= size.width && sy >= 0 && sy <= size.height) {
+        final alpha = (1.0 - star.z).clamp(0.15, 1.0);
+        final streakPaint = Paint()
+          ..color = accentColor.withValues(alpha: alpha)
+          ..strokeWidth = math.max(1.0, (1.0 - star.z) * (speed > 0.02 ? 2.8 : 1.5))
+          ..strokeCap = StrokeCap.round;
+
+        // Rita stjärnsträck (warp streak)
+        canvas.drawLine(Offset(px, py), Offset(sx, sy), streakPaint);
+
+        // Liten ljuspunkt i änden av sträcket
+        final dotPaint = Paint()
+          ..color = okColor.withValues(alpha: alpha)
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(Offset(sx, sy), math.max(1.0, star.size * (1.0 - star.z) * 1.5), dotPaint);
+      }
+    }
+
+    // 3. Yttre siktcirklar och HUD-element ovanpå rymden
+    final radius = maxRadius - 20;
+
     final circlePaint = Paint()
-      ..color = borderColor.withValues(alpha: 0.4)
+      ..color = borderColor.withValues(alpha: 0.45)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
@@ -949,7 +1062,7 @@ class _CrosshairReticlePainter extends CustomPainter {
     canvas.drawCircle(center, radius * 0.65, circlePaint);
     canvas.drawCircle(center, radius * 0.3, circlePaint);
 
-    // Roterande HUD-klamrar [ 0.8x ] och [ 1.2x ]
+    // 4. Roterande HUD-klamrar [ 0.8x ] och [ 1.2x ]
     final rotation = animValue * math.pi * 2;
     final bracketPaint = Paint()
       ..color = accentColor
@@ -960,14 +1073,13 @@ class _CrosshairReticlePainter extends CustomPainter {
     canvas.translate(center.dx, center.dy);
     canvas.rotate(rotation);
 
-    // 4 hörnklamrar
     const arcLen = math.pi * 0.25;
     canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: radius * 0.85), -arcLen / 2, arcLen, false, bracketPaint);
     canvas.drawArc(Rect.fromCircle(center: Offset.zero, radius: radius * 0.85), math.pi - arcLen / 2, arcLen, false, bracketPaint);
 
     canvas.restore();
 
-    // Mittkorshår
+    // 5. Mittkorshår
     final crosshairPaint = Paint()
       ..color = okColor
       ..style = PaintingStyle.stroke
@@ -977,10 +1089,29 @@ class _CrosshairReticlePainter extends CustomPainter {
     canvas.drawLine(center + const Offset(8, 0), center + Offset(radius * 0.4, 0), crosshairPaint);
     canvas.drawLine(center - Offset(0, radius * 0.4), center - const Offset(0, 8), crosshairPaint);
     canvas.drawLine(center + const Offset(0, 8), center + Offset(0, radius * 0.4), crosshairPaint);
+
+    // 6. HUD Warp Text-indikator längst ner i siktet
+    final warpPainter = TextPainter(
+      text: TextSpan(
+        text: warpLabel,
+        style: TextStyle(
+          color: accentColor,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.5,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    warpPainter.paint(
+      canvas,
+      Offset(center.dx - warpPainter.width / 2, center.dy + radius * 0.7),
+    );
   }
 
   @override
-  bool shouldRepaint(covariant _CrosshairReticlePainter oldDelegate) => true;
+  bool shouldRepaint(covariant _WarpStarfieldReticlePainter oldDelegate) => true;
 }
 
 /// Navigationsradar med Svepande Stråle
