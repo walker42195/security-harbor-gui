@@ -17,7 +17,12 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+const _windowThemeChannel = MethodChannel('security_harbor/window_theme');
+
+String _toHex(Color c) => '#${c.value.toRadixString(16).padLeft(8, '0').substring(2)}';
 
 /// Vilket tema som är aktivt.
 enum AppThemeMode {
@@ -126,9 +131,22 @@ class AppTheme extends ChangeNotifier {
         );
         notifyListeners();
       }
+      syncNativeWindowTheme();
     } catch (_) {
       // Kan inte läsa inställningen: behåll standard.
     }
+  }
+
+  static void syncNativeWindowTheme() {
+    try {
+      _windowThemeChannel.invokeMethod('setTheme', {
+        'bg': _toHex(AppColors.surface),
+        'text': _toHex(AppColors.text),
+        'border': _toHex(AppColors.border),
+        'hover': _toHex(isDark ? AppColors.surfaceDeep : AppColors.border),
+        'isDark': isDark,
+      });
+    } catch (_) {}
   }
 
   Future<void> toggle() => setMode(isDark ? AppThemeMode.modernLight : AppThemeMode.dark);
@@ -137,6 +155,7 @@ class AppTheme extends ChangeNotifier {
     if (mode == next) return;
     mode = next;
     notifyListeners();
+    syncNativeWindowTheme();
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefsKey, next.name);

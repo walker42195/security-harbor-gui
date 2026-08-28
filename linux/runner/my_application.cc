@@ -16,7 +16,52 @@ struct _MyApplication {
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 
-static void set_x11_dark_theme(GtkWindow* window) {
+static GtkCssProvider* global_css_provider = NULL;
+
+static void update_window_css(const char* bg, const char* text, const char* border, const char* hover) {
+  if (global_css_provider == NULL) return;
+  gchar* css = g_strdup_printf(
+    "headerbar, .titlebar, headerbar:backdrop, .titlebar:backdrop {\n"
+    "  background-color: %s;\n"
+    "  background-image: none;\n"
+    "  color: %s;\n"
+    "  border: none;\n"
+    "  border-bottom: 1px solid %s;\n"
+    "  box-shadow: none;\n"
+    "  text-shadow: none;\n"
+    "}\n"
+    "headerbar label, .titlebar label {\n"
+    "  color: %s;\n"
+    "  font-weight: bold;\n"
+    "}\n"
+    "headerbar button, .titlebar button {\n"
+    "  color: %s;\n"
+    "  background: transparent;\n"
+    "  border: none;\n"
+    "}\n"
+    "headerbar button:hover, .titlebar button:hover {\n"
+    "  background-color: %s;\n"
+    "}\n"
+    "headerbar button.titlebutton, .titlebar button.titlebutton {\n"
+    "  min-width: 28px;\n"
+    "  min-height: 28px;\n"
+    "  padding: 0;\n"
+    "  font-family: monospace;\n"
+    "  font-size: 13px;\n"
+    "  font-weight: normal;\n"
+    "}\n"
+    "decoration, decoration:backdrop {\n"
+    "  box-shadow: none;\n"
+    "  border: none;\n"
+    "  background-color: %s;\n"
+    "}\n",
+    bg, text, border, text, text, hover, bg
+  );
+  gtk_css_provider_load_from_data(global_css_provider, css, -1, NULL);
+  g_free(css);
+}
+
+static void set_x11_window_theme(GtkWindow* window, gboolean is_dark) {
 #ifdef GDK_WINDOWING_X11
   GdkWindow* gdk_win = gtk_widget_get_window(GTK_WIDGET(window));
   if (gdk_win != NULL && GDK_IS_X11_WINDOW(gdk_win)) {
@@ -24,7 +69,7 @@ static void set_x11_dark_theme(GtkWindow* window) {
     Window xid = gdk_x11_window_get_xid(gdk_win);
     Atom net_wm_theme_variant = XInternAtom(display, "_GTK_THEME_VARIANT", False);
     Atom utf8_string = XInternAtom(display, "UTF8_STRING", False);
-    const char* variant = "dark";
+    const char* variant = is_dark ? "dark" : "light";
     XChangeProperty(display, xid, net_wm_theme_variant, utf8_string, 8,
                     PropModeReplace, (const unsigned char*)variant, strlen(variant));
   }
@@ -47,10 +92,7 @@ static void on_close_clicked(GtkButton* button, GtkWindow* window) {
   gtk_window_close(window);
 }
 
-// Skapar en fönsterknapp med en text-glyf istället för en tema-ikon. Vissa
-// system saknar de symboliska minimize/maximize/close-ikonerna i sitt
-// ikontema, vilket får GTK:s inbyggda decoration_layout-knappar att visa
-// trasiga "saknad ikon"-glyfer. Text fungerar alltid, oavsett ikontema.
+// Skapar en fönsterknapp med en text-glyf istället för en tema-ikon.
 static GtkWidget* make_titlebutton(const char* label) {
   GtkWidget* button = gtk_button_new_with_label(label);
   gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
@@ -63,7 +105,40 @@ static GtkWidget* make_titlebutton(const char* label) {
 // Called when first Flutter frame received.
 static void first_frame_cb(MyApplication* self, FlView* view) {
   GtkWindow* window = GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(view)));
-  set_x11_dark_theme(window);
+  set_x11_window_theme(window, TRUE);
+}
+
+static FlMethodResponse* window_theme_method_call(FlMethodCall* method_call, gpointer user_data) {
+  const gchar* method = fl_method_call_get_name(method_call);
+  if (strcmp(method, "setTheme") == 0) {
+    FlValue* args = fl_method_call_get_args(method_call);
+    if (args != nullptr && fl_value_get_type(args) == FL_VALUE_TYPE_MAP) {
+      FlValue* bg_val = fl_value_lookup_string(args, "bg");
+      FlValue* text_val = fl_value_lookup_string(args, "text");
+      FlValue* border_val = fl_value_lookup_string(args, "border");
+      FlValue* hover_val = fl_value_lookup_string(args, "hover");
+      FlValue* is_dark_val = fl_value_lookup_string(args, "isDark");
+
+      const gchar* bg = bg_val ? fl_value_get_string(bg_val) : "#1E293B";
+      const gchar* text = text_val ? fl_value_get_string(text_val) : "#FFFFFF";
+      const gchar* border = border_val ? fl_value_get_string(border_val) : "#334155";
+      const gchar* hover = hover_val ? fl_value_get_string(hover_val) : "#334155";
+      gboolean is_dark = is_dark_val ? fl_value_get_bool(is_dark_val) : TRUE;
+
+      update_window_css(bg, text, border, hover);
+
+      GtkWindow* window = GTK_WINDOW(user_data);
+      if (window != NULL) {
+        GtkSettings* settings = gtk_settings_get_default();
+        if (settings != NULL) {
+          g_object_set(settings, "gtk-application-prefer-dark-theme", is_dark, NULL);
+        }
+        set_x11_window_theme(window, is_dark);
+      }
+    }
+    return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+  }
+  return FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
 }
 
 // Implements GApplication::activate.
@@ -72,77 +147,23 @@ static void my_application_activate(GApplication* application) {
   GtkWindow* window =
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
 
-  // Aktivera mörkt GTK-tema för hela fönstret
   GtkSettings* settings = gtk_settings_get_default();
   if (settings != NULL) {
     g_object_set(settings, "gtk-application-prefer-dark-theme", TRUE, NULL);
-    // Tvinga ett ikontema som garanterat innehåller de symboliska
-    // fönsterknapp-ikonerna (minimize/maximize/close). Utan detta faller GTK
-    // tillbaka på trasiga "saknad ikon"-glyfer på system utan ett komplett
-    // ikontema installerat/aktiverat.
     g_object_set(settings, "gtk-icon-theme-name", "Adwaita", NULL);
   }
 
-  // Applicera ren och giltig GTK CSS för mörk Slate-färg (#1E293B)
-  GtkCssProvider* css_provider = gtk_css_provider_new();
-  gtk_css_provider_load_from_data(css_provider,
-    // OBS: inga !important här. En tidigare variant med !important fick
-    // GTK att droppa hela stylesheetet (parse-fel) → titelraden föll
-    // tillbaka till ljust systemtema. Ren CSS på APPLICATION-prioritet
-    // räcker för att vinna över temat. border:none tar bort temats ljusa
-    // top-highlight; border-bottom återinförs på raden efter.
-    "headerbar, .titlebar, headerbar:backdrop, .titlebar:backdrop {\n"
-    "  background-color: #1E293B;\n"
-    "  background-image: none;\n"
-    "  color: #FFFFFF;\n"
-    "  border: none;\n"
-    "  border-bottom: 1px solid #334155;\n"
-    "  box-shadow: none;\n"
-    "  text-shadow: none;\n"
-    "}\n"
-    "headerbar label, .titlebar label {\n"
-    "  color: #FFFFFF;\n"
-    "  font-weight: bold;\n"
-    "}\n"
-    "headerbar button, .titlebar button {\n"
-    "  color: #FFFFFF;\n"
-    "  background: transparent;\n"
-    "  border: none;\n"
-    "}\n"
-    "headerbar button:hover, .titlebar button:hover {\n"
-    "  background-color: #334155;\n"
-    "}\n"
-    "headerbar button.titlebutton, .titlebar button.titlebutton {\n"
-    "  min-width: 28px;\n"
-    "  min-height: 28px;\n"
-    "  padding: 0;\n"
-    "  font-family: monospace;\n"
-    "  font-size: 13px;\n"
-    "  font-weight: normal;\n"
-    "}\n"
-    // GTK ritar en ljus highlight-linje högst upp på hela fönsterramen
-    // (client-side-decoration-"decoration"-noden, skild från headerbar) i
-    // Adwaita-temat, särskilt när fönstret är i fokus — den ligger UTANFÖR
-    // headerbar-stylingen ovan och syns som en ljus rand ovanför den mörka
-    // titelraden. Måla den i EXAKT samma färg som toppfältet (#1E293B) i
-    // stället för en avvikande gränslinje, så den smälter in helt.
-    "decoration, decoration:backdrop {\n"
-    "  box-shadow: none;\n"
-    "  border: none;\n"
-    "  background-color: #1E293B;\n"
-    "}\n",
-    -1, NULL);
+  global_css_provider = gtk_css_provider_new();
+  update_window_css("#1E293B", "#FFFFFF", "#334155", "#334155");
 
   gtk_style_context_add_provider_for_screen(
     gdk_screen_get_default(),
-    GTK_STYLE_PROVIDER(css_provider),
+    GTK_STYLE_PROVIDER(global_css_provider),
     GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
   GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
   gtk_widget_show(GTK_WIDGET(header_bar));
   gtk_header_bar_set_title(header_bar, "Security Harbor – Firewall Management");
-  // Byggda själva av text-knappar nedan istället för GTK:s ikonbaserade
-  // decoration_layout, se make_titlebutton().
   gtk_header_bar_set_show_close_button(header_bar, FALSE);
   gtk_header_bar_set_decoration_layout(header_bar, "");
 
@@ -174,22 +195,31 @@ static void my_application_activate(GApplication* application) {
   gtk_widget_show(GTK_WIDGET(view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
 
-  // Applicera mörkt X11-fönstertema igen så snart Flutter renderat sin
-  // första bildruta (bonus-styling). Fönstret visas dock oavsett om denna
-  // signal utlöses eller ej, se gtk_widget_show nedan.
-  g_signal_connect_swapped(view, "first-frame", G_CALLBACK(first_frame_cb),
-                           self);
+  g_signal_connect_swapped(view, "first-frame", G_CALLBACK(first_frame_cb), self);
 
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
 
+  // Registrera temahanteringskanal mot Flutter
+  g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
+  g_autoptr(FlBinaryMessenger) messenger = fl_engine_get_binary_messenger(fl_view_get_engine(view));
+  g_autoptr(FlMethodChannel) theme_channel = fl_method_channel_new(
+      messenger,
+      "security_harbor/window_theme",
+      FL_METHOD_CODEC(codec));
+  fl_method_channel_set_method_call_handler(
+      theme_channel,
+      [](FlMethodChannel* channel, FlMethodCall* method_call, gpointer user_data) {
+        g_autoptr(FlMethodResponse) response = window_theme_method_call(method_call, user_data);
+        g_autoptr(GError) error = nullptr;
+        fl_method_call_respond(method_call, response, &error);
+      },
+      window,
+      nullptr);
+
   gtk_widget_grab_focus(GTK_WIDGET(view));
 
-  // Visa fönstret direkt (som Flutters standardmall gör). Att vänta på ett
-  // "first-frame"-event för att visa fönstret gjorde appen osynlig om det
-  // eventet av någon anledning aldrig utlöstes — processen kördes men inget
-  // fönster syntes någonsin.
   gtk_widget_realize(GTK_WIDGET(window));
-  set_x11_dark_theme(window);
+  set_x11_window_theme(window, TRUE);
   gtk_widget_show(GTK_WIDGET(window));
 }
 
@@ -242,9 +272,8 @@ static void my_application_class_init(MyApplicationClass* klass) {
 static void my_application_init(MyApplication* self) {}
 
 MyApplication* my_application_new() {
-  g_set_prgname(APPLICATION_ID);
-
   return MY_APPLICATION(g_object_new(my_application_get_type(),
-                                     "application-id", APPLICATION_ID, "flags",
-                                     G_APPLICATION_NON_UNIQUE, nullptr));
+                                     "application-id", APPLICATION_ID,
+                                     "flags", G_APPLICATION_NON_UNIQUE,
+                                     NULL));
 }
