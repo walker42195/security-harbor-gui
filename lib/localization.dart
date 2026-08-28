@@ -67,6 +67,7 @@ const Map<String, String> _sv = {
 
   // --- Huvudnavigation (main_screen.dart) ---
   'nav.dashboard': 'Dashboard',
+  'nav.tactical_hud': 'Taktisk HUD',
   'nav.interfaces': 'Interfaces',
   'nav.routing': 'Routing',
   'nav.policies': 'Policies',
@@ -81,6 +82,7 @@ const Map<String, String> _sv = {
   'nav.services': 'Tjänster',
   'nav.tools': 'Verktyg',
   'nav.settings': 'Settings',
+  'hud.calibrating_telemetry': 'KALIBRERAR TAKTISK TELEMETRI...',
 
   'main.title': 'SECURITY HARBOR',
   'main.menu_tooltip': 'Meny',
@@ -1097,6 +1099,7 @@ const Map<String, String> _en = {
 
   // --- Main navigation (main_screen.dart) ---
   'nav.dashboard': 'Dashboard',
+  'nav.tactical_hud': 'Tactical HUD',
   'nav.interfaces': 'Interfaces',
   'nav.routing': 'Routing',
   'nav.policies': 'Policies',
@@ -1111,6 +1114,7 @@ const Map<String, String> _en = {
   'nav.services': 'Services',
   'nav.tools': 'Tools',
   'nav.settings': 'Settings',
+  'hud.calibrating_telemetry': 'CALIBRATING TACTICAL TELEMETRY...',
 
   'main.title': 'SECURITY HARBOR',
   'main.menu_tooltip': 'Menu',

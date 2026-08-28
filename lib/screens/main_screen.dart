@@ -24,6 +24,7 @@ import 'security_events_screen.dart';
 import 'services_screen.dart';
 
 import 'tools_screen.dart';
+import 'tactical_hud_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -92,6 +93,7 @@ class _MainScreenState extends State<MainScreen> {
 
     final screens = <Widget>[
       const DashboardScreen(),
+      const TacticalHudScreen(),
       const InterfacesScreen(),
       const PoliciesScreen(),
       const ObjectsScreen(),
@@ -112,6 +114,7 @@ class _MainScreenState extends State<MainScreen> {
     ];
     final destinations = <NavigationRailDestination>[
       NavigationRailDestination(icon: const Icon(Icons.dashboard_outlined), selectedIcon: const Icon(Icons.dashboard), label: Text(tr('nav.dashboard'))),
+      NavigationRailDestination(icon: const Icon(Icons.radar_outlined), selectedIcon: const Icon(Icons.radar), label: Text(tr('nav.tactical_hud'))),
       NavigationRailDestination(icon: const Icon(Icons.router_outlined), selectedIcon: const Icon(Icons.router), label: Text(tr('nav.interfaces'))),
       NavigationRailDestination(icon: const Icon(Icons.shield_outlined), selectedIcon: const Icon(Icons.shield), label: Text(tr('nav.policies'))),
       NavigationRailDestination(icon: const Icon(Icons.category_outlined), selectedIcon: const Icon(Icons.category), label: Text(tr('nav.objects'))),
