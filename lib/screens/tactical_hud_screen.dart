@@ -12,14 +12,12 @@ class _WarpStar {
   double x;
   double y;
   double z;
-  double prevZ;
   double size;
 
   _WarpStar({
     required this.x,
     required this.y,
     required this.z,
-    required this.prevZ,
     required this.size,
   });
 
@@ -31,8 +29,7 @@ class _WarpStar {
       x: x,
       y: y,
       z: z,
-      prevZ: z + 0.05,
-      size: rng.nextDouble() * 1.5 + 0.5,
+      size: rng.nextDouble() * 1.5 + 0.6,
     );
   }
 }
@@ -62,7 +59,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
   @override
   void initState() {
     super.initState();
-    _stars = List.generate(95, (_) => _WarpStar.random(_rng));
+    _stars = List.generate(110, (_) => _WarpStar.random(_rng));
 
     _animController = AnimationController(
       vsync: this,
@@ -70,7 +67,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     )..repeat();
 
     _fetchData();
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _fetchData());
+    _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) => _fetchData());
   }
 
   @override
@@ -94,6 +91,9 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
         setState(() {
           _dashboardData = futures[0] as DashboardDataModel?;
           _systemStatus = futures[1] as Map<String, dynamic>?;
+          if (_systemStatus != null) {
+            provider.systemStatus = _systemStatus;
+          }
           _isLoading = false;
         });
       }
@@ -187,7 +187,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                                 // Smal skärm: stapla vertikalt
                                 return ListView(
                                   children: [
-                                    _buildLeftShieldPanel(),
+                                    _buildLeftShieldPanel(provider),
                                     const SizedBox(height: 12),
                                     _buildCenterTargetPanel(provider),
                                     const SizedBox(height: 12),
@@ -200,7 +200,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                               return Row(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  Expanded(flex: 3, child: _buildLeftShieldPanel()),
+                                  Expanded(flex: 3, child: _buildLeftShieldPanel(provider)),
                                   const SizedBox(width: 12),
                                   Expanded(flex: 4, child: _buildCenterTargetPanel(provider)),
                                   const SizedBox(width: 12),
@@ -312,11 +312,13 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     );
   }
 
-  /// VÄNSTER PANEL: SHIELD INTEGRITY & KÄRNSTATUS
-  Widget _buildLeftShieldPanel() {
-    final status = _systemStatus;
-    final cpuUsage = (status?['cpu_percent'] as num?)?.toDouble() ?? 0.0;
-    final memUsage = (status?['mem_percent'] as num?)?.toDouble() ?? 0.0;
+  /// VÄNSTER PANEL: SHIELD INTEGRITY & KÄRNSTATUS (CPU & RAM)
+  Widget _buildLeftShieldPanel(ConfigProvider provider) {
+    final status = _systemStatus ?? provider.systemStatus;
+    final cpuUsage = ((status?['cpu'] ?? status?['cpu_percent']) as num?)?.toDouble() ?? 0.0;
+    final memUsage = ((status?['memory'] ?? status?['mem_percent']) as num?)?.toDouble() ?? 0.0;
+    final cpuCores = status?['cpu_cores'];
+    final memTotalGB = status?['memory_total_gb'];
     final degraded = (status?['degraded_backends'] as List?)?.length ?? 0;
 
     // Säkerhetsintegritet: 100 % när brandväggens skydd och resurser är optimala
@@ -370,10 +372,20 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
           _buildTelemetryMetricRow('NFTABLES FILTER', 'ACTIVE (0 DROPS)', AppColors.accent),
           const Divider(height: 16),
 
-          // CPU- & Minnesbalkar (Segmented Bars)
-          _buildSegmentedBar('CPU REACTOR CORE', cpuUsage / 100.0, '${cpuUsage.toStringAsFixed(1)}%', AppColors.accent),
+          // CPU- & Minnesbalkar (Segmented Bars) med realtidsdata
+          _buildSegmentedBar(
+            cpuCores != null ? 'CPU REACTOR CORE ($cpuCores CORES)' : 'CPU REACTOR CORE',
+            cpuUsage / 100.0,
+            '${cpuUsage.toStringAsFixed(1)}%',
+            AppColors.accent,
+          ),
           const SizedBox(height: 8),
-          _buildSegmentedBar('PLASMA MEMORY LOAD', memUsage / 100.0, '${memUsage.toStringAsFixed(1)}%', AppColors.info),
+          _buildSegmentedBar(
+            memTotalGB != null ? 'PLASMA MEMORY ($memTotalGB GB)' : 'PLASMA MEMORY LOAD',
+            memUsage / 100.0,
+            '${memUsage.toStringAsFixed(1)}%',
+            AppColors.info,
+          ),
           const SizedBox(height: 8),
           _buildSegmentedBar('STATE FLOW INTEGRITY', 1.0, '100%', AppColors.ok),
         ],
@@ -1008,45 +1020,74 @@ class _WarpStarfieldReticlePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final maxRadius = math.min(size.width, size.height) / 2;
 
-    // 1. Beräkna Warp Speed baserat på Download BPS
+    // 1. Beräkna dynamisk Warp Speed baserat på Download BPS
     final kbps = rxBps / 1000.0;
     final mbps = kbps / 1000.0;
-    // Grundhastighet (långsam drift) -> Ökar kraftigt vid nedladdning
-    final speed = 0.005 + math.min(0.065, (mbps / 100.0) * 0.045 + (kbps > 5.0 ? 0.008 : 0.0));
+
+    final double speedFactor;
+    if (mbps >= 100.0) {
+      speedFactor = 0.080 + math.min(0.060, (mbps - 100.0) / 1000.0 * 0.04);
+    } else if (mbps >= 20.0) {
+      speedFactor = 0.040 + (mbps - 20.0) / 80.0 * 0.040;
+    } else if (mbps >= 1.0) {
+      speedFactor = 0.012 + (mbps - 1.0) / 19.0 * 0.028;
+    } else if (kbps >= 50.0) {
+      speedFactor = 0.005 + (kbps - 50.0) / 950.0 * 0.007;
+    } else {
+      speedFactor = 0.0025 + (kbps / 50.0) * 0.0025;
+    }
 
     // 2. Simulera och rita 3D Warp Starfield
     for (final star in stars) {
-      star.prevZ = star.z;
-      star.z -= speed;
+      star.z -= speedFactor;
 
-      if (star.z <= 0.02) {
+      if (star.z <= 0.015) {
         star.z = 1.0;
-        star.prevZ = 1.0;
         star.x = (rng.nextDouble() * 2.0 - 1.0);
         star.y = (rng.nextDouble() * 2.0 - 1.0);
       }
 
-      // 3D -> 2D Projektion från centrum
-      final px = center.dx + (star.x / star.prevZ) * (size.width * 0.55);
-      final py = center.dy + (star.y / star.prevZ) * (size.height * 0.55);
+      // Beräkna svansens startposition bakåt i tiden i relation till hastigheten
+      final trailDepth = math.min(1.0, star.z + speedFactor * (speedFactor > 0.02 ? 14.0 : 6.0));
+      final px = center.dx + (star.x / trailDepth) * (size.width * 0.55);
+      final py = center.dy + (star.y / trailDepth) * (size.height * 0.55);
+
+      // Den främre spetspunkten som rör sig emot betraktaren
       final sx = center.dx + (star.x / star.z) * (size.width * 0.55);
       final sy = center.dy + (star.y / star.z) * (size.height * 0.55);
 
       if (sx >= 0 && sx <= size.width && sy >= 0 && sy <= size.height) {
-        final alpha = (1.0 - star.z).clamp(0.15, 1.0);
-        final streakPaint = Paint()
-          ..color = accentColor.withValues(alpha: alpha)
-          ..strokeWidth = math.max(1.0, (1.0 - star.z) * (speed > 0.02 ? 2.8 : 1.5))
-          ..strokeCap = StrokeCap.round;
+        final distFactor = (1.0 - star.z).clamp(0.0, 1.0);
+        final alpha = (0.2 + distFactor * 0.8).clamp(0.0, 1.0);
 
-        // Rita stjärnsträck (warp streak)
-        canvas.drawLine(Offset(px, py), Offset(sx, sy), streakPaint);
+        // A. Warp Streak (ljusstrimma som sträcks ut ju snabbare man åker)
+        if (speedFactor > 0.004) {
+          final streakPaint = Paint()
+            ..color = accentColor.withValues(alpha: alpha * 0.85)
+            ..strokeWidth = math.max(1.0, distFactor * (speedFactor > 0.03 ? 3.0 : 1.8))
+            ..strokeCap = StrokeCap.round;
 
-        // Liten ljuspunkt i änden av sträcket
+          canvas.drawLine(Offset(px, py), Offset(sx, sy), streakPaint);
+        }
+
+        // B. Spetsen / Punkten som kommer emot betraktaren
+        // Radien växer exponentiellt när partikeln kommer närmare och när farten är hög
+        final speedMultiplier = 1.0 + (speedFactor * 18.0);
+        final pointRadius = math.max(1.2, star.size * (1.0 + distFactor * 2.8) * speedMultiplier);
+
+        // Ljus aura / glöd runt punkten vid högre hastighet
+        if (speedFactor > 0.015 && distFactor > 0.3) {
+          final glowPaint = Paint()
+            ..color = accentColor.withValues(alpha: alpha * 0.3)
+            ..style = PaintingStyle.fill;
+          canvas.drawCircle(Offset(sx, sy), pointRadius * 2.2, glowPaint);
+        }
+
+        // Kärnpunkt som susar framåt
         final dotPaint = Paint()
-          ..color = okColor.withValues(alpha: alpha)
+          ..color = (distFactor > 0.6 ? okColor : accentColor).withValues(alpha: alpha)
           ..style = PaintingStyle.fill;
-        canvas.drawCircle(Offset(sx, sy), math.max(1.0, star.size * (1.0 - star.z) * 1.5), dotPaint);
+        canvas.drawCircle(Offset(sx, sy), pointRadius, dotPaint);
       }
     }
 
