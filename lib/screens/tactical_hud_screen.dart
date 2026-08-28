@@ -268,9 +268,22 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
   /// VÄNSTER PANEL: SHIELD INTEGRITY & KÄRNSTATUS
   Widget _buildLeftShieldPanel() {
     final status = _systemStatus;
-    final cpuUsage = (status?['cpu_percent'] as num?)?.toDouble() ?? 12.0;
-    final memUsage = (status?['mem_percent'] as num?)?.toDouble() ?? 18.0;
-    final shieldIntegrity = math.max(65.0, 100.0 - (cpuUsage * 0.15) - (memUsage * 0.1)).round();
+    final cpuUsage = (status?['cpu_percent'] as num?)?.toDouble() ?? 0.0;
+    final memUsage = (status?['mem_percent'] as num?)?.toDouble() ?? 0.0;
+    final degraded = (status?['degraded_backends'] as List?)?.length ?? 0;
+
+    // Säkerhetsintegritet: 100 % när brandväggens skydd och resurser är optimala
+    double integrity = 100.0;
+    if (degraded > 0) {
+      integrity -= (degraded * 25.0);
+    }
+    if (cpuUsage > 85.0) {
+      integrity -= (cpuUsage - 85.0) * 1.5;
+    }
+    if (memUsage > 90.0) {
+      integrity -= (memUsage - 90.0) * 1.5;
+    }
+    final shieldIntegrity = integrity.clamp(0.0, 100.0).round();
 
     return _buildCockpitContainer(
       title: 'SHIELD INTEGRITY',
@@ -290,7 +303,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                     painter: _ShieldGaugePainter(
                       progress: shieldIntegrity / 100.0,
                       animValue: _animController.value,
-                      accentColor: AppColors.accent,
+                      accentColor: shieldIntegrity > 90 ? AppColors.accent : (shieldIntegrity > 70 ? AppColors.warn : AppColors.danger),
                       surfaceColor: AppColors.surfaceDeep,
                       borderColor: AppColors.border,
                       textColor: AppColors.text,
@@ -304,7 +317,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
           const SizedBox(height: 12),
 
           // Kärn- och subsystemstatus
-          _buildTelemetryMetricRow('FIREWALL INTEGRITY', '$shieldIntegrity%', AppColors.ok),
+          _buildTelemetryMetricRow('FIREWALL INTEGRITY', '$shieldIntegrity%', shieldIntegrity > 90 ? AppColors.ok : AppColors.warn),
           _buildTelemetryMetricRow('SURICATA IDS MATRIX', 'ARMED (ACTIVE)', AppColors.accent),
           _buildTelemetryMetricRow('UNBOUND DNS SHIELD', 'ONLINE', AppColors.ok),
           _buildTelemetryMetricRow('NFTABLES FILTER', 'ACTIVE (0 DROPS)', AppColors.accent),
@@ -315,7 +328,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
           const SizedBox(height: 8),
           _buildSegmentedBar('PLASMA MEMORY LOAD', memUsage / 100.0, '${memUsage.toStringAsFixed(1)}%', AppColors.info),
           const SizedBox(height: 8),
-          _buildSegmentedBar('STATE FLOW INTEGRITY', 0.94, '94%', AppColors.ok),
+          _buildSegmentedBar('STATE FLOW INTEGRITY', 1.0, '100%', AppColors.ok),
         ],
       ),
     );
