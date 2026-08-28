@@ -13,6 +13,7 @@
 ///
 /// Priset är att getters inte är `const`. Där en färg låg i ett
 /// `const`-uttryck har det `const` tagits bort — det är en ren
+/// prestandadetalj i en app som ändå bygger om vid varje temabyte.
 library;
 
 import 'package:flutter/material.dart';
@@ -21,11 +22,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Vilket tema som är aktivt.
 enum AppThemeMode {
   dark,
+  light,
+  crimsonLight,
   modernLight,
-  emeraldLight,
-  sageLight,
-  watchguardLight,
-  checkpointLight,
   tokyoNight,
   oledBlack,
 }
@@ -35,16 +34,12 @@ extension AppThemeModeExt on AppThemeMode {
     switch (this) {
       case AppThemeMode.dark:
         return const Color(0xFF18FFFF);
+      case AppThemeMode.light:
+        return const Color(0xFF0B6E4F);
+      case AppThemeMode.crimsonLight:
+        return const Color(0xFFDC2626);
       case AppThemeMode.modernLight:
         return const Color(0xFF2563EB);
-      case AppThemeMode.emeraldLight:
-        return const Color(0xFF047857);
-      case AppThemeMode.sageLight:
-        return const Color(0xFF0F766E);
-      case AppThemeMode.watchguardLight:
-        return const Color(0xFFDC2626);
-      case AppThemeMode.checkpointLight:
-        return const Color(0xFFE11D48);
       case AppThemeMode.tokyoNight:
         return const Color(0xFF7AA2F7);
       case AppThemeMode.oledBlack:
@@ -56,16 +51,12 @@ extension AppThemeModeExt on AppThemeMode {
     switch (this) {
       case AppThemeMode.dark:
         return Icons.nightlight_round;
+      case AppThemeMode.light:
+        return Icons.light_mode;
+      case AppThemeMode.crimsonLight:
+        return Icons.shield_outlined;
       case AppThemeMode.modernLight:
         return Icons.wb_sunny_outlined;
-      case AppThemeMode.emeraldLight:
-        return Icons.eco_outlined;
-      case AppThemeMode.sageLight:
-        return Icons.spa_outlined;
-      case AppThemeMode.watchguardLight:
-        return Icons.shield_outlined;
-      case AppThemeMode.checkpointLight:
-        return Icons.security_outlined;
       case AppThemeMode.tokyoNight:
         return Icons.brightness_2_outlined;
       case AppThemeMode.oledBlack:
@@ -77,16 +68,12 @@ extension AppThemeModeExt on AppThemeMode {
     switch (this) {
       case AppThemeMode.dark:
         return 'theme.dark';
+      case AppThemeMode.light:
+        return 'theme.light';
+      case AppThemeMode.crimsonLight:
+        return 'theme.crimson_light';
       case AppThemeMode.modernLight:
         return 'theme.modern_light';
-      case AppThemeMode.emeraldLight:
-        return 'theme.emerald_light';
-      case AppThemeMode.sageLight:
-        return 'theme.sage_light';
-      case AppThemeMode.watchguardLight:
-        return 'theme.watchguard_light';
-      case AppThemeMode.checkpointLight:
-        return 'theme.checkpoint_light';
       case AppThemeMode.tokyoNight:
         return 'theme.tokyo_night';
       case AppThemeMode.oledBlack:
@@ -98,16 +85,12 @@ extension AppThemeModeExt on AppThemeMode {
     switch (this) {
       case AppThemeMode.dark:
         return 'Mörk klassisk marinblå stil';
+      case AppThemeMode.light:
+        return 'Klassisk varm gräddvit med mintknappar';
+      case AppThemeMode.crimsonLight:
+        return 'Krispig vit yta med djupröda accenter';
       case AppThemeMode.modernLight:
-        return 'Krispig vit SaaS med kungblå accenter';
-      case AppThemeMode.emeraldLight:
-        return 'Fräsch smaragdgrön stil på vit yta';
-      case AppThemeMode.sageLight:
-        return 'Dämpad salviagrön & skiffergrå';
-      case AppThemeMode.watchguardLight:
-        return 'Mörk sidebar & WatchGuard-röd accent';
-      case AppThemeMode.checkpointLight:
-        return 'Marinblå sidebar & Check Point Magenta';
+        return 'Krispig vit SaaS med kungsblå accenter';
       case AppThemeMode.tokyoNight:
         return 'Mörk nattpalett med pastell & lavendel';
       case AppThemeMode.oledBlack:
@@ -139,7 +122,7 @@ class AppTheme extends ChangeNotifier {
       if (saved != null) {
         mode = AppThemeMode.values.firstWhere(
           (e) => e.name == saved,
-          orElse: () => saved == 'light' ? AppThemeMode.modernLight : AppThemeMode.dark,
+          orElse: () => saved == 'light' ? AppThemeMode.light : AppThemeMode.dark,
         );
         notifyListeners();
       }
@@ -175,16 +158,11 @@ class AppColors {
     switch (_m) {
       case AppThemeMode.dark:
         return const Color(0xFF0F172A);
+      case AppThemeMode.light:
+        return const Color(0xFFF2F0E9);
+      case AppThemeMode.crimsonLight:
       case AppThemeMode.modernLight:
         return const Color(0xFFFFFFFF);
-      case AppThemeMode.emeraldLight:
-        return const Color(0xFFFFFFFF);
-      case AppThemeMode.sageLight:
-        return const Color(0xFFF8FAFC);
-      case AppThemeMode.watchguardLight:
-        return const Color(0xFFF4F6F9);
-      case AppThemeMode.checkpointLight:
-        return const Color(0xFFF8FAFC);
       case AppThemeMode.tokyoNight:
         return const Color(0xFF1A1B26);
       case AppThemeMode.oledBlack:
@@ -197,16 +175,12 @@ class AppColors {
     switch (_m) {
       case AppThemeMode.dark:
         return const Color(0xFF1E293B);
+      case AppThemeMode.light:
+        return const Color(0xFFFBFAF6);
+      case AppThemeMode.crimsonLight:
+        return const Color(0xFFFFFFFF);
       case AppThemeMode.modernLight:
         return const Color(0xFFF8FAFC);
-      case AppThemeMode.emeraldLight:
-        return const Color(0xFFF8FAFC);
-      case AppThemeMode.sageLight:
-        return const Color(0xFFFFFFFF);
-      case AppThemeMode.watchguardLight:
-        return const Color(0xFFFFFFFF);
-      case AppThemeMode.checkpointLight:
-        return const Color(0xFFFFFFFF);
       case AppThemeMode.tokyoNight:
         return const Color(0xFF24283B);
       case AppThemeMode.oledBlack:
@@ -219,15 +193,11 @@ class AppColors {
     switch (_m) {
       case AppThemeMode.dark:
         return const Color(0xFF0F172A);
+      case AppThemeMode.light:
+        return const Color(0xFFEDEBE2);
+      case AppThemeMode.crimsonLight:
+        return const Color(0xFFF8FAFC);
       case AppThemeMode.modernLight:
-        return const Color(0xFFF1F5F9);
-      case AppThemeMode.emeraldLight:
-        return const Color(0xFFF0FDF4);
-      case AppThemeMode.sageLight:
-        return const Color(0xFFF1F5F9);
-      case AppThemeMode.watchguardLight:
-        return const Color(0xFFE9ECEF);
-      case AppThemeMode.checkpointLight:
         return const Color(0xFFF1F5F9);
       case AppThemeMode.tokyoNight:
         return const Color(0xFF16161E);
@@ -237,29 +207,18 @@ class AppColors {
   }
 
   /// Navigations-sidebar yta.
-  static Color get sidebarBg {
-    switch (_m) {
-      case AppThemeMode.watchguardLight:
-        return const Color(0xFF1E222D);
-      case AppThemeMode.checkpointLight:
-        return const Color(0xFF0F172A);
-      default:
-        return surface;
-    }
-  }
+  static Color get sidebarBg => surface;
 
   /// Ramar och avdelare.
   static Color get border {
     switch (_m) {
       case AppThemeMode.dark:
         return const Color(0xFF334155);
+      case AppThemeMode.light:
+        return const Color(0xFFD6D3C8);
+      case AppThemeMode.crimsonLight:
       case AppThemeMode.modernLight:
-      case AppThemeMode.emeraldLight:
-      case AppThemeMode.sageLight:
-      case AppThemeMode.checkpointLight:
         return const Color(0xFFCBD5E1);
-      case AppThemeMode.watchguardLight:
-        return const Color(0xFFDEE2E6);
       case AppThemeMode.tokyoNight:
         return const Color(0xFF3B4261);
       case AppThemeMode.oledBlack:
@@ -275,14 +234,11 @@ class AppColors {
     switch (_m) {
       case AppThemeMode.dark:
         return Colors.white;
+      case AppThemeMode.light:
+        return const Color(0xFF1A1A1A);
+      case AppThemeMode.crimsonLight:
       case AppThemeMode.modernLight:
-      case AppThemeMode.emeraldLight:
-      case AppThemeMode.checkpointLight:
         return const Color(0xFF0F172A);
-      case AppThemeMode.sageLight:
-        return const Color(0xFF1E293B);
-      case AppThemeMode.watchguardLight:
-        return const Color(0xFF212529);
       case AppThemeMode.tokyoNight:
         return const Color(0xFFC0CAF5);
       case AppThemeMode.oledBlack:
@@ -295,13 +251,11 @@ class AppColors {
     switch (_m) {
       case AppThemeMode.dark:
         return Colors.white70;
+      case AppThemeMode.light:
+        return const Color(0xFF4A4A45);
+      case AppThemeMode.crimsonLight:
       case AppThemeMode.modernLight:
-      case AppThemeMode.emeraldLight:
-      case AppThemeMode.checkpointLight:
-      case AppThemeMode.sageLight:
         return const Color(0xFF475569);
-      case AppThemeMode.watchguardLight:
-        return const Color(0xFF495057);
       case AppThemeMode.tokyoNight:
         return const Color(0xFF9AA5CE);
       case AppThemeMode.oledBlack:
@@ -314,13 +268,11 @@ class AppColors {
     switch (_m) {
       case AppThemeMode.dark:
         return Colors.white38;
+      case AppThemeMode.light:
+        return const Color(0xFF6B6B62);
+      case AppThemeMode.crimsonLight:
       case AppThemeMode.modernLight:
-      case AppThemeMode.emeraldLight:
-      case AppThemeMode.sageLight:
-      case AppThemeMode.checkpointLight:
         return const Color(0xFF64748B);
-      case AppThemeMode.watchguardLight:
-        return const Color(0xFF6C757D);
       case AppThemeMode.tokyoNight:
         return const Color(0xFF7A84AA);
       case AppThemeMode.oledBlack:
@@ -329,23 +281,26 @@ class AppColors {
   }
 
   /// Platshållartext i inmatningsfält.
-  static Color get hint => textFaint;
+  static Color get hint {
+    switch (_m) {
+      case AppThemeMode.light:
+        return const Color(0xFF8A8A80);
+      default:
+        return textFaint;
+    }
+  }
 
   /// Accent för TEXT och ikoner.
   static Color get accent {
     switch (_m) {
       case AppThemeMode.dark:
         return Colors.cyanAccent;
+      case AppThemeMode.light:
+        return const Color(0xFF0B6E4F);
+      case AppThemeMode.crimsonLight:
+        return const Color(0xFFB91C1C); // Crimson 700
       case AppThemeMode.modernLight:
         return const Color(0xFF0369A1); // Sky 700
-      case AppThemeMode.emeraldLight:
-        return const Color(0xFF047857); // Deep Emerald
-      case AppThemeMode.sageLight:
-        return const Color(0xFF0F766E); // Deep Teal / Sage
-      case AppThemeMode.watchguardLight:
-        return const Color(0xFFB91C1C); // WatchGuard Red
-      case AppThemeMode.checkpointLight:
-        return const Color(0xFFBE185D); // Check Point Magenta
       case AppThemeMode.tokyoNight:
         return const Color(0xFF7DCFFF); // Tokyo Cyan
       case AppThemeMode.oledBlack:
@@ -361,16 +316,12 @@ class AppColors {
     switch (_m) {
       case AppThemeMode.dark:
         return Colors.cyanAccent;
+      case AppThemeMode.light:
+        return const Color(0xFF3DDC97);
+      case AppThemeMode.crimsonLight:
+        return const Color(0xFFDC2626);
       case AppThemeMode.modernLight:
         return const Color(0xFF2563EB);
-      case AppThemeMode.emeraldLight:
-        return const Color(0xFF047857);
-      case AppThemeMode.sageLight:
-        return const Color(0xFF0F766E);
-      case AppThemeMode.watchguardLight:
-        return const Color(0xFFDC2626);
-      case AppThemeMode.checkpointLight:
-        return const Color(0xFFE11D48);
       case AppThemeMode.tokyoNight:
         return const Color(0xFF7AA2F7);
       case AppThemeMode.oledBlack:
@@ -383,12 +334,10 @@ class AppColors {
       case AppThemeMode.dark:
       case AppThemeMode.tokyoNight:
       case AppThemeMode.oledBlack:
+      case AppThemeMode.light:
         return Colors.black;
+      case AppThemeMode.crimsonLight:
       case AppThemeMode.modernLight:
-      case AppThemeMode.emeraldLight:
-      case AppThemeMode.sageLight:
-      case AppThemeMode.watchguardLight:
-      case AppThemeMode.checkpointLight:
         return Colors.white;
     }
   }
@@ -406,11 +355,9 @@ class AppColors {
         return const Color(0xFF9ECE6A);
       case AppThemeMode.oledBlack:
         return const Color(0xFF00E676);
+      case AppThemeMode.light:
+      case AppThemeMode.crimsonLight:
       case AppThemeMode.modernLight:
-      case AppThemeMode.emeraldLight:
-      case AppThemeMode.sageLight:
-      case AppThemeMode.watchguardLight:
-      case AppThemeMode.checkpointLight:
         return const Color(0xFF15803D);
     }
   }
@@ -423,11 +370,9 @@ class AppColors {
         return const Color(0xFFE0AF68);
       case AppThemeMode.oledBlack:
         return const Color(0xFFFFD600);
+      case AppThemeMode.light:
+      case AppThemeMode.crimsonLight:
       case AppThemeMode.modernLight:
-      case AppThemeMode.emeraldLight:
-      case AppThemeMode.sageLight:
-      case AppThemeMode.watchguardLight:
-      case AppThemeMode.checkpointLight:
         return const Color(0xFF8A6A00);
     }
   }
@@ -455,14 +400,10 @@ class AppColors {
   static Color get info => _d ? Colors.lightBlueAccent : const Color(0xFF1D4ED8);
 
   /// Tonad bakgrund för de LÅSTA default-deny-raderna i policylistan.
-  /// Låg tidigare hårdkodad som 0xFF2A1518 och missades i den första
-  /// temaomskrivningen — raderna förblev mörka mitt i det ljusa temat.
   static Color get dangerSurface =>
       _d ? const Color(0xFF2A1518) : const Color(0xFFFBE9E7);
 
-  // Tonade banderollbakgrunder. I mörkt läge mörka mättade toner, i ljust
-  // läge bleka toner av samma färg — texten ovanpå är [text], som vänder med
-  // temat, så bakgrunden måste vända åt andra hållet.
+  // Tonade banderollbakgrunder.
   static Color get warnSurface =>
       _d ? const Color(0xFF78350F) : const Color(0xFFFEF3C7);
   static Color get dangerBanner =>
@@ -472,12 +413,10 @@ class AppColors {
   static Color get cautionSurface =>
       _d ? const Color(0xFF9A3412) : const Color(0xFFFFEDD5);
 
-  /// Text ovanpå en statusfärgad knapp. Statusfärgerna är LJUSA i mörkt läge
-  /// och MÖRKA i ljust, så förgrunden måste vända med dem.
+  /// Text ovanpå en statusfärgad knapp.
   static Color get onStatus => _d ? Colors.black : Colors.white;
 
-  /// ThemeData för MaterialApp, så att Flutters egna widgets (dialoger,
-  /// snackbars, textmarkering) följer med i temabytet.
+  /// ThemeData för MaterialApp.
   static ThemeData themeData() {
     final base = _d ? ThemeData.dark() : ThemeData.light();
     return base.copyWith(

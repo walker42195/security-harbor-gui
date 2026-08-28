@@ -644,6 +644,9 @@ class _MainScreenState extends State<MainScreen> {
                             selectedIndex: _selectedIndex < 0 ? null : _selectedIndex,
                             onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
                             labelType: NavigationRailLabelType.all,
+                            useIndicator: true,
+                            indicatorColor: AppColors.accent.withValues(alpha: 0.15),
+                            indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                             minWidth: 56,
                             selectedIconTheme: IconThemeData(color: AppColors.accent, size: 18),
                             selectedLabelTextStyle: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 9),
@@ -681,7 +684,7 @@ class _MainScreenState extends State<MainScreen> {
                         ),
                       ),
                     ),
-                  VerticalDivider(thickness: 1, width: 1, color: AppColors.divider),
+                  VerticalDivider(thickness: 1, width: 1, color: AppColors.border),
                 ],
                 Expanded(
                   child: _selectedIndex < 0
