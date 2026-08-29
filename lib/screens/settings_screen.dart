@@ -241,7 +241,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(color: AppColors.textMuted, fontSize: 11),
             ),
             const SizedBox(height: 16),
-            Wrap(
+            // Lyssnar direkt på AppTheme i stället för att lita på att en
+            // förälder bygger om oss. Markeringen läser AppTheme.mode, och en
+            // vy som inte råkar byggas om vid temabyte visade då kvar den
+            // gamla markeringen fast temat faktiskt bytts.
+            ListenableBuilder(
+              listenable: AppTheme.instance,
+              builder: (context, _) => Wrap(
               spacing: 12,
               runSpacing: 12,
               children: AppThemeMode.values.map((mode) {
@@ -308,6 +314,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 );
               }).toList(),
+              ),
             ),
           ],
         ),

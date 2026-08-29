@@ -99,26 +99,36 @@ class _MainScreenState extends State<MainScreen> {
     // fortfarande (INPUT/OUTPUT-hårdning är precis vad host-läget gör).
     final isHostMode = provider.runningConfig?.settings.isHostMode ?? false;
 
+    // OBS: skärmarna får INTE skapas som const. En const-widget är
+    // kanoniserad, så vid varje omritning är det exakt samma instans — och då
+    // kortsluter Flutters Element.updateChild (child.widget == newWidget) och
+    // bygger aldrig om subträdet. Följden var att en vald vy behöll sina gamla
+    // temafärger tills man navigerade bort och tillbaka, och att
+    // temaväljaren i Inställningar inte flyttade sin markering när man bytte
+    // tema (rapporterat 2026-08-29) — build() kördes helt enkelt aldrig om,
+    // trots att ListenableBuilder högst upp i main.dart byggde om appen.
+    //
+    // Bara den valda skärmen monteras, så kostnaden är en omritning av en vy.
     final screens = <Widget>[
-      const DashboardScreen(),
-      const TacticalHudScreen(),
-      const InterfacesScreen(),
-      const PoliciesScreen(),
-      const ObjectsScreen(),
+      DashboardScreen(),
+      TacticalHudScreen(),
+      InterfacesScreen(),
+      PoliciesScreen(),
+      ObjectsScreen(),
       // Routing ligger under Objekt: det är en sällan rörd inställning, och
       // Policies/Objekt är det man arbetar i dagligen.
-      const RoutesScreen(),
-      if (!isHostMode) const SniRoutesScreen(),
-      if (!isHostMode) const VpnScreen(),
-      if (!isHostMode) const DnsScreen(),
-      if (!isHostMode) const DnsDevicesScreen(),
-      if (!isHostMode) const DhcpScreen(),
-      const ConnectionsScreen(),
-      if (!isHostMode) const SecurityEventsScreen(),
-      if (!isHostMode) const IdsRulesScreen(),
-      const ServicesScreen(),
-      const ToolsScreen(),
-      const SettingsScreen(),
+      RoutesScreen(),
+      if (!isHostMode) SniRoutesScreen(),
+      if (!isHostMode) VpnScreen(),
+      if (!isHostMode) DnsScreen(),
+      if (!isHostMode) DnsDevicesScreen(),
+      if (!isHostMode) DhcpScreen(),
+      ConnectionsScreen(),
+      if (!isHostMode) SecurityEventsScreen(),
+      if (!isHostMode) IdsRulesScreen(),
+      ServicesScreen(),
+      ToolsScreen(),
+      SettingsScreen(),
     ];
     final destinations = <NavigationRailDestination>[
       NavigationRailDestination(icon: const Icon(Icons.dashboard_outlined), selectedIcon: const Icon(Icons.dashboard), label: Text(tr('nav.dashboard'))),
@@ -689,7 +699,8 @@ class _MainScreenState extends State<MainScreen> {
                 ],
                 Expanded(
                   child: _selectedIndex < 0
-                      ? const DeviceDashboardScreen()
+                      // Inte const, av samma skäl som listan ovan.
+                      ? DeviceDashboardScreen()
                       : screens[_selectedIndex],
                 ),
               ],
