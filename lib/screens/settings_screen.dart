@@ -98,8 +98,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _urlController = TextEditingController(text: provider.api.baseUrl);
     // Inget hop-kodat lösenord här — appen distribueras publikt, och ett
     // förifyllt lösenord i klientkoden hade skickats ut till varje
-    // nedladdning. Användarnamnet "admin" är inte känsligt i sig.
-    _usernameController = TextEditingController(text: 'master');
+    // nedladdning. Kontonamnet förifylls inte heller (samma resonemang som i
+    // login_screen.dart): "master" är fabrikskontot och ligger som hintText
+    // på fältet, inte som ett värde man måste radera.
+    _usernameController = TextEditingController();
     _passwordController = TextEditingController();
     if (provider.isAuthenticated && provider.isAdmin) {
       _loadUsers();

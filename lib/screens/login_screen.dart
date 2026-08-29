@@ -20,7 +20,12 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   late TextEditingController _urlController;
-  final _usernameController = TextEditingController(text: 'master');
+  // Kontonamnet förifylls INTE. "master" är bara fabriksinställningens konto —
+  // på en brandvägg där man lagt upp egna konton fick man annars radera det
+  // varje gång, och ett förifyllt fält gjorde det dessutom lätt att av misstag
+  // logga in som fel användare. Namnet ligger kvar som hintText, så det syns
+  // ändå vilket konto en fabriksny låda har.
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _urlControllerInitialized = false;
@@ -121,9 +126,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             ],
                             TextField(
                               controller: _usernameController,
+                              // Markören står i kontonamnsfältet direkt när
+                              // inloggningen visas — man ska kunna börja skriva
+                              // utan att först klicka (och på telefonen fälls
+                              // tangentbordet upp med detsamma). URL-fältet
+                              // ovanför är förifyllt från förra inloggningen
+                              // och behöver sällan röras.
+                              autofocus: true,
                               style: TextStyle(color: AppColors.text, fontSize: 13),
                               decoration: InputDecoration(
                                 labelText: tr('login.username_label'),
+                                hintText: tr('settings.master'),
                                 border: const OutlineInputBorder(),
                                 prefixIcon: Icon(Icons.person, color: AppColors.accent, size: 18),
                                 isDense: true,
