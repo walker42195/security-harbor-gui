@@ -17,6 +17,15 @@ const String _prefsLangKey = 'app_language';
 const String _prefsTokenKey = 'firewall_token';
 const String _prefsRoleKey = 'firewall_role';
 const String _prefsUserKey = 'firewall_user';
+// "Kom ihåg inloggning". Styr TVÅ saker: om sessionen alls sparas mellan
+// körningar, och om kontonamnet förifylls nästa gång. Lösenordet sparas
+// aldrig — se ConfigProvider.login.
+const String _prefsRememberKey = 'firewall_remember';
+// Kontonamnet för förifyllningen ligger på EGEN nyckel, inte _prefsUserKey.
+// Den senare hör till sessionen och raderas av _clearSession vid utloggning —
+// då hade "Kom ihåg inloggning" tappat namnet så fort man loggade ut med
+// flit, vilket är precis när man vill ha det kvar.
+const String _prefsRememberUserKey = 'firewall_remember_user';
 
 class ConfigProvider extends ChangeNotifier {
   final ApiService api = ApiService();
@@ -151,18 +160,47 @@ class ConfigProvider extends ChangeNotifier {
     api.setBaseUrl(newUrl);
   }
 
-  Future<void> login(String user, String pass) async {
+  /// Läser det sparade valet för "Kom ihåg inloggning".
+  static Future<bool> loadRemember() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_prefsRememberKey) ?? false;
+  }
+
+  /// Kontonamnet från förra inloggningen, men BARA om "Kom ihåg inloggning"
+  /// var ikryssad. Annars ska fältet vara tomt.
+  static Future<String?> loadRememberedUsername() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!(prefs.getBool(_prefsRememberKey) ?? false)) return null;
+    return prefs.getString(_prefsRememberUserKey);
+  }
+
+  Future<void> login(String user, String pass, {bool remember = false}) async {
     isLoading = true;
     errorMessage = null;
     statusMessage = tr('provider.status.connecting');
     notifyListeners();
 
-    final success = await api.login(user, pass);
+    final success = await api.login(user, pass, remember: remember);
     if (success) {
       isAuthenticated = true;
       statusMessage = tr('provider.status.logged_in');
       await _saveUrl(api.baseUrl);
-      await _saveSession();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_prefsRememberKey, remember);
+      if (remember) {
+        await prefs.setString(_prefsRememberUserKey, user);
+      } else {
+        await prefs.remove(_prefsRememberUserKey);
+      }
+      // Utan "Kom ihåg inloggning" lagras INGENTING om sessionen. Tidigare
+      // sparades token alltid, så appen loggade in sig själv igen i ett dygn
+      // oavsett vad användaren ville — på en delad dator var det inte ett val
+      // man kunde göra.
+      if (remember) {
+        await _saveSession();
+      } else {
+        await _clearSession();
+      }
       await fetchAll();
     } else {
       isAuthenticated = false;

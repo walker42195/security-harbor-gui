@@ -29,6 +29,32 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _urlControllerInitialized = false;
+  // "Kom ihåg inloggning". Sparar INTE lösenordet — den ber servern om en lång
+  // session i stället för dygnssessionen, och låter kontonamnet förifyllas.
+  // Utan kryss lagras ingen session alls mellan körningar.
+  bool _remember = false;
+  // Sant när kontonamnet fyllts i från förra inloggningen; då ska markören
+  // hoppa direkt till lösenordet i stället.
+  bool _usernamePrefilled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreRemembered();
+  }
+
+  Future<void> _restoreRemembered() async {
+    final remember = await ConfigProvider.loadRemember();
+    final user = await ConfigProvider.loadRememberedUsername();
+    if (!mounted) return;
+    setState(() {
+      _remember = remember;
+      if (user != null && user.isNotEmpty) {
+        _usernameController.text = user;
+        _usernamePrefilled = true;
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -50,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted || !proceed) return;
     }
 
-    await provider.login(_usernameController.text, _passwordController.text);
+    await provider.login(_usernameController.text, _passwordController.text, remember: _remember);
   }
 
   @override
@@ -145,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               // tangentbordet upp med detsamma). URL-fältet
                               // ovanför är förifyllt från förra inloggningen
                               // och behöver sällan röras.
-                              autofocus: true,
+                              autofocus: !_usernamePrefilled,
                               style: TextStyle(color: AppColors.text, fontSize: 13),
                               decoration: InputDecoration(
                                 labelText: tr('login.username_label'),
@@ -158,6 +184,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(height: 14),
                             TextField(
                               controller: _passwordController,
+                              // Är kontonamnet redan ifyllt är lösenordet det
+                              // enda som återstår — då ska markören stå där.
+                              autofocus: _usernamePrefilled,
                               obscureText: _obscurePassword,
                               style: TextStyle(color: AppColors.text, fontSize: 13),
                               onSubmitted: (_) => _login(provider),
@@ -172,7 +201,41 @@ class _LoginScreenState extends State<LoginScreen> {
                                 isDense: true,
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 4),
+                            InkWell(
+                              onTap: () => setState(() => _remember = !_remember),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: Checkbox(
+                                        value: _remember,
+                                        onChanged: (v) => setState(() => _remember = v ?? false),
+                                        activeColor: AppColors.accent,
+                                        checkColor: AppColors.onAccentBg,
+                                        visualDensity: VisualDensity.compact,
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(tr('login.remember_me'),
+                                          style: TextStyle(color: AppColors.text, fontSize: 12)),
+                                    ),
+                                    Tooltip(
+                                      message: tr('login.remember_me_tooltip'),
+                                      triggerMode: TooltipTriggerMode.tap,
+                                      showDuration: const Duration(seconds: 6),
+                                      child: Icon(Icons.help_outline, size: 15, color: AppColors.textMuted),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
                             SizedBox(
                               height: 44,
                               child: ElevatedButton.icon(

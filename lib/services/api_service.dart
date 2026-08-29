@@ -113,12 +113,16 @@ class ApiService {
   // svar (inte bara ekot av vad man skrev in i fältet).
   String? username;
 
-  Future<bool> login(String usernameInput, String password) async {
+  /// [remember] motsvarar kryssrutan "Kom ihåg inloggning" och ger en lång
+  /// session i stället för dygnssessionen. Lösenordet sparas ALDRIG lokalt —
+  /// det enda som lagras är den serversignerade token, som går att återkalla
+  /// på brandväggen. Äldre agenter ignorerar fältet och ger en dygnssession.
+  Future<bool> login(String usernameInput, String password, {bool remember = false}) async {
     try {
       final res = await _client.post(
         Uri.parse('$baseUrl/api/v1/auth/login'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'username': usernameInput, 'password': password}),
+        body: jsonEncode({'username': usernameInput, 'password': password, 'remember': remember}),
       );
 
       if (res.statusCode == 200) {

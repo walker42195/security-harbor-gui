@@ -62,6 +62,8 @@ const Map<String, String> _sv = {
   'login.url_hint': 'https://192.168.1.1:8443',
   'login.username_label': 'Användarnamn',
   'login.password_label': 'Lösenord',
+  'login.remember_me': 'Kom ihåg inloggning',
+  'login.remember_me_tooltip': 'Håller dig inloggad i 30 dagar i stället för ett dygn. Lösenordet sparas aldrig — bara en sessionsnyckel, som kan återkallas på brandväggen. Utan kryss sparas ingen inloggning alls när appen stängs.',
   'login.submit': 'Logga in',
   'login.language_label': 'Språk',
 
@@ -1095,6 +1097,8 @@ const Map<String, String> _en = {
   'login.url_hint': 'https://192.168.1.1:8443',
   'login.username_label': 'Username',
   'login.password_label': 'Password',
+  'login.remember_me': 'Remember me',
+  'login.remember_me_tooltip': 'Keeps you signed in for 30 days instead of one day. Your password is never stored — only a session key, which can be revoked on the firewall. Without this, no login is kept when the app closes.',
   'login.submit': 'Log in',
   'login.language_label': 'Language',
 
