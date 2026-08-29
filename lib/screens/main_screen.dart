@@ -59,6 +59,13 @@ class _MainScreenState extends State<MainScreen> {
   List<ServiceStatusModel> _failedServices = [];
   Timer? _servicesPollTimer;
 
+  // Kort ljus-/skal-puls på dashboard-loggan vid tryck. Utan den ser ett tryck
+  // ut att inte göra någonting när dashboarden redan är den aktiva vyn — och
+  // eftersom den är STARTVYN (_kDeviceDashboardIndex) är det precis det läge
+  // man oftast befinner sig i.
+  bool _dashPulse = false;
+  Timer? _dashPulseTimer;
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +76,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void dispose() {
     _servicesPollTimer?.cancel();
+    _dashPulseTimer?.cancel();
     super.dispose();
   }
 
@@ -660,25 +668,15 @@ class _MainScreenState extends State<MainScreen> {
                               child: Column(
                                 children: [
                                   // Loggan är en genväg tillbaka till
-                                  // dashboarden, samma konvention som en
-                                  // hem-knapp i en webbtjänst.
-                                  Tooltip(
-                                    message: tr('devdash.rubrik'),
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(5),
-                                      onTap: () => setState(() => _selectedIndex = _kDeviceDashboardIndex),
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(5),
-                                        child: Image.asset(
-                                          'assets/logo.png',
-                                          width: 24,
-                                          height: 24,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) => Icon(Icons.shield, color: AppColors.accent, size: 22),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                  // enhets-dashboarden, samma konvention som
+                                  // en hem-knapp i en webbtjänst. Den ritas
+                                  // med samma markering (indicator) som en
+                                  // vanlig menypost när dashboarden är den
+                                  // aktiva vyn — annars såg ett tryck ut att
+                                  // inte göra någonting alls, eftersom
+                                  // dashboarden dessutom är STARTVYN och man
+                                  // därför oftast redan står på den.
+                                  _buildDeviceDashboardButton(size: 24),
                                 ],
                               ),
                             ),
@@ -704,6 +702,72 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  /// Går till enhets-dashboarden och pulsar loggan så att trycket ALLTID syns,
+  /// även när man redan står på dashboarden.
+  void _goToDeviceDashboard() {
+    _dashPulseTimer?.cancel();
+    setState(() {
+      _selectedIndex = _kDeviceDashboardIndex;
+      _dashPulse = true;
+    });
+    _dashPulseTimer = Timer(const Duration(milliseconds: 450), () {
+      if (mounted) setState(() => _dashPulse = false);
+    });
+  }
+
+  /// Loggan som genväg till enhets-dashboarden — samma knapp i NavigationRailen
+  /// (breda skärmar) och i drawer-huvudet (smala). Ikonen är oförändrad; det är
+  /// markeringen runt den som ger responsen: en bestående indikator-ram när
+  /// dashboarden är aktiv vy (samma accentfärg som NavigationRailens
+  /// `indicatorColor`) plus en kort puls vid varje tryck.
+  ///
+  /// `interactive: false` används när en yttre InkWell redan tar tryckningen
+  /// (drawer-huvudet, där hela raden är klickbar) — annars äter den inre
+  /// InkWellen trycket och drawern stängs aldrig.
+  Widget _buildDeviceDashboardButton({required double size, bool interactive = true}) {
+    final active = _selectedIndex < 0;
+    final logo = ClipRRect(
+      borderRadius: BorderRadius.circular(5),
+      child: Image.asset(
+        'assets/logo.png',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => Icon(Icons.shield, color: AppColors.accent, size: size - 2),
+      ),
+    );
+    final marked = AnimatedScale(
+      scale: _dashPulse ? 1.12 : 1.0,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: active ? AppColors.accent.withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: active ? AppColors.accent.withValues(alpha: 0.65) : Colors.transparent,
+            width: 1,
+          ),
+          boxShadow: _dashPulse
+              ? [BoxShadow(color: AppColors.accent.withValues(alpha: 0.55), blurRadius: 10, spreadRadius: 1)]
+              : const [],
+        ),
+        child: logo,
+      ),
+    );
+    if (!interactive) return marked;
+    return Tooltip(
+      message: tr('devdash.rubrik'),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: _goToDeviceDashboard,
+        child: marked,
+      ),
+    );
+  }
+
   // Drawer-versionen av navigationen (smala skärmar) — byggd av samma
   // `destinations`-lista (NavigationRailDestination) som den vanliga
   // NavigationRailen, så de två alltid visar exakt samma menyval i samma
@@ -715,23 +779,33 @@ class _MainScreenState extends State<MainScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(5),
-                    child: Image.asset(
-                      'assets/logo.png',
-                      width: 28,
-                      height: 28,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => Icon(Icons.shield, color: AppColors.accent, size: 26),
+            // Loggan i drawer-huvudet är samma genväg till enhets-dashboarden
+            // som loggan i NavigationRailen på breda skärmar. Tidigare var den
+            // bara en dekoration här, vilket gjorde enhets-dashboarden helt
+            // ONÅBAR på smala skärmar så fort man navigerat bort från den
+            // (den har ingen egen menypost i `destinations`).
+            InkWell(
+              onTap: () {
+                _goToDeviceDashboard();
+                Navigator.pop(context);
+              },
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                child: Row(
+                  children: [
+                    _buildDeviceDashboardButton(size: 28, interactive: false),
+                    const SizedBox(width: 10),
+                    Text(
+                      tr('main.title'),
+                      style: TextStyle(
+                        color: _selectedIndex < 0 ? AppColors.accent : AppColors.text,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(tr('main.title'), style: TextStyle(color: AppColors.text, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
-                ],
+                  ],
+                ),
               ),
             ),
             Divider(color: AppColors.divider, height: 1),
