@@ -465,9 +465,15 @@ class ApiService {
 
   /// [res] är "1m" | "5m" | "1h" | "1d". [spark] är antal minutpunkter för
   /// minigrafen i varje rad (0-60, 0 = ingen).
-  Future<DashboardDataModel?> getDashboardDevices({String res = '5m', int spark = 0}) async {
+  ///
+  /// [live] talar om att anropet kommer från en realtidsvy (Tactical HUD) och
+  /// ber agenten läsa av trafikräknarna i snabb takt en kort stund framåt.
+  /// Utan den ändras bps-siffrorna aldrig oftare än agentens vanliga
+  /// avläsningstakt (10 s), hur tätt klienten än pollar. Sätt den BARA i vyer
+  /// som faktiskt visas — den kostar extra avläsningar på brandväggen.
+  Future<DashboardDataModel?> getDashboardDevices({String res = '5m', int spark = 0, bool live = false}) async {
     try {
-      final uri = Uri.parse('$baseUrl/api/v1/dashboard/devices?res=$res&spark=$spark');
+      final uri = Uri.parse('$baseUrl/api/v1/dashboard/devices?res=$res&spark=$spark${live ? '&live=1' : ''}');
       final r = await _client.get(uri, headers: _headers);
       if (r.statusCode == 200) {
         return DashboardDataModel.fromJson(jsonDecode(r.body) as Map<String, dynamic>);

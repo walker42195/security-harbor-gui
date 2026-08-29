@@ -51,6 +51,11 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
   DashboardDataModel? _dashboardData;
   Map<String, dynamic>? _systemStatus;
   bool _isLoading = true;
+  // Skydd mot att anropen travar på varandra: 2 s-tickern väntar inte på att
+  // förra svaret kommit, och på en långsam länk (eller en brandvägg med många
+  // enheter i inventeringen) hade kön då bara växt och belastat agenten värre
+  // ju trögare den redan gick.
+  bool _fetchInFlight = false;
   DeviceStatModel? _selectedRadarDevice;
 
   late final List<_WarpStar> _stars;
@@ -67,6 +72,11 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     )..repeat();
 
     _fetchData();
+    // Pollintervallet matchar agentens snabba avläsningstakt (live=1 nedan,
+    // trafficSampleIntervalLive i pkg/engine/traffic.go). Tätare än så ger
+    // bara samma siffra igen. Timern startas i initState och rivs i dispose,
+    // och skärmen monteras bara när den är den valda vyn — det snabba läget
+    // är alltså aktivt exakt så länge HUD:en visas, aldrig i bakgrunden.
     _pollTimer = Timer.periodic(const Duration(seconds: 2), (_) => _fetchData());
   }
 
@@ -80,10 +90,12 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
   Future<void> _fetchData() async {
     final provider = Provider.of<ConfigProvider>(context, listen: false);
     if (!provider.isAuthenticated) return;
+    if (_fetchInFlight) return;
+    _fetchInFlight = true;
 
     try {
       final futures = await Future.wait([
-        provider.api.getDashboardDevices(res: '5m', spark: 1),
+        provider.api.getDashboardDevices(res: '5m', spark: 1, live: true),
         provider.api.getSystemStatus(),
       ]);
 
@@ -101,6 +113,8 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    } finally {
+      _fetchInFlight = false;
     }
   }
 
