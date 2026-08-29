@@ -179,6 +179,12 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   // nätet idag, så IPv6 (om något någonsin dyker upp) eller "Alla" får
   // väljas medvetet istället för att blanda in i vyn från start.
   String _ipVersionFilter = LogFilterPrefs.defaults.ipVersion; // ALL, IPV4, IPV6
+  // Filterkortet är hopfällbart på LÅGA skärmar. Det bryts över tre rader och
+  // åt tillsammans med topplisten hela höjden i liggande läge på telefon —
+  // tabellen (Expanded nedan) fick då noll höjd och gick inte att scrolla till
+  // (rapporterat 2026-08-29). null = användaren har inte valt själv, då styr
+  // skärmhöjden; annars gäller användarens val.
+  bool? _filterExpanded;
   // Riktning relativt brandväggen (WAN/LAN-zonbaserad, se
   // _classifyDirection) — separat från _directionFilterField ovan, som
   // bara styr IP-fältets Från/Till-tolkning.
@@ -273,6 +279,9 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Låg skärm = telefon i liggande läge (och små fönster). Där fälls
+    // filterkortet ihop som standard så tabellen får plats; se _buildFilterBar.
+    final isShort = MediaQuery.sizeOf(context).height < 560;
     final provider = Provider.of<ConfigProvider>(context);
     final cfg = provider.candidateConfig ?? provider.runningConfig;
     final objects = cfg?.objects ?? [];
@@ -419,7 +428,7 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
               ],
             ),
             const SizedBox(height: 10),
-            _buildFilterBar(),
+            _buildFilterBar(isShort),
             if (_truncated) ...[
               const SizedBox(height: 8),
               Row(
@@ -441,7 +450,10 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     );
   }
 
-  Widget _buildFilterBar() {
+  Widget _buildFilterBar(bool isShort) {
+    // På en låg skärm är filtret hopfällt som standard, men användarens eget
+    // val vinner så fort hen tryckt på rubriken.
+    final expanded = _filterExpanded ?? !isShort;
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -452,6 +464,36 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Rubriken visas bara när kortet KAN fällas ihop — på en hög skärm
+          // finns ingen anledning att lägga till ett extra klick.
+          if (isShort) ...[
+            InkWell(
+              onTap: () => setState(() => _filterExpanded = !expanded),
+              child: Row(
+                children: [
+                  Icon(expanded ? Icons.expand_less : Icons.expand_more,
+                      size: 18, color: AppColors.accent),
+                  const SizedBox(width: 6),
+                  Text(tr('conn.filter_rubrik'),
+                      style: TextStyle(color: AppColors.text, fontSize: 12, fontWeight: FontWeight.bold)),
+                  if (!expanded && _activeFilterCount() > 0) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Text('${_activeFilterCount()}',
+                          style: TextStyle(color: AppColors.accent, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (expanded) const SizedBox(height: 10),
+          ],
+          if (!expanded) const SizedBox.shrink() else ...[
           _buildExpressionField(),
           const SizedBox(height: 10),
           Wrap(
@@ -520,9 +562,25 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
           ),
         ],
           ),
+          ],
         ],
       ),
     );
+  }
+
+  /// Antal aktiva filter — visas som en liten siffra på den hopfällda rubriken
+  /// så man ser att en filtrering är i kraft utan att fälla ut kortet.
+  int _activeFilterCount() {
+    var n = 0;
+    if (_exprController.text.trim().isNotEmpty) n++;
+    if (_ipController.text.trim().isNotEmpty) n++;
+    if (_macController.text.trim().isNotEmpty) n++;
+    if (_nameController.text.trim().isNotEmpty) n++;
+    if (_directionFilterField != LogFilterPrefs.defaults.directionField) n++;
+    if (_trafficDirectionFilter != LogFilterPrefs.defaults.trafficDirection) n++;
+    if (_actionFilter != LogFilterPrefs.defaults.action) n++;
+    if (_ipVersionFilter != LogFilterPrefs.defaults.ipVersion) n++;
+    return n;
   }
 
   /// Filteruttrycket — det enda fältet som kan uttrycka ett UNDANTAG.

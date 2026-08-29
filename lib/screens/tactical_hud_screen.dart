@@ -198,14 +198,26 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                         : LayoutBuilder(
                             builder: (context, constraints) {
                               if (constraints.maxWidth < 900) {
-                                // Smal skärm: stapla vertikalt
+                                // Smal skärm: stapla vertikalt.
+                                //
+                                // Panelerna MÅSTE få en bestämd höjd här.
+                                // Center- och radarpanelen bygger sina layouter
+                                // med Expanded, vilket kräver en avgränsad
+                                // höjd — i den breda grenen kommer den från
+                                // Rowens crossAxisAlignment: stretch, men en
+                                // ListView ger sina barn OBEGRÄNSAD höjd. Utan
+                                // SizedBox kollapsade de därför till noll och
+                                // hela HUD:en blev tom på telefon (rapporterat
+                                // 2026-08-29).
                                 return ListView(
+                                  padding: EdgeInsets.zero,
                                   children: [
-                                    _buildLeftShieldPanel(provider),
+                                    SizedBox(height: 380, child: _buildLeftShieldPanel(provider)),
                                     const SizedBox(height: 12),
-                                    _buildCenterTargetPanel(provider),
+                                    SizedBox(height: 440, child: _buildCenterTargetPanel(provider)),
                                     const SizedBox(height: 12),
-                                    _buildRightRadarPanel(),
+                                    SizedBox(height: 440, child: _buildRightRadarPanel()),
+                                    const SizedBox(height: 12),
                                   ],
                                 );
                               }
