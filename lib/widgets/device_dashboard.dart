@@ -264,7 +264,14 @@ class _DeviceDashboardState extends State<DeviceDashboard> {
         SizedBox(width: narrow ? 0 : 10, height: narrow ? 10 : 0),
         Expanded(child: _pieCard(tr('devdash.per_zon'), zones, formatBytes(d.totalRx + d.totalTx))),
       ];
-      return narrow ? Column(children: children) : Row(crossAxisAlignment: CrossAxisAlignment.start, children: children);
+      if (narrow) return Column(children: children);
+      // IntrinsicHeight + stretch ger alla tre korten SAMMA höjd, satt av det
+      // högsta. Med CrossAxisAlignment.start blev varje kort bara så högt som
+      // sitt eget innehåll, och "Per zon" — som har färre poster än
+      // topplistorna — såg avhugget ut bredvid dem.
+      return IntrinsicHeight(
+        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+      );
     });
   }
 

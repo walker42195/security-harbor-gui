@@ -67,10 +67,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: Center(
+      // Scrollbar, annars går fälten inte att komma åt när tangentbordet är
+      // uppe på telefon: viewporten krymper till nästan ingenting och varken
+      // konto- eller lösenordsfältet syns (rapporterat 2026-08-29). Med en
+      // scrollvy skjuter Flutter dessutom automatiskt upp det FOKUSERADE
+      // fältet ovanför tangentbordet.
+      //
+      // resizeToAvoidBottomInset lämnas på (default) — det är det som gör att
+      // viewporten krymper och scrollen får något att arbeta med.
+      body: SafeArea(
+        child: Center(
         child: provider.isInitializing
             ? CircularProgressIndicator(color: AppColors.accent)
-            : ConstrainedBox(
+            : SingleChildScrollView(
+              // Håller innehållet centrerat på en hög skärm men låter det
+              // scrolla så fort det inte får plats.
+              child: Center(
+              child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -188,6 +201,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
+              ),
+            ),
+      ),
       ),
     );
   }

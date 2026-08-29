@@ -212,11 +212,21 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                                 return ListView(
                                   padding: EdgeInsets.zero,
                                   children: [
-                                    SizedBox(height: 380, child: _buildLeftShieldPanel(provider)),
+                                    // Sköldpanelen har INGEN Expanded — den är
+                                    // intrinsisk och ska få växa fritt. En
+                                    // SizedBox här klippte bort de nedersta
+                                    // balkarna (PLASMA MEMORY, STATE FLOW).
+                                    _buildLeftShieldPanel(provider),
                                     const SizedBox(height: 12),
-                                    SizedBox(height: 440, child: _buildCenterTargetPanel(provider)),
+                                    // De två nedan bygger med Expanded och
+                                    // MÅSTE ha bunden höjd. Innehållet i dem
+                                    // (telemetriloggen, kommunikationsmatrisen)
+                                    // ligger i ListViews och scrollar internt,
+                                    // så höjden styr hur mycket man ser åt
+                                    // gången — inte hur mycket som finns.
+                                    SizedBox(height: 620, child: _buildCenterTargetPanel(provider)),
                                     const SizedBox(height: 12),
-                                    SizedBox(height: 440, child: _buildRightRadarPanel()),
+                                    SizedBox(height: 560, child: _buildRightRadarPanel()),
                                     const SizedBox(height: 12),
                                   ],
                                 );
@@ -613,7 +623,13 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
 
   /// HÖGER PANEL: NAVIGATIONSRADAR & KOMMUNIKATION
   Widget _buildRightRadarPanel() {
-    final devices = _dashboardData?.devices ?? const <DeviceStatModel>[];
+    // Sorterat på AKTUELL hastighet, fallande. Listan kom tidigare i
+    // agentens inventeringsordning (i praktiken godtycklig) och klipptes till
+    // de första 8 — så en enhet med 0 bit/s kunde ligga över en som drog
+    // 394 kbit/s, och den mest aktiva enheten syntes inte alls om den råkade
+    // hamna på plats 9. Det är de mest aktiva som hör hemma i en realtidsvy.
+    final devices = [...(_dashboardData?.devices ?? const <DeviceStatModel>[])]
+      ..sort((a, b) => (b.rxBps + b.txBps).compareTo(a.rxBps + a.txBps));
 
     return _buildCockpitContainer(
       title: 'NAVIGATION RADAR',
