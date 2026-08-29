@@ -185,6 +185,8 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   // (rapporterat 2026-08-29). null = användaren har inte valt själv, då styr
   // skärmhöjden; annars gäller användarens val.
   bool? _filterExpanded;
+  // Se _poll: hindrar att hämtningar staplas på varandra.
+  bool _pollInFlight = false;
   // Riktning relativt brandväggen (WAN/LAN-zonbaserad, se
   // _classifyDirection) — separat från _directionFilterField ovan, som
   // bara styr IP-fältets Från/Till-tolkning.
@@ -266,15 +268,27 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
   }
 
   Future<void> _poll() async {
+    // Ett anrop i taget. Utan den här spärren startade den periodiska
+    // uppdateringen (och varje byte av tidsfönster) en NY hämtning innan den
+    // förra svarat. På ett långt fönster tar hämtningen längre tid än
+    // pollintervallet, så anropen staplades: uppmätt 2026-08-29 fem samtidiga
+    // journalctl-processer på brandväggen, agenten på 134 % CPU och en loggvy
+    // som visade tomt eftersom inget svar hann fram.
+    if (_pollInFlight) return;
+    _pollInFlight = true;
     final provider = Provider.of<ConfigProvider>(context, listen: false);
     setState(() => _isLoading = true);
-    final result = await provider.api.getFirewallLog(window: _window);
-    if (!mounted) return;
-    setState(() {
-      _entries = result.entries;
-      _truncated = result.truncated;
-      _isLoading = false;
-    });
+    try {
+      final result = await provider.api.getFirewallLog(window: _window);
+      if (!mounted) return;
+      setState(() {
+        _entries = result.entries;
+        _truncated = result.truncated;
+        _isLoading = false;
+      });
+    } finally {
+      _pollInFlight = false;
+    }
   }
 
   @override
