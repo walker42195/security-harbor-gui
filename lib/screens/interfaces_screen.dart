@@ -9,7 +9,39 @@ import '../localization.dart';
 class InterfacesScreen extends StatelessWidget {
   const InterfacesScreen({super.key});
 
+  /// Host-läge har EN zon: HOST. Zoner är en gateway-idé — de beskriver
+  /// sidor av en brandvägg som står mellan nät. En värddator-brandvägg
+  /// skyddar en enda dator och har inget "internt nät" att skilja från ett
+  /// externt.
+  ///
+  /// Rapporterat 2026-08-30: en host-installation hade fått ett kort i zon
+  /// LAN, en zon som inte ens fanns i configens zonlista (den innehöll bara
+  /// HOST). Kortet blev därmed omatchbart för alla policyer, och det utlöste
+  /// dessutom en LAN-varning som inte gick att åtgärda. Orsaken var att
+  /// zon-dropdownen föreslog LAN som standard även här.
+  static bool _isHostMode(ConfigModel? cfg) => cfg?.settings.isHostMode ?? false;
+
+  /// Den zon ett kort ska hamna i som standard, per driftläge.
+  static String _defaultZone(ConfigModel? cfg, String gatewayDefault) =>
+      _isHostMode(cfg) ? 'HOST' : gatewayDefault;
+
   List<DropdownMenuItem<String>> _getZoneDropdownItems(ConfigModel? cfg) {
+    // Host-läge: bara HOST, och ingen "skapa ny zon" — se _isHostMode ovan.
+    if (_isHostMode(cfg)) {
+      final desc = cfg?.zones
+              .firstWhere((z) => z.name.toUpperCase() == 'HOST',
+                  orElse: () => ZoneModel(name: 'HOST', description: ''))
+              .description
+              .trim() ??
+          '';
+      return [
+        DropdownMenuItem(
+          value: 'HOST',
+          child: Text(desc.isNotEmpty ? 'HOST ($desc)' : 'HOST'),
+        ),
+      ];
+    }
+
     // Byggs från configens FAKTISKA zoner (cfg.zones) — inte en hårdkodad
     // lista. Tidigare visades SERVERS/IOT/GUEST/VPN alltid, även efter att man
     // tagit bort dem via "Hantera zoner". Beskrivningen tas från zonen själv.
@@ -90,7 +122,10 @@ class InterfacesScreen extends StatelessWidget {
                     side: BorderSide(color: AppColors.accent),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   ),
-                  onPressed: cfg == null ? null : () => _showManageZonesDialog(context, provider, cfg),
+                  // Host-läge har bara zonen HOST och inget att hantera.
+                  onPressed: (cfg == null || _isHostMode(cfg))
+                      ? null
+                      : () => _showManageZonesDialog(context, provider, cfg),
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.alt_route, size: 14),
@@ -444,7 +479,9 @@ class InterfacesScreen extends StatelessWidget {
     final dnsCtrl = TextEditingController(text: iface.dnsServers.join(', '));
     final macCtrl = TextEditingController(text: iface.macAddress);
     
-    String selectedZonePreset = iface.zone.isEmpty ? 'LAN' : iface.zone.toUpperCase();
+    String selectedZonePreset = _isHostMode(cfg)
+        ? 'HOST'
+        : (iface.zone.isEmpty ? 'LAN' : iface.zone.toUpperCase());
     final customZoneCtrl = TextEditingController(text: _zoneExistsInMenu(selectedZonePreset, cfg) ? '' : iface.zone);
 
     showDialog(
@@ -528,7 +565,13 @@ class InterfacesScreen extends StatelessWidget {
 
                   dialogSection(title: tr('iface.section_zon'), children: [
                     DropdownButtonFormField<String>(
-                      initialValue: _zoneExistsInMenu(selectedZonePreset, cfg) ? selectedZonePreset : 'CUSTOM',
+                      // I host-läge finns bara HOST i listan; ett kort som
+                      // ligger kvar i en gammal zon (t.ex. LAN) flyttas
+                      // därmed till HOST när man sparar. initialValue MÅSTE
+                      // finnas bland items, annars fäller Flutter en assert.
+                      initialValue: _isHostMode(cfg)
+                          ? 'HOST'
+                          : (_zoneExistsInMenu(selectedZonePreset, cfg) ? selectedZonePreset : 'CUSTOM'),
                       dropdownColor: AppColors.surface,
                       style: TextStyle(color: AppColors.text, fontSize: 12),
                       decoration: InputDecoration(
@@ -686,7 +729,7 @@ class InterfacesScreen extends StatelessWidget {
     final cfg = provider.candidateConfig ?? provider.runningConfig;
     final parentCtrl = TextEditingController(text: 'ens19');
     final vlanIdCtrl = TextEditingController(text: '10');
-    String selectedZonePreset = 'SERVERS';
+    String selectedZonePreset = _defaultZone(cfg, 'SERVERS');
     final customZoneCtrl = TextEditingController(text: '');
     final ipCtrl = TextEditingController(text: '192.168.10.1/24');
     final dnsCtrl = TextEditingController(text: '1.1.1.1, 8.8.8.8');

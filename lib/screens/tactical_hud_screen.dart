@@ -403,9 +403,16 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
 
           // Kärn- och subsystemstatus
           _buildTelemetryMetricRow('FIREWALL INTEGRITY', '$shieldIntegrity%', shieldIntegrity > 90 ? AppColors.ok : AppColors.warn),
-          _buildTelemetryMetricRow('SURICATA IDS MATRIX', 'ARMED (ACTIVE)', AppColors.accent),
-          _buildTelemetryMetricRow('UNBOUND DNS SHIELD', 'ONLINE', AppColors.ok),
-          _buildTelemetryMetricRow('NFTABLES FILTER', 'ACTIVE (0 DROPS)', AppColors.accent),
+          // Läses ur den KÖRANDE konfigurationen. De här tre raderna var
+          // hårdkodade strängar — "ARMED (ACTIVE)", "ONLINE" och
+          // "ACTIVE (0 DROPS)" visades oavsett vad som faktiskt gällde.
+          //
+          // Rapporterat 2026-08-30 på en skarp gateway: panelen påstod att
+          // Suricata var ARMED trots att IDS var avstängt i konfigurationen.
+          // En statuspanel på en brandvägg som alltid säger att allt är
+          // påslaget är värre än ingen panel alls — den går inte att lita på
+          // åt något håll.
+          ..._buildSubsystemRows(provider),
           const Divider(height: 16),
 
           // CPU- & Minnesbalkar (Segmented Bars) med realtidsdata
@@ -430,6 +437,41 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
   }
 
   /// MITTPANEL: RETIKEL / HASTIGHET / AKTIV MÅLTRAFIK / 3D WARP STJÄRNFÄLT
+  /// De tre subsystemraderna, byggda ur den körande konfigurationen.
+  ///
+  /// Visar FUNKTIONENS tillstånd (påslagen i konfigurationen), inte
+  /// systemd-enhetens. Det är skillnaden som gjorde den gamla panelen
+  /// missvisande: en tjänst kan vara igång trots att funktionen är avstängd,
+  /// t.ex. efter att någon tryckt "starta om" på Tjänste-sidan.
+  List<Widget> _buildSubsystemRows(ConfigProvider provider) {
+    final cfg = provider.runningConfig;
+
+    String state(bool? on) {
+      if (on == null) return 'OKÄND';
+      return on ? 'AKTIV' : 'AVSTÄNGD';
+    }
+
+    Color color(bool? on) {
+      if (on == null) return AppColors.textFaint;
+      return on ? AppColors.accent : AppColors.textFaint;
+    }
+
+    final idsOn = cfg == null ? null : (cfg.ids?.enabled ?? false);
+    final dnsOn = cfg == null ? null : (cfg.dns?.enabled ?? false);
+
+    // nftables är alltid aktivt när agenten kör — det är brandväggens kärna,
+    // inte en funktion man slår av. Den gamla texten "ACTIVE (0 DROPS)" var
+    // dessutom dubbelt fel: nollan var hårdkodad, och det enda siffervärde
+    // som finns i status är IDS-LARM, inte nftables-drops. Att visa larm
+    // under etiketten "DROPS" hade bara bytt en osanning mot en annan, så
+    // raden säger bara att filtret är aktivt.
+    return [
+      _buildTelemetryMetricRow('SURICATA IDS MATRIX', state(idsOn), color(idsOn)),
+      _buildTelemetryMetricRow('UNBOUND DNS SHIELD', state(dnsOn), color(dnsOn)),
+      _buildTelemetryMetricRow('NFTABLES FILTER', 'AKTIV', AppColors.accent),
+    ];
+  }
+
   Widget _buildCenterTargetPanel(ConfigProvider provider) {
     final rxBps = _dashboardData?.totalRxBps ?? 0;
     final txBps = _dashboardData?.totalTxBps ?? 0;
