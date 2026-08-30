@@ -49,6 +49,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
   late AnimationController _animController;
   Timer? _pollTimer;
   DashboardDataModel? _dashboardData;
+  List<FirewallLogModel> _firewallLog = const [];
   Map<String, dynamic>? _systemStatus;
   bool _isLoading = true;
   // Skydd mot att anropen travar på varandra: 2 s-tickern väntar inte på att
@@ -94,15 +95,27 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     _fetchInFlight = true;
 
     try {
+      // Brandväggsloggen hämtas med kort fönster: panelen visar de SENASTE
+      // händelserna, inte en historik. Ett långt fönster hade bara gjort
+      // svaret större utan att ändra vad som syns.
       final futures = await Future.wait([
         provider.api.getDashboardDevices(res: '5m', spark: 1, live: true),
         provider.api.getSystemStatus(),
+        // Loggen får misslyckas utan att fälla hela hämtningen — den är det
+        // minst kritiska av det tre, och på en brandvägg utan trafik är ett
+        // tomt svar det normala.
+        provider.api.getFirewallLog(window: '15m').then<Object?>((r) => r).catchError((_) => null),
       ]);
 
       if (mounted) {
         setState(() {
           _dashboardData = futures[0] as DashboardDataModel?;
           _systemStatus = futures[1] as Map<String, dynamic>?;
+          final log = futures[2];
+          if (log != null) {
+            _firewallLog =
+                (log as ({List<FirewallLogModel> entries, bool truncated})).entries;
+          }
           if (_systemStatus != null) {
             provider.systemStatus = _systemStatus;
           }
@@ -357,7 +370,16 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     final memTotalGB = status?['memory_total_gb'];
     final degraded = (status?['degraded_backends'] as List?)?.length ?? 0;
 
-    // Säkerhetsintegritet: 100 % när brandväggens skydd och resurser är optimala
+    // Vad mätaren FAKTISKT mäter: driftstatus. Den drar av för backends som
+    // inte kunde appliceras (degraded_backends) och för resurstryck — alltså
+    // "fungerar det du har slagit på?".
+    //
+    // Den mäter INTE skyddsomfattning. Att IDS är avstängt är ett val, inte
+    // ett fel, och ger därför inget avdrag; det syns i stället på raden
+    // SURICATA IDS MATRIX nedan. Etiketten sa tidigare "FIREWALL INTEGRITY",
+    // vilket läses som "hur skyddad är jag" — och 100 % med både IDS och
+    // DNS-skydd avstängda var därför missvisande (frågat 2026-08-30). Namnet
+    // säger nu vad siffran betyder.
     double integrity = 100.0;
     if (degraded > 0) {
       integrity -= (degraded * 25.0);
@@ -371,8 +393,8 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     final shieldIntegrity = integrity.clamp(0.0, 100.0).round();
 
     return _buildCockpitContainer(
-      title: 'SHIELD INTEGRITY',
-      subtitle: 'DEFENSE CORE TELEMETRY',
+      title: 'DRIFTINTEGRITET',
+      subtitle: 'FUNGERAR DET SOM ÄR PÅSLAGET?',
       icon: Icons.shield_outlined,
       child: Column(
         children: [
@@ -402,7 +424,11 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
           const SizedBox(height: 12),
 
           // Kärn- och subsystemstatus
-          _buildTelemetryMetricRow('FIREWALL INTEGRITY', '$shieldIntegrity%', shieldIntegrity > 90 ? AppColors.ok : AppColors.warn),
+          _buildTelemetryMetricRow(
+            degraded > 0 ? 'DRIFTSTATUS ($degraded FEL)' : 'DRIFTSTATUS',
+            '$shieldIntegrity%',
+            shieldIntegrity > 90 ? AppColors.ok : AppColors.warn,
+          ),
           // Läses ur den KÖRANDE konfigurationen. De här tre raderna var
           // hårdkodade strängar — "ARMED (ACTIVE)", "ONLINE" och
           // "ACTIVE (0 DROPS)" visades oavsett vad som faktiskt gällde.
@@ -599,12 +625,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                   Expanded(
                     child: ListView(
                       physics: const ClampingScrollPhysics(),
-                      children: [
-                        _buildLogLine('[SHIELDS ARMED]', 'NFTables stateful inspection active', AppColors.ok),
-                        _buildLogLine('[DEEP SCAN]', 'TLS SNI inspection routing all clients', AppColors.accent),
-                        _buildLogLine('[IDS SENSOR]', 'Suricata fast.log reverse scanner active', AppColors.info),
-                        _buildLogLine('[DEFENSE OK]', 'Zero critical breach signals detected', AppColors.ok),
-                      ],
+                      children: _buildTelemetryLogLines(),
                     ),
                   ),
                 ],
@@ -639,6 +660,52 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
         ],
       ),
     );
+  }
+
+  /// Telemetriloggen: brandväggens FAKTISKA senaste beslut, nyast först.
+  ///
+  /// Ersätter fyra hårdkodade rader ("[SHIELDS ARMED] NFTables stateful
+  /// inspection active" och liknande) som visades oavsett tillstånd — även
+  /// "[IDS SENSOR] Suricata fast.log reverse scanner active" på en brandvägg
+  /// där IDS var avstängt.
+  ///
+  /// DENY-rader först och tydligt märkta: det är blockerad trafik man vill se
+  /// på en sådan här panel — portskanningar, försök mot management-porten,
+  /// klienter som når något de inte får. ACCEPT fyller annars listan med brus
+  /// från normal trafik.
+  List<Widget> _buildTelemetryLogLines() {
+    if (_firewallLog.isEmpty) {
+      return [
+        _buildLogLine(
+          '[TYST]',
+          _isLoading
+              ? 'Läser brandväggsloggen…'
+              : 'Inga loggade beslut de senaste 15 minuterna',
+          AppColors.textFaint,
+        ),
+      ];
+    }
+
+    // Nyast först. Loggen kommer äldst-först från kärnan.
+    final entries = _firewallLog.reversed.toList();
+    final denies = entries.where((e) => e.action == 'deny').toList();
+    // Blockerat är det intressanta; är det tomt visas de senaste besluten
+    // över huvud taget i stället för en tom ruta.
+    final show = (denies.isNotEmpty ? denies : entries).take(12).toList();
+
+    return show.map((e) {
+      final deny = e.action == 'deny';
+      final proto = e.protocol.isEmpty ? '' : e.protocol.toUpperCase();
+      final src = e.srcPort > 0 ? '${e.srcIp}:${e.srcPort}' : e.srcIp;
+      final dst = e.dstPort > 0 ? '${e.dstIp}:${e.dstPort}' : e.dstIp;
+      final via = e.inIface.isNotEmpty ? ' · ${e.inIface}' : '';
+      final rule = e.policyName.isNotEmpty ? ' · ${e.policyName}' : '';
+      return _buildLogLine(
+        deny ? '[BLOCKERAD]' : '[TILLÅTEN]',
+        '$src → $dst${proto.isEmpty ? '' : '  $proto'}$via$rule',
+        deny ? AppColors.danger : AppColors.ok,
+      );
+    }).toList();
   }
 
   Widget _buildLogLine(String tag, String message, Color tagColor) {
