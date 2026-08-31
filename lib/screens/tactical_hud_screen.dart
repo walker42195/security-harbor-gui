@@ -148,13 +148,13 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
   static String _getWarpFactor(int rxBps) {
     final mbps = rxBps / 1000000.0;
     final kbps = rxBps / 1000.0;
-    if (mbps >= 200.0) return 'HYPERSPACE (WARP 9.9)';
-    if (mbps >= 50.0) return 'WARP SPEED (WARP 8.2)';
-    if (mbps >= 10.0) return 'WARP FLIGHT (WARP 4.5)';
-    if (mbps >= 1.0) return 'WARP VECTOR (WARP 1.8)';
-    if (kbps >= 50.0) return 'IMPULSE DRIVE (0.7c)';
-    if (kbps >= 1.0) return 'SUB-LIGHT CRUISE (0.2c)';
-    return 'STELLAR DRIFT (IDLE)';
+    if (mbps >= 200.0) return tr('hud.warp.hyperspace');
+    if (mbps >= 50.0) return tr('hud.warp.warp_speed');
+    if (mbps >= 10.0) return tr('hud.warp.warp_flight');
+    if (mbps >= 1.0) return tr('hud.warp.warp_vector');
+    if (kbps >= 50.0) return tr('hud.warp.impulse');
+    if (kbps >= 1.0) return tr('hud.warp.sublight');
+    return tr('hud.warp.drift');
   }
 
   @override
@@ -306,7 +306,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
               ),
               const SizedBox(width: 8),
               Text(
-                'TACTICAL CYBER HUD',
+                tr('hud.title'),
                 style: TextStyle(
                   color: AppColors.accent,
                   fontSize: 11,
@@ -325,19 +325,22 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
               border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
             ),
             child: Text(
-              'FW OS $version',
+              trp('hud.fw_os', {'version': '$version'}),
               style: TextStyle(color: AppColors.accent, fontSize: 9, fontWeight: FontWeight.bold),
             ),
           ),
           const Spacer(),
           if (_dashboardData != null) ...[
             _buildHudStatusPill(
-              'ONLINE NODES: $onlineCount/$totalDevices',
+              trp('hud.online_nodes', {
+                'online': '$onlineCount',
+                'total': '$totalDevices',
+              }),
               AppColors.ok,
             ),
             const SizedBox(width: 8),
             _buildHudStatusPill(
-              'DEFENSE MATRIX: ACTIVE',
+              tr('hud.defense_matrix'),
               AppColors.accent,
             ),
           ],
@@ -393,8 +396,8 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     final shieldIntegrity = integrity.clamp(0.0, 100.0).round();
 
     return _buildCockpitContainer(
-      title: 'DRIFTINTEGRITET',
-      subtitle: 'FUNGERAR DET SOM ÄR PÅSLAGET?',
+      title: tr('hud.shield.title'),
+      subtitle: tr('hud.shield.subtitle'),
       icon: Icons.shield_outlined,
       child: Column(
         children: [
@@ -425,7 +428,9 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
 
           // Kärn- och subsystemstatus
           _buildTelemetryMetricRow(
-            degraded > 0 ? 'DRIFTSTATUS ($degraded FEL)' : 'DRIFTSTATUS',
+            degraded > 0
+                ? trp('hud.shield.op_status_faults', {'count': '$degraded'})
+                : tr('hud.shield.op_status'),
             '$shieldIntegrity%',
             shieldIntegrity > 90 ? AppColors.ok : AppColors.warn,
           ),
@@ -443,20 +448,24 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
 
           // CPU- & Minnesbalkar (Segmented Bars) med realtidsdata
           _buildSegmentedBar(
-            cpuCores != null ? 'CPU REACTOR CORE ($cpuCores CORES)' : 'CPU REACTOR CORE',
+            cpuCores != null
+                ? trp('hud.shield.cpu_cores', {'cores': '$cpuCores'})
+                : tr('hud.shield.cpu'),
             cpuUsage / 100.0,
             '${cpuUsage.toStringAsFixed(1)}%',
             AppColors.accent,
           ),
           const SizedBox(height: 8),
           _buildSegmentedBar(
-            memTotalGB != null ? 'PLASMA MEMORY ($memTotalGB GB)' : 'PLASMA MEMORY LOAD',
+            memTotalGB != null
+                ? trp('hud.shield.memory_total', {'gb': '$memTotalGB'})
+                : tr('hud.shield.memory'),
             memUsage / 100.0,
             '${memUsage.toStringAsFixed(1)}%',
             AppColors.info,
           ),
           const SizedBox(height: 8),
-          _buildSegmentedBar('STATE FLOW INTEGRITY', 1.0, '100%', AppColors.ok),
+          _buildSegmentedBar(tr('hud.shield.flow'), 1.0, '100%', AppColors.ok),
         ],
       ),
     );
@@ -473,8 +482,8 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     final cfg = provider.runningConfig;
 
     String state(bool? on) {
-      if (on == null) return 'OKÄND';
-      return on ? 'AKTIV' : 'AVSTÄNGD';
+      if (on == null) return tr('hud.state.unknown');
+      return on ? tr('hud.state.active') : tr('hud.state.disabled');
     }
 
     Color color(bool? on) {
@@ -492,9 +501,10 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     // under etiketten "DROPS" hade bara bytt en osanning mot en annan, så
     // raden säger bara att filtret är aktivt.
     return [
-      _buildTelemetryMetricRow('SURICATA IDS MATRIX', state(idsOn), color(idsOn)),
-      _buildTelemetryMetricRow('UNBOUND DNS SHIELD', state(dnsOn), color(dnsOn)),
-      _buildTelemetryMetricRow('NFTABLES FILTER', 'AKTIV', AppColors.accent),
+      _buildTelemetryMetricRow(tr('hud.shield.ids'), state(idsOn), color(idsOn)),
+      _buildTelemetryMetricRow(tr('hud.shield.dns'), state(dnsOn), color(dnsOn)),
+      _buildTelemetryMetricRow(
+          tr('hud.shield.nftables'), tr('hud.state.active'), AppColors.accent),
     ];
   }
 
@@ -507,8 +517,8 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     final warpFactor = _getWarpFactor(rxBps);
 
     return _buildCockpitContainer(
-      title: 'TRAFFIC VELOCITY & TARGETING',
-      subtitle: 'REAL-TIME FLOW VECTOR MATRIX',
+      title: tr('hud.center.title'),
+      subtitle: tr('hud.center.subtitle'),
       icon: Icons.track_changes,
       child: Column(
         children: [
@@ -533,7 +543,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                         okColor: AppColors.ok,
                         borderColor: AppColors.border,
                         textColor: AppColors.text,
-                        centerLabel: 'VELOCITY: $downRate',
+                        centerLabel: trp('hud.center.velocity', {'rate': downRate}),
                         warpLabel: warpFactor,
                       ),
                     );
@@ -559,7 +569,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'BANDWIDTH VELOCITY SPECTRUM',
+                      tr('hud.center.spectrum'),
                       style: TextStyle(
                         color: AppColors.accent,
                         fontSize: 10,
@@ -568,7 +578,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                       ),
                     ),
                     Text(
-                      'TOTAL: $totalVol',
+                      trp('hud.center.total', {'volume': totalVol}),
                       style: TextStyle(color: AppColors.textMuted, fontSize: 10),
                     ),
                   ],
@@ -578,7 +588,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                   children: [
                     Expanded(
                       child: _buildHudVelocityPill(
-                        'DOWN: $downRate',
+                        trp('hud.center.down', {'rate': downRate}),
                         Icons.arrow_downward,
                         AppColors.ok,
                       ),
@@ -586,7 +596,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                     const SizedBox(width: 8),
                     Expanded(
                       child: _buildHudVelocityPill(
-                        'UP: $upRate',
+                        trp('hud.center.up', {'rate': upRate}),
                         Icons.arrow_upward,
                         AppColors.warn,
                       ),
@@ -613,7 +623,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'TACTICAL TELEMETRY LOG',
+                    tr('hud.log.title'),
                     style: TextStyle(
                       color: AppColors.textFaint,
                       fontSize: 9,
@@ -677,10 +687,8 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     if (_firewallLog.isEmpty) {
       return [
         _buildLogLine(
-          '[TYST]',
-          _isLoading
-              ? 'Läser brandväggsloggen…'
-              : 'Inga loggade beslut de senaste 15 minuterna',
+          tr('hud.log.quiet_tag'),
+          _isLoading ? tr('hud.log.reading') : tr('hud.log.empty'),
           AppColors.textFaint,
         ),
       ];
@@ -701,7 +709,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
       final via = e.inIface.isNotEmpty ? ' · ${e.inIface}' : '';
       final rule = e.policyName.isNotEmpty ? ' · ${e.policyName}' : '';
       return _buildLogLine(
-        deny ? '[BLOCKERAD]' : '[TILLÅTEN]',
+        deny ? tr('hud.log.blocked') : tr('hud.log.allowed'),
         '$src → $dst${proto.isEmpty ? '' : '  $proto'}$via$rule',
         deny ? AppColors.danger : AppColors.ok,
       );
@@ -741,8 +749,8 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
       ..sort((a, b) => (b.rxBps + b.txBps).compareTo(a.rxBps + a.txBps));
 
     return _buildCockpitContainer(
-      title: 'NAVIGATION RADAR',
-      subtitle: 'ACTIVE NODES & SECTORS',
+      title: tr('hud.radar.title'),
+      subtitle: tr('hud.radar.subtitle'),
       icon: Icons.radar,
       child: Column(
         children: [
@@ -786,8 +794,11 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                 Expanded(
                   child: Text(
                     _selectedRadarDevice != null
-                        ? 'TARGET: ${_selectedRadarDevice!.displayName} (${_selectedRadarDevice!.ip})'
-                        : 'RADAR TARGET: SECTOR AUTO-SCAN (${devices.length} NODES)',
+                        ? trp('hud.radar.target', {
+                            'name': _selectedRadarDevice!.displayName,
+                            'ip': _selectedRadarDevice!.ip,
+                          })
+                        : trp('hud.radar.autoscan', {'count': '${devices.length}'}),
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: AppColors.accent,
@@ -815,7 +826,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'COMMUNICATIONS MATRIX',
+                    tr('hud.radar.matrix'),
                     style: TextStyle(
                       color: AppColors.textFaint,
                       fontSize: 9,
@@ -828,7 +839,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                     child: devices.isEmpty
                         ? Center(
                             child: Text(
-                              'SCANNING SECTORS...',
+                              tr('hud.radar.scanning'),
                               style: TextStyle(color: AppColors.textMuted, fontSize: 10),
                             ),
                           )
