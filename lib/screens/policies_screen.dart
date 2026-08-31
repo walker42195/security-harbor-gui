@@ -272,14 +272,22 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
                                         if (_implicitRules.isNotEmpty)
                                           _buildImplicitHeader(),
                                         ..._implicitRules.map((r) => _buildImplicitRow(widths, r)),
-                                        _buildDefaultDenyRow(
-                                          widths,
-                                          name: tr('pol.deny_wan_name'),
-                                          from: 'WAN',
-                                          to: 'SELF / LAN',
-                                          hitKey: null,
-                                          tooltip: tr('pol.default_deny_wan_tooltip'),
-                                        ),
+                                        // Samma nft-regel som agentens
+                                        // implicita "WAN Drop" ovan. Visas
+                                        // därför bara när den listan saknas
+                                        // (äldre agent utan implicit-API:t):
+                                        // två rader för samma regel, som
+                                        // dessutom sa emot varandra om
+                                        // loggning, var bara förvirrande.
+                                        if (_implicitRules.isEmpty)
+                                          _buildDefaultDenyRow(
+                                            widths,
+                                            name: tr('pol.deny_wan_name'),
+                                            from: 'WAN',
+                                            to: 'SELF / LAN',
+                                            hitKey: null,
+                                            tooltip: tr('pol.default_deny_wan_tooltip'),
+                                          ),
                                         _buildDefaultDenyRow(
                                           widths,
                                           name: tr('pol.deny_all_name'),
@@ -584,8 +592,12 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     required String tooltip,
   }) {
     final denyColor = AppColors.danger;
+    // WAN-raden har ingen egen räknare i det här API:t; den implicita
+    // "WAN Drop"-raden bär den. Tooltipen sa tidigare "Loggas inte (tyst
+    // drop)" — fel: regeln renderas med både räknare och loggrad, och det
+    // är just de raderna man ser som DENY från WAN i trafikloggen.
     final nameTooltip = hitKey == null
-        ? tr('pol.loggas_inte_tyst_drop')
+        ? tr('pol.deny_wan_logged')
         : trp('pol.hit_count', {'packets': '${_hitCountFor(hitKey).$1}', 'bytes': '${_hitCountFor(hitKey).$2}'});
     final cells = <Widget>[
       Icon(Icons.lock, size: 13, color: AppColors.textMuted),
