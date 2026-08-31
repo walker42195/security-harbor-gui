@@ -6,6 +6,7 @@ import '../localization.dart';
 import '../models/config_model.dart';
 import '../providers/config_provider.dart';
 import '../theme.dart';
+import '../widgets/traffic_charts.dart';
 
 /// Stjärnpartikel för 3D-rymdsimulering.
 class _WarpStar {
@@ -131,12 +132,16 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     }
   }
 
-  static String _formatBps(int bps) {
-    if (bps >= 1000000000) return '${(bps / 1000000000).toStringAsFixed(1)} Gbit/s';
-    if (bps >= 1000000) return '${(bps / 1000000).toStringAsFixed(1)} Mbit/s';
-    if (bps >= 1000) return '${(bps / 1000).toStringAsFixed(1)} kbit/s';
-    return '$bps bit/s';
-  }
+  // HÄR LÅG _formatBps, som delade rx_bps med 1 000 000 och satte "Mbit/s"
+  // på resultatet. Men rx_bps från agenten är BYTE per sekund (se
+  // pkg/traffic/collector.go: "Rate är ögonblicksbandbredd i byte per
+  // sekund") — HUD:en visade alltså MB/s med bit-etikett och underskattade
+  // linjen med en faktor 8. Rapporterat 2026-08-31.
+  //
+  // formatBps i widgets/traffic_charts.dart gör redan rätt (multiplicerar
+  // med 8) och används av enhetsvyerna. HUD:en hade en egen kopia som
+  // missade just den multiplikationen — därför är den borta och den delade
+  // funktionen används i stället.
 
   static String _formatBytes(int bytes) {
     if (bytes >= 1073741824) return '${(bytes / 1073741824).toStringAsFixed(1)} GB';
@@ -145,9 +150,14 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
     return '$bytes B';
   }
 
-  static String _getWarpFactor(int rxBps) {
-    final mbps = rxBps / 1000000.0;
-    final kbps = rxBps / 1000.0;
+  /// Warp-faktorn för en nedladdningshastighet i BIT per sekund.
+  ///
+  /// Trösklarna är bit/s och läses av som sådana i etiketten (WARP 9.9 vid
+  /// 200 Mbit/s). Fram till 2026-08-31 matades funktionen med byte per
+  /// sekund, så "WARP 9.9" krävde i praktiken 1,6 Gbit/s.
+  static String _getWarpFactor(int rxBitsPerSecond) {
+    final mbps = rxBitsPerSecond / 1000000.0;
+    final kbps = rxBitsPerSecond / 1000.0;
     if (mbps >= 200.0) return tr('hud.warp.hyperspace');
     if (mbps >= 50.0) return tr('hud.warp.warp_speed');
     if (mbps >= 10.0) return tr('hud.warp.warp_flight');
@@ -509,12 +519,14 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
   }
 
   Widget _buildCenterTargetPanel(ConfigProvider provider) {
-    final rxBps = _dashboardData?.totalRxBps ?? 0;
-    final txBps = _dashboardData?.totalTxBps ?? 0;
-    final downRate = _formatBps(rxBps);
-    final upRate = _formatBps(txBps);
+    // total_rx_bps/total_tx_bps är BYTE per sekund trots namnet. Omräkningen
+    // till bit sker här, en gång, så att allt nedanför räknar i samma enhet
+    // som etiketterna säger.
+    final rxBits = (_dashboardData?.totalRxBps ?? 0) * 8;
+    final downRate = formatBps(_dashboardData?.totalRxBps ?? 0);
+    final upRate = formatBps(_dashboardData?.totalTxBps ?? 0);
     final totalVol = _formatBytes((_dashboardData?.totalRx ?? 0) + (_dashboardData?.totalTx ?? 0));
-    final warpFactor = _getWarpFactor(rxBps);
+    final warpFactor = _getWarpFactor(rxBits);
 
     return _buildCockpitContainer(
       title: tr('hud.center.title'),
@@ -537,7 +549,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                       painter: _WarpStarfieldReticlePainter(
                         stars: _stars,
                         rng: _rng,
-                        rxBps: rxBps,
+                        rxBitsPerSecond: rxBits,
                         animValue: _animController.value,
                         accentColor: AppColors.accent,
                         okColor: AppColors.ok,
@@ -848,7 +860,7 @@ class _TacticalHudScreenState extends State<TacticalHudScreen>
                             itemBuilder: (context, idx) {
                               final d = devices[idx];
                               final isTarget = _selectedRadarDevice?.ip == d.ip;
-                              final rateStr = _formatBps(d.rxBps + d.txBps);
+                              final rateStr = formatBps(d.rxBps + d.txBps);
                               return InkWell(
                                 onTap: () => setState(() => _selectedRadarDevice = isTarget ? null : d),
                                 child: Container(
@@ -1155,7 +1167,7 @@ class _ShieldGaugePainter extends CustomPainter {
 class _WarpStarfieldReticlePainter extends CustomPainter {
   final List<_WarpStar> stars;
   final math.Random rng;
-  final int rxBps;
+  final int rxBitsPerSecond;
   final double animValue;
   final Color accentColor;
   final Color okColor;
@@ -1167,7 +1179,7 @@ class _WarpStarfieldReticlePainter extends CustomPainter {
   _WarpStarfieldReticlePainter({
     required this.stars,
     required this.rng,
-    required this.rxBps,
+    required this.rxBitsPerSecond,
     required this.animValue,
     required this.accentColor,
     required this.okColor,
@@ -1182,8 +1194,13 @@ class _WarpStarfieldReticlePainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final maxRadius = math.min(size.width, size.height) / 2;
 
-    // 1. Beräkna dynamisk Warp Speed baserat på Download BPS
-    final kbps = rxBps / 1000.0;
+    // 1. Beräkna dynamisk Warp Speed baserat på nedladdningen, i BIT/s.
+    //
+    // Trösklarna nedan är oförändrade men läses nu som bit/s i stället för
+    // byte/s. Stjärnfältet svarar därmed på de hastigheter etiketterna
+    // pratar om: full warp vid 100 Mbit/s i stället för vid 100 MB/s
+    // (800 Mbit/s), vilket knappt någon linje nådde.
+    final kbps = rxBitsPerSecond / 1000.0;
     final mbps = kbps / 1000.0;
 
     final double speedFactor;

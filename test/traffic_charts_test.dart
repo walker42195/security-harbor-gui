@@ -61,7 +61,8 @@ void main() {
       // bit/s medan räknarna är i byte.
       expect(formatBps(125), '1.0 kbit/s');
       expect(formatBps(1250000), '10.0 Mbit/s');
-      expect(formatBps(0), '0 bps');
+      // Enheten skrivs likadant på alla steg — 'bit/s', aldrig 'bps'.
+      expect(formatBps(0), '0 bit/s');
     });
   });
 

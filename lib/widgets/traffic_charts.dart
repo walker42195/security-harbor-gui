@@ -153,7 +153,9 @@ String formatBytes(int b) {
 /// medan volym anges i byte. Att blanda ihop dem ger en faktor 8 fel.
 String formatBps(int bytesPerSecond) {
   final bits = bytesPerSecond * 8;
-  if (bits < 1000) return '$bits bps';
+  // Samma enhetsskrivning som stegen ovanför ('kbit/s'), inte 'bps' —
+  // annars byter samma kolumn benämning beroende på hastigheten.
+  if (bits < 1000) return '$bits bit/s';
   const units = ['kbit/s', 'Mbit/s', 'Gbit/s'];
   var v = bits / 1000.0;
   var i = 0;
