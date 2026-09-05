@@ -293,6 +293,8 @@ const Map<String, String> _sv = {
   'dashboard.karnor': 'Kärnor: {n}',
   'dashboard.minne': 'Minne',
   'dashboard.ram_ledigt': 'RAM: {gb} GB (LEDIGT {pct}%)',
+  'dashboard.disk': 'Disk',
+  'dashboard.disk_ledigt': '{gb} GB (LEDIGT {free} GB)',
   'dashboard.okonfigurerad': 'Okonfigurerad',
 
   // --- dns_screen.dart ---
@@ -1373,6 +1375,8 @@ const Map<String, String> _en = {
   'dashboard.karnor': 'Cores: {n}',
   'dashboard.minne': 'Memory',
   'dashboard.ram_ledigt': 'RAM: {gb} GB (FREE {pct}%)',
+  'dashboard.disk': 'Disk',
+  'dashboard.disk_ledigt': '{gb} GB (FREE {free} GB)',
   'dashboard.okonfigurerad': 'Unconfigured',
 
   // --- dns_screen.dart ---

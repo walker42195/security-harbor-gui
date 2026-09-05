@@ -177,6 +177,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final memUsage = (status?['memory'] as num?)?.toDouble();
     final memTotalGB = status?['memory_total_gb'];
     final memFreePct = status?['memory_free_pct'];
+    final diskUsage = (status?['disk'] as num?)?.toDouble();
+    final diskTotalGB = status?['disk_total_gb'];
+    final diskFreeGB = status?['disk_free_gb'];
+    // Färga disk-rutan efter fyllnadsgrad så en full disk (som gör
+    // brandväggen oanvändbar) syns direkt: >90% fara, >75% varning.
+    final diskColor = diskUsage == null
+        ? AppColors.info
+        : (diskUsage >= 90 ? AppColors.danger : (diskUsage >= 75 ? AppColors.warn : AppColors.info));
 
     final metricsList = _metrics.values.toList();
 
@@ -212,6 +220,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   (memTotalGB == null || memFreePct == null) ? '—' : trp('dashboard.ram_ledigt', {'gb': '$memTotalGB', 'pct': '$memFreePct'}),
                   Icons.pie_chart_outline,
                   AppColors.info,
+                ),
+                _buildCompactStatCard(
+                  tr('dashboard.disk'),
+                  diskUsage == null ? '—' : '${diskUsage.toStringAsFixed(1)}%',
+                  (diskTotalGB == null || diskFreeGB == null) ? '—' : trp('dashboard.disk_ledigt', {'gb': '$diskTotalGB', 'free': '$diskFreeGB'}),
+                  Icons.storage,
+                  diskColor,
                 ),
               ];
               if (constraints.maxWidth >= 500) {
