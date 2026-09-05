@@ -64,6 +64,35 @@ class _DhcpScreenState extends State<DhcpScreen> {
     });
   }
 
+  Future<void> _confirmDeleteLease(DhcpLeaseModel l) async {
+    final name = l.hostname.isEmpty ? l.ip : '${l.hostname} (${l.ip})';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ta bort DHCP-lease?'),
+        content: Text('Frigör leasen för $name?\n\nAdressen går tillbaka till poolen. '
+            'Enheten kan begära en ny lease direkt — sätt en reservation om du vill '
+            'att den aldrig ska få adressen igen.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Avbryt')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Ta bort', style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final provider = Provider.of<ConfigProvider>(context, listen: false);
+    final err = await provider.api.deleteDhcpLease(l.ip);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(err == null ? 'Lease ${l.ip} borttagen' : 'Kunde inte ta bort: $err'),
+      backgroundColor: err == null ? AppColors.ok : AppColors.danger,
+    ));
+    await _poll();
+  }
+
   List<String> get _interfaces {
     final set = <String>{for (final l in _leases) if (l.interfaceDevice.isNotEmpty) l.interfaceDevice};
     final list = set.toList()..sort();
@@ -668,6 +697,7 @@ class _DhcpScreenState extends State<DhcpScreen> {
                               DataColumn(label: Text(tr('dhcp.fick_lease'), style: _hStyle), onSort: (i, _) => _onSort(5)),
                               DataColumn(label: Text(tr('dhcp.utgar'), style: _hStyle), onSort: (i, _) => _onSort(6)),
                               DataColumn(label: Text(tr('dhcp.reservera'), style: _hStyle)),
+                              DataColumn(label: Text('Ta bort', style: _hStyle)),
                             ],
                             rows: visible
                                 .map((l) => DataRow(cells: [
@@ -686,6 +716,11 @@ class _DhcpScreenState extends State<DhcpScreen> {
                                               tooltip: tr('dhcp.reservera_denna_ip_till_mac_adressen'),
                                               onPressed: () => _showReservationDialog(context, hostname: l.hostname, mac: l.mac, ip: l.ip, device: l.interfaceDevice),
                                             )),
+                                      DataCell(IconButton(
+                                        icon: Icon(Icons.delete_outline, size: 16, color: AppColors.danger),
+                                        tooltip: 'Frigör (ta bort) denna lease',
+                                        onPressed: () => _confirmDeleteLease(l),
+                                      )),
                                     ]))
                                 .toList(),
                           ),

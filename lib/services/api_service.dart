@@ -585,6 +585,22 @@ class ApiService {
     }
   }
 
+  /// Frigör (tar bort) EN aktiv DHCP-lease via Kea:s lease4-del. Returnerar
+  /// null vid lyckad borttagning, annars ett felmeddelande.
+  Future<String?> deleteDhcpLease(String ip) async {
+    try {
+      final res = await _client.post(
+        Uri.parse('$baseUrl/api/v1/dhcp/leases/delete'),
+        headers: _headers,
+        body: jsonEncode({'ip': ip}),
+      );
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Borttagning misslyckades';
+    } catch (e) {
+      return 'Fel: $e';
+    }
+  }
+
   Future<List<ServiceStatusModel>> getServicesStatus() async {
     try {
       final res = await _client.get(Uri.parse('$baseUrl/api/v1/services/status'), headers: _headers);
