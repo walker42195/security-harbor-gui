@@ -1051,7 +1051,7 @@ const Map<String, String> _sv = {
   'traftype.help_other': 'Flöden utan domännamn — trafik direkt mot en IP-adress, utan TLS-handskakning eller DNS-uppslag att läsa namnet ur.',
   'traftype.rubrik': 'Trafiktyper',
   'traftype.underrubrik':
-      'Vad nätet används till. Klassificeringen bygger på servernamnet i TLS-handskakningen och på DNS-uppslagen — båda i klartext, inget certifikat behövs.',
+      'Vad nätet används till (baserat på servernamn i TLS-handskakningen och DNS-uppslag). Mängden mäts av IDS på det övervakade kortet och omfattar ÄVEN lokal trafik på samma nät som aldrig går genom brandväggen — därför blir totalen ofta högre än på "Trafik per enhet".',
   'traftype.fordelning': 'Fördelning per kategori',
   'traftype.toppdomaner': 'Mest trafikerade domäner',
   'traftype.per_enhet': 'Fördelning per enhet',
@@ -1097,7 +1097,7 @@ const Map<String, String> _sv = {
   'devdash.ny_enhet_tooltip': 'Sedd första gången det senaste dygnet',
   'devdash.slumpad_mac_tooltip': 'Slumpad MAC-adress (integritetsskydd).',
   'devdash.underrubrik':
-      'Realtidsbandbredd, historik och säkerhetssignaler per enhet på nätet.',
+      'Realtidsbandbredd, historik och säkerhetssignaler per enhet. Mängden räknas på trafik GENOM brandväggen (forward) och nollställs vid varje Applicera — därför kan totalen skilja sig från "Datatyper".',
   'nav.ids_rules': 'IDS-regler',
   // --- IDS-regelurval ---
   'sec.tysta_signaturen': 'Tysta signaturen',
@@ -2134,7 +2134,7 @@ const Map<String, String> _en = {
   'traftype.help_other': 'Flows without a domain name — traffic straight to an IP address, with no TLS handshake or DNS lookup to read a name from.',
   'traftype.rubrik': 'Traffic types',
   'traftype.underrubrik':
-      'What the network is used for. Classification is based on the server name in the TLS handshake and on DNS lookups — both in plaintext, no certificate needed.',
+      'What the network is used for (based on the server name in the TLS handshake and DNS lookups). The volume is measured by the IDS on the monitored interface and ALSO includes local traffic on the same network that never passes through the firewall — so the total is often higher than on "Traffic per device".',
   'traftype.fordelning': 'Breakdown by category',
   'traftype.toppdomaner': 'Busiest domains',
   'traftype.per_enhet': 'Breakdown per device',
@@ -2180,7 +2180,7 @@ const Map<String, String> _en = {
   'devdash.ny_enhet_tooltip': 'First seen within the last 24 hours',
   'devdash.slumpad_mac_tooltip': 'Randomized MAC address (privacy feature).',
   'devdash.underrubrik':
-      'Real-time bandwidth, history and security signals per device on the network.',
+      'Real-time bandwidth, history and security signals per device. The volume counts traffic THROUGH the firewall (forward) and resets on every Apply — so the total can differ from "Data types".',
   'nav.ids_rules': 'IDS rules',
   // --- IDS rule selection ---
   'sec.tysta_signaturen': 'Silence signature',

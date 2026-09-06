@@ -1,3 +1,4 @@
+import '../widgets/notifications_card.dart';
 import 'dart:convert' show utf8;
 import '../theme.dart';
 import 'dart:typed_data' show Uint8List;
@@ -196,6 +197,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildConfigHistoryCard(provider),
             const SizedBox(height: 16),
             _buildSyslogCard(provider),
+            const SizedBox(height: 16),
+            const NotificationsCard(),
             const SizedBox(height: 16),
             _buildBackupRestoreCard(provider),
             const SizedBox(height: 16),

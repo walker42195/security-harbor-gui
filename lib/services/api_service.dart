@@ -601,6 +601,41 @@ class ApiService {
     }
   }
 
+  /// Hämtar notifieringskonfigurationen (SMTP-lösen maskerat; has_password
+  /// anger om ett lösenord finns sparat).
+  Future<Map<String, dynamic>?> getNotifications() async {
+    try {
+      final res = await _client.get(Uri.parse('$baseUrl/api/v1/notifications'), headers: _headers);
+      if (res.statusCode == 200) return jsonDecode(res.body) as Map<String, dynamic>;
+    } catch (_) {}
+    return null;
+  }
+
+  /// Sparar notifieringskonfigurationen. Skicka tomt smtp_pass för att behålla
+  /// det redan sparade. Returnerar null vid lyckat, annars felmeddelande.
+  Future<String?> saveNotifications(Map<String, dynamic> cfg) async {
+    try {
+      final res = await _client.post(Uri.parse('$baseUrl/api/v1/notifications'),
+          headers: _headers, body: jsonEncode(cfg));
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Sparning misslyckades';
+    } catch (e) {
+      return 'Fel: $e';
+    }
+  }
+
+  /// Skickar ett testmejl med den medskickade konfigurationen.
+  Future<String?> testNotifications(Map<String, dynamic> cfg) async {
+    try {
+      final res = await _client.post(Uri.parse('$baseUrl/api/v1/notifications/test'),
+          headers: _headers, body: jsonEncode(cfg));
+      if (res.statusCode == 200) return null;
+      return res.body.isNotEmpty ? res.body : 'Testet misslyckades';
+    } catch (e) {
+      return 'Fel: $e';
+    }
+  }
+
   Future<List<ServiceStatusModel>> getServicesStatus() async {
     try {
       final res = await _client.get(Uri.parse('$baseUrl/api/v1/services/status'), headers: _headers);
