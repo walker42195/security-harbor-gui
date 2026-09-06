@@ -1280,49 +1280,68 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
 
                   // To Box — nedtonad och märkt när regeln gäller
                   // brandväggen själv, eftersom "To" då inte används.
-                  Opacity(
-                    opacity: local ? 0.4 : 1.0,
-                    child: _buildMemberBox(
-                      context: context,
-                      title: local
-                          ? tr('pol.to_title_local')
-                          : tr('pol.to_title'),
-                      members: local ? [tr('pol.brandvaggen_sjalv')] : toMembers,
-                      onAdd: local
-                          ? () {}
-                          : () async {
-                              final selected = await _showAddressPicker(context, cfg, toMembers);
-                              if (selected != null) {
-                                setState(() => toMembers = selected);
-                              }
-                            },
-                      onRemove: local ? (_) {} : (item) => setState(() => toMembers.remove(item)),
+                  // För en DNAT (Port Forward) döljs rutan helt: målet styrs av
+                  // "Intern IP" i DNAT-parametrarna nedan, och destinationszonen
+                  // ignoreras av brandväggen för port forwards (följeregeln
+                  // matchar på ct status dnat + intern IP/port).
+                  if (action != 'dnat')
+                    Opacity(
+                      opacity: local ? 0.4 : 1.0,
+                      child: _buildMemberBox(
+                        context: context,
+                        title: local
+                            ? tr('pol.to_title_local')
+                            : tr('pol.to_title'),
+                        members: local ? [tr('pol.brandvaggen_sjalv')] : toMembers,
+                        onAdd: local
+                            ? () {}
+                            : () async {
+                                final selected = await _showAddressPicker(context, cfg, toMembers);
+                                if (selected != null) {
+                                  setState(() => toMembers = selected);
+                                }
+                              },
+                        onRemove: local ? (_) {} : (item) => setState(() => toMembers.remove(item)),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(4)),
+                      child: Text(
+                        tr('pol.to_dnat_note'),
+                        style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                      ),
                     ),
-                  ),
 
-                  // Local-regel: trafik TILL brandväggen själv.
-                  const SizedBox(height: 10),
-                  InkWell(
-                    onTap: () => setState(() => local = !local),
-                    child: Row(
-                      children: [
-                        Checkbox(
-                          value: local,
-                          activeColor: AppColors.ok,
-                          checkColor: Colors.black,
-                          onChanged: (v) => setState(() => local = v ?? false),
-                        ),
-                        Expanded(
-                          child: Text(
-                            local
-                                ? tr('pol.local_on_note')
-                                : tr('pol.local_off_note'),
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                  // Local-regel: trafik TILL brandväggen själv. Irrelevant för
+                  // en DNAT (port forward vidarebefordrar ALLTID till en intern
+                  // värd), så kryssrutan döljs då.
+                  if (action != 'dnat') ...[
+                    const SizedBox(height: 10),
+                    InkWell(
+                      onTap: () => setState(() => local = !local),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: local,
+                            activeColor: AppColors.ok,
+                            checkColor: Colors.black,
+                            onChanged: (v) => setState(() => local = v ?? false),
                           ),
-                        ),
-                      ],
+                          Expanded(
+                            child: Text(
+                              local
+                                  ? tr('pol.local_on_note')
+                                  : tr('pol.local_off_note'),
+                              style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
 
                   if (action == 'dnat') ...[
                     const SizedBox(height: 10),
