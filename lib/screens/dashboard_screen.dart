@@ -186,6 +186,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ? AppColors.info
         : (diskUsage >= 90 ? AppColors.danger : (diskUsage >= 75 ? AppColors.warn : AppColors.info));
 
+    // OS-omstart krävs efter paketuppdateringar — samma signal som CLI:ns
+    // inloggnings-MOTD. Visas som banner högst upp så administratören ser den
+    // i GUI:t utan att behöva logga in via SSH.
+    final rebootRequired = status?['reboot_required'] == true;
+    final rebootPkgs = (status?['reboot_required_pkgs'] as List?)?.cast<dynamic>() ?? const [];
+
     final metricsList = _metrics.values.toList();
 
     return Container(
@@ -197,6 +203,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
+            if (rebootRequired) _buildRebootBanner(rebootPkgs),
             // Status-översikt (Kompakta kort). Fyra kort i EN rad tvingar
             // varje kort ner till en fjärdedel av bredden — på en smal
             // telefonskärm blev det så trångt att texten radbröts en
@@ -366,6 +373,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Row/Column-förälder) — anroparen (LayoutBuilder ovan) avgör själv om
   // kortet ska wrappas i Expanded (bred skärm, en rad) eller SizedBox
   // (smal skärm, 2x2-Wrap), så samma kort funkar i båda layouterna.
+  Widget _buildRebootBanner(List<dynamic> pkgs) {
+    final pkgList = pkgs.map((e) => e.toString()).where((e) => e.isNotEmpty).toList();
+    final subtitle = pkgList.isEmpty
+        ? tr('dashboard.reboot_required_sub')
+        : trp('dashboard.reboot_required_pkgs', {'pkgs': pkgList.join(', ')});
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.warn.withValues(alpha: 0.12),
+        border: Border.all(color: AppColors.warn.withValues(alpha: 0.6)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.restart_alt, color: AppColors.warn, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tr('dashboard.reboot_required_title'),
+                  style: TextStyle(color: AppColors.warn, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 3),
+                Text(subtitle, style: TextStyle(color: AppColors.text, fontSize: 12)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCompactStatCard(String title, String mainValue, String subValue, IconData icon, Color accentColor) {
     return Container(
       padding: const EdgeInsets.all(10),

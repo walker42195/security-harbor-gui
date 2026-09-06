@@ -295,6 +295,9 @@ const Map<String, String> _sv = {
   'dashboard.ram_ledigt': 'RAM: {gb} GB (LEDIGT {pct}%)',
   'dashboard.disk': 'Disk',
   'dashboard.disk_ledigt': '{gb} GB (LEDIGT {free} GB)',
+  'dashboard.reboot_required_title': 'Omstart krävs',
+  'dashboard.reboot_required_sub': 'Brandväggen har installerat uppdateringar som träder i kraft först efter en omstart.',
+  'dashboard.reboot_required_pkgs': 'Uppdateringar som kräver omstart: {pkgs}. De träder i kraft först efter en omstart.',
   'dashboard.okonfigurerad': 'Okonfigurerad',
 
   // --- dns_screen.dart ---
@@ -1378,6 +1381,9 @@ const Map<String, String> _en = {
   'dashboard.ram_ledigt': 'RAM: {gb} GB (FREE {pct}%)',
   'dashboard.disk': 'Disk',
   'dashboard.disk_ledigt': '{gb} GB (FREE {free} GB)',
+  'dashboard.reboot_required_title': 'Reboot required',
+  'dashboard.reboot_required_sub': 'The firewall has installed updates that only take effect after a reboot.',
+  'dashboard.reboot_required_pkgs': 'Updates requiring a reboot: {pkgs}. They only take effect after a reboot.',
   'dashboard.okonfigurerad': 'Unconfigured',
 
   // --- dns_screen.dart ---
